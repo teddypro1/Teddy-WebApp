@@ -70,7 +70,7 @@ Roadmap items are goals, not claims that those features are already available.
 
 ```text
 Teddy-WebApp/
-├── app/
+├── app/                         # Existing Android application
 │   ├── src/
 │   │   └── main/
 │   │       ├── kotlin/com/teddy/bpositive/
@@ -78,11 +78,17 @@ Teddy-WebApp/
 │   │       └── res/
 │   ├── module.toml
 │   └── proguard-rules.pro
+├── backend/
+│   └── README.md                # Planned Worker API; not implemented
+├── docs/
+│   └── architecture.md          # Planned system architecture
+├── web/
+│   └── README.md                # Planned website; not implemented
 ├── .gitignore
 └── README.md
 ```
 
-This tree describes the current tracked project files plus this README. The website and backend directories will be added when those components are started.
+The `backend/` and `web/` directories currently contain planning notes only. No backend service or website application has been implemented yet.
 
 ## Development notes
 
