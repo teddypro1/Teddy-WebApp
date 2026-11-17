@@ -47,24 +47,27 @@ object SupabaseProfilesApi {
             session = session,
             onResult = { result ->
                 if (!result.success) {
-                    onResult(result)
-                } else if (result.data != null) {
-                    onResult(result)
+                    onResult(ApiResult(false, message = result.message))
                 } else {
-                    val initialName = session.email?.substringBefore("@").orEmpty()
-                    saveProfile(
-                        session = session,
-                        fullName = initialName,
-                        username = null,
-                        bio = "",
-                        avatarUrl = null,
-                        onResult = onResult
-                    )
+                    val existing = result.data?.firstOrNull()
+                    if (existing != null) {
+                        onResult(ApiResult(true, existing, "Profile loaded."))
+                    } else {
+                        val initialName = session.email?.substringBefore("@").orEmpty()
+                        saveProfile(
+                            session = session,
+                            fullName = initialName,
+                            username = null,
+                            bio = "",
+                            avatarUrl = null,
+                            onResult = onResult
+                        )
+                    }
                 }
             }
         ) { body ->
             val array = JSONArray(body)
-            if (array.length() == 0) null else array.getJSONObject(0).toProfile()
+            (0 until array.length()).map { index -> array.getJSONObject(index).toProfile() }
         }
     }
 
