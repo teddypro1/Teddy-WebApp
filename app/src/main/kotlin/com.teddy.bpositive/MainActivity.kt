@@ -1,4 +1,4 @@
-package com.teddy.bpositive
+package bpositive.com
 
 import android.os.Bundle
 import android.content.Context
