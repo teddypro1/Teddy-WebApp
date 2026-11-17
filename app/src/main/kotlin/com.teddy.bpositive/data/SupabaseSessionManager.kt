@@ -4,6 +4,8 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import android.os.Handler
+import android.os.Looper
 import org.json.JSONObject
 import java.nio.ByteBuffer
 import java.security.KeyStore
@@ -31,8 +33,20 @@ object SupabaseSessionManager {
         val email: String?
     )
 
+    data class RefreshResult(
+        val success: Boolean,
+        val session: Session? = null,
+        val message: String
+    )
+
+    @Volatile private var applicationContext: Context? = null
+    private var refreshInFlight = false
+    private val refreshCallbacks = mutableListOf<(RefreshResult) -> Unit>()
+    private val mainHandler = Handler(Looper.getMainLooper())
+
     @Synchronized
     fun save(context: Context, session: Session) {
+        applicationContext = context.applicationContext
         val json = JSONObject()
             .put("access_token", session.accessToken)
             .put("refresh_token", session.refreshToken)
@@ -48,6 +62,7 @@ object SupabaseSessionManager {
 
     @Synchronized
     fun load(context: Context): Session? {
+        applicationContext = context.applicationContext
         val stored = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getString(SESSION_KEY, null) ?: return null
 
@@ -71,6 +86,68 @@ object SupabaseSessionManager {
         } catch (_: Exception) {
             clear(context)
             null
+        }
+    }
+
+
+    fun refreshAfterUnauthorized(
+        rejectedSession: Session,
+        onResult: (RefreshResult) -> Unit
+    ) {
+        val context = applicationContext
+        if (context == null) {
+            mainHandler.post {
+                onResult(RefreshResult(false, message = "Session storage is not initialized."))
+            }
+            return
+        }
+
+        var shouldStartRefresh = false
+        var alreadyRefreshed: Session? = null
+        synchronized(this) {
+            val latest = load(context)
+            if (latest != null && latest.accessToken != rejectedSession.accessToken) {
+                alreadyRefreshed = latest
+            } else {
+                refreshCallbacks.add(onResult)
+                if (!refreshInFlight) {
+                    refreshInFlight = true
+                    shouldStartRefresh = true
+                }
+            }
+        }
+
+        alreadyRefreshed?.let {
+            onResult(RefreshResult(true, it, "A newer session is already available."))
+            return
+        }
+        if (!shouldStartRefresh) return
+
+        SupabaseAuth.refreshSession(rejectedSession.refreshToken) { authResult ->
+            val access = authResult.accessToken
+            val refresh = authResult.refreshToken
+            val result = if (authResult.success && !access.isNullOrBlank() && !refresh.isNullOrBlank()) {
+                val refreshed = Session(
+                    accessToken = access,
+                    refreshToken = refresh,
+                    userId = authResult.userId ?: rejectedSession.userId,
+                    email = authResult.email ?: rejectedSession.email
+                )
+                try {
+                    save(context, refreshed)
+                    RefreshResult(true, refreshed, "Session refreshed successfully.")
+                } catch (e: Exception) {
+                    RefreshResult(false, message = "Could not save refreshed session: \${e.message ?: "Unknown error"}")
+                }
+            } else {
+                RefreshResult(false, message = authResult.message.ifBlank { "Session refresh failed." })
+            }
+
+            val callbacks = synchronized(this) {
+                refreshInFlight = false
+                refreshCallbacks.toList().also { refreshCallbacks.clear() }
+            }
+            callbacks.forEach { callback -> callback(result) }
         }
     }
 
