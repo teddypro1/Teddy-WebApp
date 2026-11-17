@@ -179,7 +179,8 @@ object NoteSyncRepository {
                         context,
                         userId,
                         record,
-                        result.data.id
+                        result.data.id,
+                        result.data.updatedAt
                     )
                 }
             } catch (e: Exception) {
