@@ -137,7 +137,7 @@ object SupabaseSessionManager {
                     save(context, refreshed)
                     RefreshResult(true, refreshed, "Session refreshed successfully.")
                 } catch (e: Exception) {
-                    RefreshResult(false, message = "Could not save refreshed session: \${e.message ?: "Unknown error"}")
+                    RefreshResult(false, message = "Could not save refreshed session: ${e.message ?: "Unknown error"}")
                 }
             } else {
                 RefreshResult(false, message = authResult.message.ifBlank { "Session refresh failed." })
