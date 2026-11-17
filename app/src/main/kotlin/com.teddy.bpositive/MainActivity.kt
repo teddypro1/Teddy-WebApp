@@ -1,8 +1,9 @@
-package bpositive.com
+package com.teddy.bpositive
 
 import android.os.Bundle
 import android.content.Context
 import android.widget.Toast
+import com.teddy.bpositive.data.SupabaseClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -42,6 +43,11 @@ data class Note(
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Temporary Supabase connectivity test
+        SupabaseClient.testConnectionAsync { result ->
+            Toast.makeText(this, result, Toast.LENGTH_LONG).show()
+        }
 
         setContent {
             TeddyNotesApp()
