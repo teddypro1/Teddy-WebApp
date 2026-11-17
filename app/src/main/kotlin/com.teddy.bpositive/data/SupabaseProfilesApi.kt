@@ -128,9 +128,9 @@ object SupabaseProfilesApi {
         fun send(activeSession: SupabaseSessionManager.Session, retried: Boolean) {
             Thread {
                 val builder = Request.Builder()
-                    .url("\${SupabaseConfig.BASE_URL}$path")
+                    .url("${SupabaseConfig.BASE_URL}$path")
                     .addHeader("apikey", SupabaseConfig.API_KEY)
-                    .addHeader("Authorization", "Bearer \${activeSession.accessToken}")
+                    .addHeader("Authorization", "Bearer ${activeSession.accessToken}")
                     .addHeader("Accept", "application/json")
                 if (prefer != null) builder.addHeader("Prefer", prefer)
                 val requestBody = body?.toRequestBody(jsonMediaType)
@@ -148,18 +148,18 @@ object SupabaseProfilesApi {
                                 JSONObject(responseText).optString("message")
                             } catch (_: Exception) { "" }
                             ApiResult<T>(false, message = error.ifBlank {
-                                "Supabase request failed. HTTP \${response.code}"
+                                "Supabase request failed. HTTP ${response.code}"
                             })
                         } else {
                             try {
                                 ApiResult(true, parse(responseText), "Profile request completed.")
                             } catch (e: Exception) {
-                                ApiResult<T>(false, message = "Could not parse profile: \${e.message ?: "Unknown error"}")
+                                ApiResult<T>(false, message = "Could not parse profile: ${e.message ?: "Unknown error"}")
                             }
                         }
                     }
                 } catch (e: Exception) {
-                    ApiResult<T>(false, message = "Network error: \${e.message ?: "Unknown error"}")
+                    ApiResult<T>(false, message = "Network error: ${e.message ?: "Unknown error"}")
                 }
 
                 val tokenExpired = result.message.contains("JWT expired", true) ||
@@ -172,7 +172,7 @@ object SupabaseProfilesApi {
                         if (refreshResult.success && refreshed != null) {
                             send(refreshed, true)
                         } else {
-                            onResult(ApiResult(false, message = "Session refresh failed: \${refreshResult.message}"))
+                            onResult(ApiResult(false, message = "Session refresh failed: ${refreshResult.message}"))
                         }
                     }
                 } else {
