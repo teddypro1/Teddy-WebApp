@@ -358,6 +358,7 @@ fun TeddyNotesApp() {
 
     var showTrash by rememberSaveable { mutableStateOf(false) }
     var showConflicts by rememberSaveable { mutableStateOf(false) }
+    var selectedTab by rememberSaveable { mutableStateOf("Home") }
     var permanentDeleteTarget by remember { mutableStateOf<Long?>(null) }
 
     var sortNewest by rememberSaveable {
@@ -739,7 +740,31 @@ fun TeddyNotesApp() {
 
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
-
+            bottomBar = {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 8.dp) {
+                    listOf(Triple("Home", "⌂", "Home"), Triple("Trash", "▤", "Trash"),
+                        Triple("Profile", "●", "Profile"), Triple("Settings", "⚙", "Settings")).forEach { (tab, symbol, label) ->
+                        NavigationBarItem(
+                            selected = selectedTab == tab,
+                            onClick = {
+                                selectedTab = tab
+                                if (tab == "Trash") {
+                                    showTrash = true
+                                    showConflicts = false
+                                    showPinnedOnly = false
+                                    searchQuery = ""
+                                } else if (tab == "Home") {
+                                    showTrash = false
+                                    showConflicts = false
+                                }
+                            },
+                            icon = { Text(symbol, fontSize = 20.sp) },
+                            label = { Text(label, maxLines = 1) },
+                            alwaysShowLabel = true
+                        )
+                    }
+                }
+            },
             topBar = {
                 CenterAlignedTopAppBar(
                     title = {
@@ -838,6 +863,7 @@ fun TeddyNotesApp() {
 
         ) { padding ->
 
+            if (selectedTab == "Home") {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1125,6 +1151,73 @@ fun TeddyNotesApp() {
 
                 Spacer(Modifier.height(15.dp))
             }
+            } else if (selectedTab == "Trash") {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(padding)
+                        .verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 20.dp)
+                ) {
+                    Text("Recently Deleted", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(6.dp))
+                    Text("Restore notes or permanently remove them.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(18.dp))
+                    if (deletedNotes.isEmpty()) EmptyNotes() else deletedNotes.forEach { cloudNote ->
+                        TrashNoteCard(note = cloudNote, onRestore = { restoreDeletedNote(cloudNote) },
+                            onDeletePermanently = { permanentDeleteTarget = cloudNote.id })
+                        Spacer(Modifier.height(12.dp))
+                    }
+                }
+            } else if (selectedTab == "Profile") {
+                ProfilePage(profile = currentProfile, email = activeSession?.email.orEmpty(), onEdit = {
+                    currentProfile?.let { profile ->
+                        profileFullName = profile.fullName
+                        profileUsername = profile.username.orEmpty()
+                        profileBio = profile.bio
+                        profileAvatarUrl = profile.avatarUrl.orEmpty()
+                    }
+                    showProfileDialog = true
+                })
+            } else if (selectedTab == "Settings") {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
+                        .padding(horizontal = 18.dp, vertical = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text("Settings", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                    Text("Customize your Teddy WebApp experience.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Appearance", fontWeight = FontWeight.SemiBold)
+                                Text(if (darkMode) "Dark mode is enabled" else "Light mode is enabled",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                            }
+                            Switch(checked = darkMode, onCheckedChange = { enabled ->
+                                darkMode = enabled
+                                context.getSharedPreferences("teddy_settings", Context.MODE_PRIVATE).edit()
+                                    .putBoolean("dark_mode", enabled).apply()
+                            })
+                        }
+                    }
+                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Account", fontWeight = FontWeight.SemiBold)
+                            Text(activeSession?.email.orEmpty(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            OutlinedButton(onClick = {
+                                SupabaseSessionManager.clear(context)
+                                activeSession = null
+                            }, modifier = Modifier.fillMaxWidth()) { Text("Sign Out") }
+                        }
+                    }
+                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                        Column(modifier = Modifier.padding(18.dp)) {
+                            Text("Teddy WebApp", fontWeight = FontWeight.SemiBold)
+                            Text("Your thoughts, organized beautifully.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                            Text("Version 1.0", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1242,6 +1335,62 @@ fun TeddyNotesApp() {
                 deleteTarget = null
             }
         )
+    }
+}
+
+
+@Composable
+fun ProfilePage(profile: SupabaseProfilesApi.Profile?, email: String, onEdit: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+        .padding(horizontal = 18.dp, vertical = 22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text("My Profile", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+            Column(modifier = Modifier.fillMaxWidth().padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(modifier = Modifier.size(104.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    contentAlignment = Alignment.Center) {
+                    Text(profile?.fullName?.trim()?.firstOrNull()?.uppercase() ?: "👤", fontSize = 38.sp,
+                        fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    profile?.avatarUrl?.takeIf { it.isNotBlank() }?.let { avatar ->
+                        AsyncImage(model = avatar, contentDescription = "Profile picture",
+                            modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                Text(profile?.fullName?.ifBlank { "Your Name" } ?: "Loading profile...", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text(profile?.username?.takeIf { it.isNotBlank() }?.let { "@$it" } ?: "Username not set",
+                    color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
+                Spacer(Modifier.height(8.dp))
+                Text(email, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                if (!profile?.bio.isNullOrBlank()) {
+                    Spacer(Modifier.height(10.dp))
+                    Text(profile?.bio.orEmpty(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+                Spacer(Modifier.height(18.dp))
+                Button(onClick = onEdit, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
+                    Text("Edit Profile")
+                }
+            }
+        }
+        Text("Personal Information", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                ProfileInfoRow("Full Name", profile?.fullName.orEmpty())
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                ProfileInfoRow("Username", profile?.username?.let { "@$it" }.orEmpty().ifBlank { "Not set" })
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                ProfileInfoRow("Email", email)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                ProfileInfoRow("Account Created", profile?.createdAt.orEmpty().ifBlank { "Unavailable" })
+            }
+        }
+    }
+}
+
+@Composable
+fun ProfileInfoRow(label: String, value: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+        Text(value.ifBlank { "Not set" }, fontWeight = FontWeight.Medium, fontSize = 15.sp)
     }
 }
 
