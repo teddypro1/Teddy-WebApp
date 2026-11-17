@@ -28,7 +28,8 @@ object NoteSyncStore {
         val title: String,
         val content: String,
         val isPinned: Boolean,
-        val cloudNoteId: Long?
+        val cloudNoteId: Long?,
+        val cloudUpdatedAt: String?
     )
 
     /**
@@ -201,7 +202,8 @@ object NoteSyncStore {
         cloudNoteId: Long,
         title: String,
         content: String,
-        isPinned: Boolean
+        isPinned: Boolean,
+        cloudUpdatedAt: String? = null
     ) {
         require(userId.isNotBlank()) { "User ID cannot be empty." }
         require(clientId.isNotBlank()) { "Client ID cannot be empty." }
@@ -212,6 +214,7 @@ object NoteSyncStore {
         record.put("local_note_id", localNoteId)
         record.put("client_id", clientId)
         record.put("cloud_note_id", cloudNoteId)
+        if (cloudUpdatedAt != null) record.put("cloud_updated_at", cloudUpdatedAt)
         record.put("operation", JSONObject.NULL)
         record.put("title", title)
         record.put("content", content)
@@ -230,7 +233,8 @@ object NoteSyncStore {
         context: Context,
         userId: String,
         expected: SyncRecord,
-        cloudNoteId: Long
+        cloudNoteId: Long,
+        cloudUpdatedAt: String?
     ): Boolean {
         val root = readRoot(context)
         val userRecords = root.optJSONObject(userId) ?: return false
@@ -245,6 +249,7 @@ object NoteSyncStore {
         ) return false
 
         json.put("cloud_note_id", cloudNoteId)
+        if (expected.cloudUpdatedAt != null) json.put("cloud_updated_at", expected.cloudUpdatedAt)
         json.put("operation", JSONObject.NULL)
         userRecords.put(expected.localNoteId.toString(), json)
         root.put(userId, userRecords)
@@ -355,7 +360,8 @@ object NoteSyncStore {
             title = optString("title"),
             content = optString("content"),
             isPinned = optBoolean("is_pinned", false),
-            cloudNoteId = if (isNull("cloud_note_id")) null else optLong("cloud_note_id")
+            cloudNoteId = if (isNull("cloud_note_id")) null else optLong("cloud_note_id"),
+            cloudUpdatedAt = optString("cloud_updated_at").takeIf { it.isNotBlank() && it != "null" }
         )
     }
 }
