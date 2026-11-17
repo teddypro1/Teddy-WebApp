@@ -180,7 +180,7 @@ class SupabaseRealtimeSubscription(
         }
     }
     private fun scheduleReconnect() {
-        if (stopped) return
+        if (stopped || refreshingSession) return
         val delay = reconnectDelayMs
         reconnectDelayMs = (reconnectDelayMs * 2).coerceAtMost(30_000L)
         handler.postDelayed({ if (!stopped && socket == null) connect() }, delay)
