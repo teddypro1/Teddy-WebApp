@@ -12,8 +12,8 @@ import org.json.JSONObject
 /**
  * REST API for the authenticated user's notes.
  *
- * Row-level security must remain enabled in Supabase. Every request uses the
- * user's access token; user_id is also sent on inserts and filters.
+ * RLS remains the security boundary. Every request uses the user's access
+ * token and scopes records to the authenticated user.
  */
 object SupabaseNotesApi {
 
@@ -24,11 +24,13 @@ object SupabaseNotesApi {
     data class CloudNote(
         val id: Long,
         val userId: String,
+        val clientId: String?,
         val title: String,
         val content: String,
         val isPinned: Boolean,
         val createdAt: String?,
-        val updatedAt: String?
+        val updatedAt: String?,
+        val deletedAt: String?
     )
 
     data class ApiResult<T>(
@@ -41,50 +43,53 @@ object SupabaseNotesApi {
         session: SupabaseSessionManager.Session,
         onResult: (ApiResult<List<CloudNote>>) -> Unit
     ) {
+        val userId = session.userId
+        if (userId.isNullOrBlank()) {
+            onResult(ApiResult(false, message = "User ID is missing from the session."))
+            return
+        }
+
         execute(
             method = "GET",
-            path = "/rest/v1/notes?select=id,user_id,title,content,is_pinned,created_at,updated_at&user_id=eq.${session.userId.orEmpty()}&order=updated_at.desc",
+            path = "/rest/v1/notes?select=id,user_id,client_id,title,content,is_pinned,created_at,updated_at,deleted_at&user_id=eq.$userId&order=updated_at.desc",
             session = session,
             onResult = onResult
         ) { body ->
             val array = JSONArray(body)
-            val notes = (0 until array.length()).map { index ->
-                val item = array.getJSONObject(index)
-                CloudNote(
-                    id = item.getLong("id"),
-                    userId = item.getString("user_id"),
-                    title = item.getString("title"),
-                    content = item.getString("content"),
-                    isPinned = item.optBoolean("is_pinned", false),
-                    createdAt = item.optNullableString("created_at"),
-                    updatedAt = item.optNullableString("updated_at")
-                )
+            (0 until array.length()).map { index ->
+                array.getJSONObject(index).toCloudNote()
             }
-            notes
         }
     }
 
     fun createNote(
         session: SupabaseSessionManager.Session,
+        clientId: String,
         title: String,
         content: String,
         isPinned: Boolean = false,
         onResult: (ApiResult<CloudNote?>) -> Unit
     ) {
-        if (session.userId.isNullOrBlank()) {
+        val userId = session.userId
+        if (userId.isNullOrBlank()) {
             onResult(ApiResult(false, message = "User ID is missing from the session."))
+            return
+        }
+        if (clientId.isBlank()) {
+            onResult(ApiResult(false, message = "Client ID cannot be empty."))
             return
         }
 
         val payload = JSONObject()
-            .put("user_id", session.userId)
+            .put("user_id", userId)
+            .put("client_id", clientId)
             .put("title", title.trim())
             .put("content", content.trim())
             .put("is_pinned", isPinned)
 
         execute(
             method = "POST",
-            path = "/rest/v1/notes?select=id,user_id,title,content,is_pinned,created_at,updated_at",
+            path = "/rest/v1/notes?select=id,user_id,client_id,title,content,is_pinned,created_at,updated_at,deleted_at",
             session = session,
             body = payload.toString(),
             prefer = "return=representation",
@@ -113,10 +118,11 @@ object SupabaseNotesApi {
             .put("title", title.trim())
             .put("content", content.trim())
             .put("is_pinned", isPinned)
+            .put("deleted_at", JSONObject.NULL)
 
         execute(
             method = "PATCH",
-            path = "/rest/v1/notes?id=eq.$noteId&user_id=eq.$userId&select=id,user_id,title,content,is_pinned,created_at,updated_at",
+            path = "/rest/v1/notes?id=eq.$noteId&user_id=eq.$userId&select=id,user_id,client_id,title,content,is_pinned,created_at,updated_at,deleted_at",
             session = session,
             body = payload.toString(),
             prefer = "return=representation",
@@ -127,10 +133,13 @@ object SupabaseNotesApi {
         }
     }
 
+    /**
+     * Soft-deletes a note. The tombstone is retained for cross-device sync.
+     */
     fun deleteNote(
         session: SupabaseSessionManager.Session,
         noteId: Long,
-        onResult: (ApiResult<Boolean>) -> Unit
+        onResult: (ApiResult<CloudNote?>) -> Unit
     ) {
         val userId = session.userId
         if (userId.isNullOrBlank()) {
@@ -138,13 +147,22 @@ object SupabaseNotesApi {
             return
         }
 
+        val payload = JSONObject().put("deleted_at", "now()")
+        // PostgREST expects a timestamp value, so send an ISO-8601 UTC timestamp.
+        val deletedAt = java.time.Instant.now().toString()
+        payload.put("deleted_at", deletedAt)
+
         execute(
-            method = "DELETE",
-            path = "/rest/v1/notes?id=eq.$noteId&user_id=eq.$userId",
+            method = "PATCH",
+            path = "/rest/v1/notes?id=eq.$noteId&user_id=eq.$userId&select=id,user_id,client_id,title,content,is_pinned,created_at,updated_at,deleted_at",
             session = session,
-            prefer = "return=minimal",
+            body = payload.toString(),
+            prefer = "return=representation",
             onResult = onResult
-        ) { true }
+        ) { body ->
+            val array = JSONArray(body)
+            if (array.length() == 0) null else array.getJSONObject(0).toCloudNote()
+        }
     }
 
     private fun <T> execute(
@@ -170,7 +188,6 @@ object SupabaseNotesApi {
                 "GET" -> builder.get()
                 "POST" -> builder.post(requestBody ?: "{}".toRequestBody(jsonMediaType))
                 "PATCH" -> builder.patch(requestBody ?: "{}".toRequestBody(jsonMediaType))
-                "DELETE" -> builder.delete(requestBody)
                 else -> throw IllegalArgumentException("Unsupported HTTP method: $method")
             }
 
@@ -216,10 +233,12 @@ object SupabaseNotesApi {
     private fun JSONObject.toCloudNote() = CloudNote(
         id = getLong("id"),
         userId = getString("user_id"),
+        clientId = optNullableString("client_id"),
         title = getString("title"),
         content = getString("content"),
         isPinned = optBoolean("is_pinned", false),
         createdAt = optNullableString("created_at"),
-        updatedAt = optNullableString("updated_at")
+        updatedAt = optNullableString("updated_at"),
+        deletedAt = optNullableString("deleted_at")
     )
 }
