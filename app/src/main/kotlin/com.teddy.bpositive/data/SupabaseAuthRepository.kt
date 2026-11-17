@@ -90,8 +90,10 @@ object SupabaseAuthRepository {
     }
 
     /**
-     * Restores a saved session by rotating its refresh token.
-     * A failed refresh clears the unusable local session.
+     * Restores a saved session. If the network is unavailable or Supabase is
+     * temporarily unreachable, keep the encrypted local session so the user
+     * can continue working with locally cached notes. Only a refresh-token
+     * rejection that clearly indicates an invalid/revoked token clears it.
      */
     fun restoreSession(
         context: Context,
@@ -117,8 +119,33 @@ object SupabaseAuthRepository {
 
         SupabaseAuth.refreshSession(savedSession.refreshToken) { authResult ->
             if (!authResult.success) {
-                SupabaseSessionManager.clear(appContext)
-                onResult(Result(false, "Saved session expired. Please sign in again."))
+                val error = authResult.message.lowercase()
+                val refreshTokenRejected =
+                    error.contains("invalid refresh token") ||
+                    error.contains("refresh_token_not_found") ||
+                    error.contains("refresh token not found") ||
+                    error.contains("refresh token is invalid") ||
+                    error.contains("refresh token has been revoked")
+
+                if (refreshTokenRejected) {
+                    SupabaseSessionManager.clear(appContext)
+                    onResult(
+                        Result(
+                            success = false,
+                            message = "Your saved session is no longer valid. Please sign in again."
+                        )
+                    )
+                } else {
+                    // Network errors, timeouts and temporary server failures
+                    // must not be treated as a sign-out.
+                    onResult(
+                        Result(
+                            success = true,
+                            message = "Offline mode: using your saved session. Cloud sync will resume when internet is available.",
+                            session = savedSession
+                        )
+                    )
+                }
                 return@refreshSession
             }
 
@@ -126,8 +153,15 @@ object SupabaseAuthRepository {
             val refreshToken = authResult.refreshToken
 
             if (accessToken.isNullOrBlank() || refreshToken.isNullOrBlank()) {
-                SupabaseSessionManager.clear(appContext)
-                onResult(Result(false, "Session refresh returned incomplete tokens. Please sign in again."))
+                // Preserve the existing local session rather than locking the
+                // user out because a refresh response was incomplete.
+                onResult(
+                    Result(
+                        success = true,
+                        message = "Using your saved session. Cloud session refresh was incomplete; it will be retried later.",
+                        session = savedSession
+                    )
+                )
                 return@refreshSession
             }
 
@@ -148,11 +182,13 @@ object SupabaseAuthRepository {
                     )
                 )
             } catch (e: Exception) {
-                SupabaseSessionManager.clear(appContext)
+                // The old encrypted session remains available if saving the
+                // rotated token fails.
                 onResult(
                     Result(
-                        success = false,
-                        message = "Could not save refreshed session: ${e.message ?: "Unknown error"}"
+                        success = true,
+                        message = "Using your saved session. Could not persist refreshed session: ${e.message ?: "Unknown error"}",
+                        session = savedSession
                     )
                 )
             }
