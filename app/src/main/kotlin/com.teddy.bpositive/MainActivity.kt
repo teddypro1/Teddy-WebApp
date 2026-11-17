@@ -99,6 +99,7 @@ fun TeddyNotesApp() {
         }
     }
     val deletedNotes = remember { mutableStateListOf<SupabaseNotesApi.CloudNote>() }
+    val conflictCopies = remember { mutableStateListOf<SupabaseNotesApi.ConflictCopy>() }
 
     LaunchedEffect(activeSession) {
         val session = activeSession ?: return@LaunchedEffect
@@ -150,6 +151,13 @@ fun TeddyNotesApp() {
 
                 deletedNotes.clear()
                 fetchResult.data.filter { it.deletedAt != null }.forEach { deletedNotes.add(it) }
+
+                SupabaseNotesApi.fetchConflictCopies(session) { conflictResult ->
+                    if (conflictResult.success && conflictResult.data != null) {
+                        conflictCopies.clear()
+                        conflictCopies.addAll(conflictResult.data)
+                    }
+                }
 
                 fetchResult.data.forEach { cloudNote ->
                     val existingRecord = cloudNote.clientId?.let { clientId ->
@@ -240,6 +248,7 @@ fun TeddyNotesApp() {
     }
 
     var showTrash by rememberSaveable { mutableStateOf(false) }
+    var showConflicts by rememberSaveable { mutableStateOf(false) }
     var permanentDeleteTarget by remember { mutableStateOf<Long?>(null) }
 
     var sortNewest by rememberSaveable {
@@ -414,6 +423,98 @@ fun TeddyNotesApp() {
                     "Permanent deletion failed: ${result.message}. Check the Supabase DELETE policy.",
                     Toast.LENGTH_LONG
                 ).show()
+            }
+        }
+    }
+
+    fun refreshConflictCopies() {
+        val session = activeSession ?: return
+        SupabaseNotesApi.fetchConflictCopies(session) { result ->
+            if (result.success && result.data != null) {
+                conflictCopies.clear()
+                conflictCopies.addAll(result.data)
+            } else {
+                Toast.makeText(context, "Could not load conflict copies: ${result.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    fun restoreConflictCopy(copy: SupabaseNotesApi.ConflictCopy) {
+        val session = activeSession ?: return
+        val userId = session.userId.orEmpty()
+        val restoredClientId = "conflict-${copy.id}"
+        val existingRecord = NoteSyncStore.findByClientId(context, userId, restoredClientId)
+        val localId = existingRecord?.localNoteId ?: run {
+            var candidate = System.currentTimeMillis()
+            while (notes.any { it.id == candidate }) candidate++
+            candidate
+        }
+
+        SupabaseNotesApi.upsertNote(
+            session = session,
+            clientId = restoredClientId,
+            title = copy.title,
+            content = copy.content,
+            isPinned = copy.isPinned,
+            deletedAt = null
+        ) { result ->
+            val restored = result.data
+            if (!result.success || restored == null) {
+                Toast.makeText(context, "Could not restore conflict copy: ${result.message}", Toast.LENGTH_LONG).show()
+                return@upsertNote
+            }
+
+            fun cloudTime(value: String?): Long = try {
+                if (value.isNullOrBlank()) System.currentTimeMillis()
+                else java.time.Instant.parse(value).toEpochMilli()
+            } catch (_: Exception) {
+                System.currentTimeMillis()
+            }
+
+            val localNote = Note(
+                id = localId,
+                title = restored.title,
+                content = restored.content,
+                isPinned = restored.isPinned,
+                createdAt = cloudTime(restored.createdAt),
+                updatedAt = cloudTime(restored.updatedAt)
+            )
+            val localIndex = notes.indexOfFirst { it.id == localId }
+            if (localIndex >= 0) notes[localIndex] = localNote else notes.add(0, localNote)
+
+            NoteSyncStore.registerCloudNote(
+                context = context,
+                userId = userId,
+                localNoteId = localId,
+                clientId = restoredClientId,
+                cloudNoteId = restored.id,
+                title = restored.title,
+                content = restored.content,
+                isPinned = restored.isPinned,
+                cloudUpdatedAt = restored.updatedAt
+            )
+            saveChanges()
+
+            SupabaseNotesApi.resolveConflictCopy(session, copy.id) { resolveResult ->
+                if (resolveResult.success && resolveResult.data == true) {
+                    conflictCopies.removeAll { it.id == copy.id }
+                    Toast.makeText(context, "Conflict copy restored as a separate note.", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Note restored, but conflict status could not be updated: ${resolveResult.message}", Toast.LENGTH_LONG).show()
+                    refreshConflictCopies()
+                }
+            }
+        }
+    }
+
+    fun dismissConflictCopy(copy: SupabaseNotesApi.ConflictCopy) {
+        val session = activeSession ?: return
+        SupabaseNotesApi.resolveConflictCopy(session, copy.id) { result ->
+            if (result.success && result.data == true) {
+                conflictCopies.removeAll { it.id == copy.id }
+                Toast.makeText(context, "Conflict copy dismissed.", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Could not dismiss conflict copy: ${result.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -676,7 +777,9 @@ fun TeddyNotesApp() {
                         Spacer(Modifier.height(5.dp))
 
                         Text(
-                            if (showTrash) {
+                            if (showConflicts) {
+                                "Conflict Copies (${conflictCopies.size})"
+                            } else if (showTrash) {
                                 "Trash (${deletedNotes.size})"
                             } else if (showPinnedOnly) {
                                 "Pinned Notes ($pinnedNotes)"
@@ -688,7 +791,7 @@ fun TeddyNotesApp() {
                         )
                     }
 
-                    if (!showTrash) Button(
+                    if (!showTrash && !showConflicts) Button(
                         onClick = {
                             if (!showEditor) {
                                 editingId = null
@@ -712,6 +815,7 @@ fun TeddyNotesApp() {
                 OutlinedButton(
                     onClick = {
                         showTrash = !showTrash
+                        showConflicts = false
                         searchQuery = ""
                         showPinnedOnly = false
                     },
@@ -720,9 +824,24 @@ fun TeddyNotesApp() {
                     Text(if (showTrash) "← Back to All Notes" else "🗑 Recently Deleted (${deletedNotes.size})")
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
 
-                OutlinedTextField(
+                OutlinedButton(
+                    onClick = {
+                        showConflicts = !showConflicts
+                        showTrash = false
+                        searchQuery = ""
+                        showPinnedOnly = false
+                        if (showConflicts) refreshConflictCopies()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (showConflicts) "← Back to All Notes" else "⚠ Conflict Copies (${conflictCopies.size})")
+                }
+
+                if (!showConflicts && !showTrash) {
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
                     value = searchQuery,
                     onValueChange = {
                         searchQuery = it
@@ -736,11 +855,12 @@ fun TeddyNotesApp() {
                     },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp)
-                )
+                    )
 
-                Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(12.dp))
+                }
 
-                Row(
+                if (!showConflicts && !showTrash) Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
@@ -785,7 +905,20 @@ fun TeddyNotesApp() {
 
                 Spacer(Modifier.height(12.dp))
 
-                if (showTrash) {
+                if (showConflicts) {
+                    if (conflictCopies.isEmpty()) {
+                        EmptyNotes()
+                    } else {
+                        conflictCopies.forEach { copy ->
+                            ConflictCopyCard(
+                                conflict = copy,
+                                onRestore = { restoreConflictCopy(copy) },
+                                onDismiss = { dismissConflictCopy(copy) }
+                            )
+                            Spacer(Modifier.height(12.dp))
+                        }
+                    }
+                } else if (showTrash) {
                     if (deletedNotes.isEmpty()) {
                         EmptyNotes()
                     } else {
@@ -923,6 +1056,44 @@ fun TrashNoteCard(
                 TextButton(onClick = onRestore) { Text("↶ Restore") }
                 TextButton(onClick = onDeletePermanently) {
                     Text("Delete Permanently", color = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ConflictCopyCard(
+    conflict: SupabaseNotesApi.ConflictCopy,
+    onRestore: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("⚠ Conflict copy", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(7.dp))
+            Text(conflict.title, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(7.dp))
+            Text(conflict.content, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, maxLines = 5, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(10.dp))
+            Text("Saved: ${conflict.createdAt ?: "Unknown"}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+            Spacer(Modifier.height(10.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text("Dismiss", color = MaterialTheme.colorScheme.error)
+                }
+                TextButton(onClick = onRestore) {
+                    Text("↶ Restore as Note")
                 }
             }
         }
