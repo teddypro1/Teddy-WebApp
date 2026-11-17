@@ -156,6 +156,10 @@ fun TeddyNotesApp() {
                         NoteSyncStore.findByClientId(context, userId, clientId)
                     }
 
+                    // Never let an older cloud snapshot overwrite a local change
+                    // that is still waiting to be synchronized.
+                    if (existingRecord?.operation != null) return@forEach
+
                     if (cloudNote.deletedAt != null) {
                         existingRecord?.let { record ->
                             notes.removeAll { it.id == record.localNoteId }
