@@ -12,6 +12,9 @@ import java.time.Instant
  */
 object NoteSyncRepository {
 
+    private val activeSyncUsers = mutableSetOf<String>()
+    private val waitingCallbacks = mutableMapOf<String, MutableList<(SyncResult) -> Unit>>()
+
     data class SyncResult(
         val success: Boolean,
         val processed: Int,
@@ -38,10 +41,30 @@ object NoteSyncRepository {
         }
 
         val appContext = context.applicationContext
+        val shouldStart = synchronized(activeSyncUsers) {
+            if (userId in activeSyncUsers) {
+                waitingCallbacks.getOrPut(userId) { mutableListOf() }.add(onResult)
+                false
+            } else {
+                activeSyncUsers.add(userId)
+                true
+            }
+        }
+        if (!shouldStart) return
+
+        val complete: (SyncResult) -> Unit = { result ->
+            val callbacks = synchronized(activeSyncUsers) {
+                activeSyncUsers.remove(userId)
+                waitingCallbacks.remove(userId).orEmpty()
+            }
+            onResult(result)
+            callbacks.forEach { callback -> callback(result) }
+        }
+
         val pending = try {
             NoteSyncStore.getPendingChanges(appContext, userId)
         } catch (e: Exception) {
-            onResult(
+            complete(
                 SyncResult(
                     success = false,
                     processed = 0,
@@ -53,7 +76,7 @@ object NoteSyncRepository {
         }
 
         if (pending.isEmpty()) {
-            onResult(
+            complete(
                 SyncResult(
                     success = true,
                     processed = 0,
@@ -70,7 +93,7 @@ object NoteSyncRepository {
             records = pending,
             index = 0,
             processed = 0,
-            onResult = onResult
+            onResult = complete
         )
     }
 
@@ -96,17 +119,24 @@ object NoteSyncRepository {
         }
 
         if (index >= records.size) {
-            val remaining = NoteSyncStore.getPendingChanges(context, userId).size
+            val latestPending = NoteSyncStore.getPendingChanges(context, userId)
+            if (latestPending.isNotEmpty()) {
+                processNext(
+                    context = context,
+                    session = session,
+                    records = latestPending,
+                    index = 0,
+                    processed = processed,
+                    onResult = onResult
+                )
+                return
+            }
             onResult(
                 SyncResult(
-                    success = remaining == 0,
+                    success = true,
                     processed = processed,
-                    remaining = remaining,
-                    message = if (remaining == 0) {
-                        "All pending note changes were synchronized."
-                    } else {
-                        "Some note changes are still pending."
-                    }
+                    remaining = 0,
+                    message = "All pending note changes were synchronized."
                 )
             )
             return
