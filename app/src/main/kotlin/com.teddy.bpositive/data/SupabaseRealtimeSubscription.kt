@@ -122,7 +122,14 @@ class SupabaseRealtimeSubscription(
                         val payload = message.optJSONObject("payload")
                         if (payload?.optString("status") == "ok") {
                             reconnectDelayMs = 2_000L
+                            if (message.optString("ref") == "1") {
+                                handler.post {
+                                    if (!stopped) onNotesChanged()
+                                }
+                            }
                         }
+                    } else if (event == "phx_error" || event == "phx_close") {
+                        webSocket.close(1011, "Realtime channel unavailable")
                     }
                 } catch (_: Exception) {
                     // Ignore malformed or unrelated protocol messages.
