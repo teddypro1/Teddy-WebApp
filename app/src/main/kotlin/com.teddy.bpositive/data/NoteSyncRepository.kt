@@ -139,16 +139,16 @@ object NoteSyncRepository {
 
             try {
                 if (isDelete) {
-                    NoteSyncStore.markDeleteSynced(
+                    NoteSyncStore.markDeleteSyncedIfUnchanged(
                         context,
                         userId,
-                        record.localNoteId
+                        record
                     )
                 } else {
-                    NoteSyncStore.markSynced(
+                    NoteSyncStore.markSyncedIfUnchanged(
                         context,
                         userId,
-                        record.localNoteId,
+                        record,
                         result.data.id
                     )
                 }
