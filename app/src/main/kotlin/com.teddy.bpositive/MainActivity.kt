@@ -182,7 +182,8 @@ fun TeddyNotesApp() {
                             cloudNoteId = cloudNote.id,
                             title = cloudNote.title,
                             content = cloudNote.content,
-                            isPinned = cloudNote.isPinned
+                            isPinned = cloudNote.isPinned,
+                            cloudUpdatedAt = cloudNote.updatedAt
                         )
 
                         fun parseCloudTime(value: String?): Long {
@@ -391,7 +392,8 @@ fun TeddyNotesApp() {
                 cloudNoteId = restored.id,
                 title = restored.title,
                 content = restored.content,
-                isPinned = restored.isPinned
+                isPinned = restored.isPinned,
+                cloudUpdatedAt = restored.updatedAt
             )
             deletedNotes.removeAll { it.id == cloudNote.id }
             saveChanges()
