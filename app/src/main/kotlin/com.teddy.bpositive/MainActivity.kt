@@ -100,43 +100,46 @@ fun TeddyNotesApp() {
 
     LaunchedEffect(activeSession) {
         val session = activeSession ?: return@LaunchedEffect
+        val userId = session.userId.orEmpty()
+        if (userId.isBlank()) return@LaunchedEffect
+
         val preferences = context.getSharedPreferences(
             "teddy_note_sync_metadata",
             Context.MODE_PRIVATE
         )
-        val migrationKey = "legacy_notes_migrated_\${session.userId}"
+        val migrationKey = "legacy_notes_migrated_${session.userId}"
 
-        if (!preferences.getBoolean(migrationKey, false)) {
-            val legacyNotes = loadNotes(context)
-
-            legacyNotes.forEach { note ->
+        // Queue local notes that do not yet have sync metadata.
+        // This also recovers notes created before CRUD sync was wired.
+        loadNotes(context).forEach { note ->
+            if (NoteSyncStore.getRecord(context, userId, note.id) == null) {
                 NoteSyncStore.enqueueUpsert(
                     context = context,
-                    userId = session.userId.orEmpty(),
+                    userId = userId,
                     localNoteId = note.id,
                     title = note.title,
                     content = note.content,
                     isPinned = note.isPinned
                 )
             }
+        }
 
-            NoteSyncRepository.syncPendingChanges(context, session) { result ->
-                if (result.success) {
-                    preferences.edit().putBoolean(migrationKey, true).apply()
-                    if (result.processed > 0) {
-                        Toast.makeText(
-                            context,
-                            "Existing notes synced to cloud successfully.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                } else {
+        NoteSyncRepository.syncPendingChanges(context, session) { result ->
+            if (result.success) {
+                preferences.edit().putBoolean(migrationKey, true).apply()
+                if (result.processed > 0) {
                     Toast.makeText(
                         context,
-                        "Cloud sync pending: \${result.message}",
+                        "Notes synced to cloud successfully.",
                         Toast.LENGTH_LONG
                     ).show()
                 }
+            } else {
+                Toast.makeText(
+                    context,
+                    "Cloud sync pending: ${result.message}",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
@@ -205,6 +208,54 @@ fun TeddyNotesApp() {
         saveNotes(context, notes)
     }
 
+    fun syncNoteUpsert(note: Note) {
+        val session = activeSession ?: return
+        val userId = session.userId ?: return
+
+        NoteSyncStore.enqueueUpsert(
+            context = context,
+            userId = userId,
+            localNoteId = note.id,
+            title = note.title,
+            content = note.content,
+            isPinned = note.isPinned
+        )
+
+        NoteSyncRepository.syncPendingChanges(context, session) { result ->
+            if (!result.success) {
+                Toast.makeText(
+                    context,
+                    "Saved locally. Cloud sync pending: ${result.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    fun syncNoteDelete(note: Note) {
+        val session = activeSession ?: return
+        val userId = session.userId ?: return
+
+        NoteSyncStore.enqueueDelete(
+            context = context,
+            userId = userId,
+            localNoteId = note.id,
+            title = note.title,
+            content = note.content,
+            isPinned = note.isPinned
+        )
+
+        NoteSyncRepository.syncPendingChanges(context, session) { result ->
+            if (!result.success) {
+                Toast.makeText(
+                    context,
+                    "Deletion saved locally. Cloud sync pending: ${result.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
     fun clearEditor() {
         title = ""
         content = ""
@@ -269,6 +320,7 @@ fun TeddyNotesApp() {
         }
 
         saveChanges()
+        notes.firstOrNull { it.id == (editingId ?: currentTime) }?.let { syncNoteUpsert(it) }
         clearEditor()
     }
 
@@ -292,6 +344,7 @@ fun TeddyNotesApp() {
             )
 
             saveChanges()
+            notes.firstOrNull { it.id == note.id }?.let { syncNoteUpsert(it) }
         }
     }
         MaterialTheme(
@@ -630,11 +683,12 @@ fun TeddyNotesApp() {
 
             onConfirm = {
 
-                notes.removeAll {
-                    it.id == deleteTarget
+                val noteToDelete = notes.firstOrNull { it.id == deleteTarget }
+                if (noteToDelete != null) {
+                    syncNoteDelete(noteToDelete)
+                    notes.removeAll { it.id == deleteTarget }
+                    saveChanges()
                 }
-
-                saveChanges()
                 deleteTarget = null
 
                 Toast.makeText(
