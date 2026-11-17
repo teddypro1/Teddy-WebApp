@@ -4,6 +4,9 @@ import android.os.Bundle
 import android.content.Context
 import android.widget.Toast
 import com.teddy.bpositive.data.SupabaseAuthRepository
+import com.teddy.bpositive.data.SupabaseSessionManager
+import com.teddy.bpositive.data.NoteSyncStore
+import com.teddy.bpositive.data.NoteSyncRepository
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -58,11 +61,12 @@ fun TeddyNotesApp() {
     val context = androidx.compose.ui.platform.LocalContext.current
 
     var isCheckingSession by remember { mutableStateOf(true) }
-    var isAuthenticated by remember { mutableStateOf(false) }
+    var activeSession by remember { mutableStateOf<SupabaseSessionManager.Session?>(null) }
+    val isAuthenticated = activeSession != null
 
     LaunchedEffect(Unit) {
         SupabaseAuthRepository.restoreSession(context) { result ->
-            isAuthenticated = result.success
+            activeSession = if (result.success) result.session else null
             isCheckingSession = false
         }
     }
@@ -81,8 +85,8 @@ fun TeddyNotesApp() {
 
     if (!isAuthenticated) {
         AuthScreen(
-            onAuthenticated = {
-                isAuthenticated = true
+            onAuthenticated = { session ->
+                activeSession = session
             }
         )
         return
@@ -91,6 +95,49 @@ fun TeddyNotesApp() {
     val notes = remember {
         mutableStateListOf<Note>().apply {
             addAll(loadNotes(context))
+        }
+    }
+
+    LaunchedEffect(activeSession) {
+        val session = activeSession ?: return@LaunchedEffect
+        val preferences = context.getSharedPreferences(
+            "teddy_note_sync_metadata",
+            Context.MODE_PRIVATE
+        )
+        val migrationKey = "legacy_notes_migrated_\${session.userId}"
+
+        if (!preferences.getBoolean(migrationKey, false)) {
+            val legacyNotes = loadNotes(context)
+
+            legacyNotes.forEach { note ->
+                NoteSyncStore.enqueueUpsert(
+                    context = context,
+                    userId = session.userId.orEmpty(),
+                    localNoteId = note.id,
+                    title = note.title,
+                    content = note.content,
+                    isPinned = note.isPinned
+                )
+            }
+
+            NoteSyncRepository.syncPendingChanges(context, session) { result ->
+                if (result.success) {
+                    preferences.edit().putBoolean(migrationKey, true).apply()
+                    if (result.processed > 0) {
+                        Toast.makeText(
+                            context,
+                            "Existing notes synced to cloud successfully.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Cloud sync pending: \${result.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
         }
     }
 
@@ -606,7 +653,7 @@ fun TeddyNotesApp() {
 
 @Composable
 fun AuthScreen(
-    onAuthenticated: () -> Unit
+    onAuthenticated: (SupabaseSessionManager.Session) -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -760,8 +807,8 @@ fun AuthScreen(
                                 ) { result ->
                                     isLoading = false
                                     message = result.message
-                                    if (result.success) {
-                                        onAuthenticated()
+                                    if (result.success && result.session != null) {
+                                        onAuthenticated(result.session)
                                     }
                                 }
                             }
