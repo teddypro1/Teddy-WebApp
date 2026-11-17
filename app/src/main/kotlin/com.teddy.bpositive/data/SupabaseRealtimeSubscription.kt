@@ -21,6 +21,8 @@ class SupabaseRealtimeSubscription(
     private val session: SupabaseSessionManager.Session,
     private val onNotesChanged: () -> Unit
 ) {
+    @Volatile private var currentSession = session
+    @Volatile private var refreshingSession = false
     private val handler = Handler(Looper.getMainLooper())
     private val client = OkHttpClient.Builder()
         .readTimeout(0, TimeUnit.MILLISECONDS)
@@ -59,7 +61,8 @@ class SupabaseRealtimeSubscription(
     }
 
     private fun connect() {
-        if (stopped || session.userId.isNullOrBlank()) return
+        val activeSession = currentSession
+        if (stopped || activeSession.userId.isNullOrBlank()) return
 
         val apiKey = URLEncoder.encode(SupabaseConfig.API_KEY, "UTF-8")
         val url = SupabaseConfig.BASE_URL
@@ -90,14 +93,14 @@ class SupabaseRealtimeSubscription(
                                 .put("event", "*")
                                 .put("schema", "public")
                                 .put("table", "notes")
-                                .put("filter", "user_id=eq.${session.userId}")
+                                .put("filter", "user_id=eq.${activeSession.userId}")
                         )
                     )
                     .put("private", false)
 
                 val joinPayload = JSONObject()
                     .put("config", config)
-                    .put("access_token", session.accessToken)
+                    .put("access_token", activeSession.accessToken)
 
                 val join = JSONObject()
                     .put("topic", "realtime:public:notes")
@@ -129,7 +132,12 @@ class SupabaseRealtimeSubscription(
                             }
                         }
                     } else if (event == "phx_error" || event == "phx_close") {
+                        val detail = message.optJSONObject("payload")?.toString().orEmpty().lowercase()
                         webSocket.close(1011, "Realtime channel unavailable")
+                        if (detail.contains("jwt") || detail.contains("token") ||
+                            detail.contains("unauthorized") || detail.contains("expired")) {
+                            refreshAndReconnect(activeSession)
+                        }
                     }
                 } catch (_: Exception) {
                     // Ignore malformed or unrelated protocol messages.
@@ -145,11 +153,32 @@ class SupabaseRealtimeSubscription(
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 handler.removeCallbacks(heartbeat)
                 if (socket === webSocket) socket = null
-                scheduleReconnect()
+                if (response?.code == 401) {
+                    refreshAndReconnect(activeSession)
+                } else {
+                    scheduleReconnect()
+                }
             }
         })
     }
 
+    private fun refreshAndReconnect(rejectedSession: SupabaseSessionManager.Session) {
+        if (stopped || refreshingSession) return
+        refreshingSession = true
+        SupabaseSessionManager.refreshAfterUnauthorized(rejectedSession) { result ->
+            refreshingSession = false
+            val refreshed = result.session
+            if (result.success && refreshed != null) {
+                currentSession = refreshed
+                handler.removeCallbacks(heartbeat)
+                socket?.close(1000, "Refreshing authenticated Realtime session")
+                socket = null
+                handler.postDelayed({ if (!stopped) connect() }, 300L)
+            } else {
+                scheduleReconnect()
+            }
+        }
+    }
     private fun scheduleReconnect() {
         if (stopped) return
         val delay = reconnectDelayMs
