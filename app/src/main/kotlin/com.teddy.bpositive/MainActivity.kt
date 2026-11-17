@@ -98,6 +98,7 @@ fun TeddyNotesApp() {
             addAll(loadNotes(context))
         }
     }
+    val deletedNotes = remember { mutableStateListOf<SupabaseNotesApi.CloudNote>() }
 
     LaunchedEffect(activeSession) {
         val session = activeSession ?: return@LaunchedEffect
@@ -146,6 +147,9 @@ fun TeddyNotesApp() {
                     ).show()
                     return@fetchNotes
                 }
+
+                deletedNotes.clear()
+                fetchResult.data.filter { it.deletedAt != null }.forEach { deletedNotes.add(it) }
 
                 fetchResult.data.forEach { cloudNote ->
                     val existingRecord = cloudNote.clientId?.let { clientId ->
@@ -229,6 +233,9 @@ fun TeddyNotesApp() {
     var showPinnedOnly by rememberSaveable {
         mutableStateOf(false)
     }
+
+    var showTrash by rememberSaveable { mutableStateOf(false) }
+    var permanentDeleteTarget by remember { mutableStateOf<Long?>(null) }
 
     var sortNewest by rememberSaveable {
         mutableStateOf(true)
@@ -319,6 +326,86 @@ fun TeddyNotesApp() {
                 Toast.makeText(
                     context,
                     "Deletion saved locally. Cloud sync pending: ${result.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
+                SupabaseNotesApi.fetchNotes(session) { fetchResult ->
+                    if (fetchResult.success && fetchResult.data != null) {
+                        deletedNotes.clear()
+                        deletedNotes.addAll(fetchResult.data.filter { it.deletedAt != null })
+                    }
+                }
+            }
+        }
+    }
+
+    fun restoreDeletedNote(cloudNote: SupabaseNotesApi.CloudNote) {
+        val session = activeSession ?: return
+        val clientId = cloudNote.clientId
+        if (clientId.isNullOrBlank()) {
+            Toast.makeText(context, "This note cannot be restored because its sync ID is missing.", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        SupabaseNotesApi.upsertNote(
+            session = session,
+            clientId = clientId,
+            title = cloudNote.title,
+            content = cloudNote.content,
+            isPinned = cloudNote.isPinned,
+            deletedAt = null
+        ) { result ->
+            val restored = result.data
+            if (!result.success || restored == null) {
+                Toast.makeText(context, "Could not restore note: ${result.message}", Toast.LENGTH_LONG).show()
+                return@upsertNote
+            }
+
+            var localId = System.currentTimeMillis()
+            while (notes.any { it.id == localId }) localId++
+            fun cloudTime(value: String?): Long = try {
+                if (value.isNullOrBlank()) System.currentTimeMillis()
+                else java.time.Instant.parse(value).toEpochMilli()
+            } catch (_: Exception) {
+                System.currentTimeMillis()
+            }
+
+            val localNote = Note(
+                id = localId,
+                title = restored.title,
+                content = restored.content,
+                isPinned = restored.isPinned,
+                createdAt = cloudTime(restored.createdAt),
+                updatedAt = cloudTime(restored.updatedAt)
+            )
+            notes.add(0, localNote)
+            NoteSyncStore.registerCloudNote(
+                context = context,
+                userId = session.userId.orEmpty(),
+                localNoteId = localId,
+                clientId = clientId,
+                cloudNoteId = restored.id,
+                title = restored.title,
+                content = restored.content,
+                isPinned = restored.isPinned
+            )
+            deletedNotes.removeAll { it.id == cloudNote.id }
+            saveChanges()
+            showTrash = false
+            Toast.makeText(context, "Note restored successfully.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun permanentlyDeleteNote(cloudNote: SupabaseNotesApi.CloudNote) {
+        val session = activeSession ?: return
+        SupabaseNotesApi.permanentlyDeleteNote(session, cloudNote.id) { result ->
+            if (result.success && result.data == true) {
+                deletedNotes.removeAll { it.id == cloudNote.id }
+                Toast.makeText(context, "Note permanently deleted.", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(
+                    context,
+                    "Permanent deletion failed: ${result.message}. Check the Supabase DELETE policy.",
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -583,7 +670,9 @@ fun TeddyNotesApp() {
                         Spacer(Modifier.height(5.dp))
 
                         Text(
-                            if (showPinnedOnly) {
+                            if (showTrash) {
+                                "Trash (${deletedNotes.size})"
+                            } else if (showPinnedOnly) {
                                 "Pinned Notes ($pinnedNotes)"
                             } else {
                                 "All Notes ($totalNotes)"
@@ -593,7 +682,7 @@ fun TeddyNotesApp() {
                         )
                     }
 
-                    Button(
+                    if (!showTrash) Button(
                         onClick = {
                             if (!showEditor) {
                                 editingId = null
@@ -613,6 +702,19 @@ fun TeddyNotesApp() {
                 }
 
                 Spacer(Modifier.height(16.dp))
+
+                OutlinedButton(
+                    onClick = {
+                        showTrash = !showTrash
+                        searchQuery = ""
+                        showPinnedOnly = false
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (showTrash) "← Back to All Notes" else "🗑 Recently Deleted (${deletedNotes.size})")
+                }
+
+                Spacer(Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = searchQuery,
@@ -677,30 +779,29 @@ fun TeddyNotesApp() {
 
                 Spacer(Modifier.height(12.dp))
 
-                if (filteredNotes.isEmpty()) {
-
+                if (showTrash) {
+                    if (deletedNotes.isEmpty()) {
+                        EmptyNotes()
+                    } else {
+                        deletedNotes.forEach { cloudNote ->
+                            TrashNoteCard(
+                                note = cloudNote,
+                                onRestore = { restoreDeletedNote(cloudNote) },
+                                onDeletePermanently = { permanentDeleteTarget = cloudNote.id }
+                            )
+                            Spacer(Modifier.height(12.dp))
+                        }
+                    }
+                } else if (filteredNotes.isEmpty()) {
                     EmptyNotes()
-
                 } else {
-
                     filteredNotes.forEach { note ->
-
                         NoteCard(
                             note = note,
-
-                            onEdit = {
-                                editNote(note)
-                            },
-
-                            onPin = {
-                                togglePin(note)
-                            },
-
-                            onDelete = {
-                                deleteTarget = note.id
-                            }
+                            onEdit = { editNote(note) },
+                            onPin = { togglePin(note) },
+                            onDelete = { deleteTarget = note.id }
                         )
-
                         Spacer(Modifier.height(12.dp))
                     }
                 }
@@ -746,6 +847,24 @@ fun TeddyNotesApp() {
         }
     }
 
+    if (permanentDeleteTarget != null) {
+        val target = deletedNotes.firstOrNull { it.id == permanentDeleteTarget }
+        AlertDialog(
+            onDismissRequest = { permanentDeleteTarget = null },
+            title = { Text("Delete permanently?") },
+            text = { Text("This note will be permanently removed from your cloud database. This action cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (target != null) permanentlyDeleteNote(target)
+                    permanentDeleteTarget = null
+                }) { Text("Delete permanently", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { permanentDeleteTarget = null }) { Text("Cancel") }
+            }
+        )
+    }
+
     if (deleteTarget != null) {
 
         DeleteConfirmationDialog(
@@ -771,6 +890,36 @@ fun TeddyNotesApp() {
                 deleteTarget = null
             }
         )
+    }
+}
+
+@Composable
+fun TrashNoteCard(
+    note: SupabaseNotesApi.CloudNote,
+    onRestore: () -> Unit,
+    onDeletePermanently: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(note.title, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(7.dp))
+            Text(note.content, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(10.dp))
+            Text("Deleted: ${note.deletedAt ?: "Unknown"}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+            Spacer(Modifier.height(10.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = onRestore) { Text("↶ Restore") }
+                TextButton(onClick = onDeletePermanently) {
+                    Text("Delete Permanently", color = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
     }
 }
 
