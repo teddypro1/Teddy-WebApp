@@ -1134,7 +1134,7 @@ fun TeddyNotesApp() {
                         label = { Text("Full Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(value = profileUsername,
                         onValueChange = { value -> profileUsername = value.filter { it.isLetterOrDigit() || it == '_' || it == '.' } },
-                        label = { Text("Username") }, prefix = { Text("@") }, singleLine = true,
+                        label = { Text("Username (without @)") }, singleLine = true,
                         modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(value = profileBio,
                         onValueChange = { if (it.length <= 160) profileBio = it },
