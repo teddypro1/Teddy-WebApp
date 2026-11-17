@@ -39,6 +39,17 @@ object SupabaseNotesApi {
         val message: String
     )
 
+    data class ConflictCopy(
+        val id: String,
+        val originalClientId: String,
+        val title: String,
+        val content: String,
+        val isPinned: Boolean,
+        val baseCloudUpdatedAt: String?,
+        val observedCloudUpdatedAt: String?,
+        val createdAt: String?
+    )
+
     fun fetchNotes(
         session: SupabaseSessionManager.Session,
         onResult: (ApiResult<List<CloudNote>>) -> Unit
@@ -208,6 +219,65 @@ object SupabaseNotesApi {
         ) { body ->
             val array = JSONArray(body)
             if (array.length() == 0) null else array.getJSONObject(0).optString("id").takeIf { it.isNotBlank() }
+        }
+    }
+
+    /** Fetches unresolved conflict copies belonging to the signed-in user. */
+    fun fetchConflictCopies(
+        session: SupabaseSessionManager.Session,
+        onResult: (ApiResult<List<ConflictCopy>>) -> Unit
+    ) {
+        val userId = session.userId
+        if (userId.isNullOrBlank()) {
+            onResult(ApiResult(false, message = "User ID is missing from the session."))
+            return
+        }
+
+        execute(
+            method = "GET",
+            path = "/rest/v1/note_conflicts?select=id,original_client_id,title,content,is_pinned,base_cloud_updated_at,observed_cloud_updated_at,created_at&user_id=eq.$userId&resolved_at=is.null&order=created_at.desc",
+            session = session,
+            onResult = onResult
+        ) { body ->
+            val array = JSONArray(body)
+            (0 until array.length()).map { index ->
+                val item = array.getJSONObject(index)
+                ConflictCopy(
+                    id = item.getString("id"),
+                    originalClientId = item.getString("original_client_id"),
+                    title = item.getString("title"),
+                    content = item.getString("content"),
+                    isPinned = item.optBoolean("is_pinned", false),
+                    baseCloudUpdatedAt = item.optNullableString("base_cloud_updated_at"),
+                    observedCloudUpdatedAt = item.optNullableString("observed_cloud_updated_at"),
+                    createdAt = item.optNullableString("created_at")
+                )
+            }
+        }
+    }
+
+    /** Marks a conflict copy as resolved without deleting its audit record. */
+    fun resolveConflictCopy(
+        session: SupabaseSessionManager.Session,
+        conflictId: String,
+        onResult: (ApiResult<Boolean>) -> Unit
+    ) {
+        val userId = session.userId
+        if (userId.isNullOrBlank() || conflictId.isBlank()) {
+            onResult(ApiResult(false, message = "User ID or conflict ID is missing."))
+            return
+        }
+
+        val payload = JSONObject().put("resolved_at", java.time.Instant.now().toString())
+        execute(
+            method = "PATCH",
+            path = "/rest/v1/note_conflicts?id=eq.${java.net.URLEncoder.encode(conflictId, "UTF-8")}&user_id=eq.$userId&select=id",
+            session = session,
+            body = payload.toString(),
+            prefer = "return=representation",
+            onResult = onResult
+        ) { body ->
+            JSONArray(body).length() > 0
         }
     }
 
