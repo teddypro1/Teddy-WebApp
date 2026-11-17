@@ -122,13 +122,15 @@ object SupabaseProfilesApi {
         onResult: (ApiResult<T>) -> Unit,
         parse: (String) -> T
     ) {
-        val appContext = context.applicationContext
+        // Ensure the shared session manager has an application context.
+        SupabaseSessionManager.load(context.applicationContext)
+
         fun send(activeSession: SupabaseSessionManager.Session, retried: Boolean) {
             Thread {
                 val builder = Request.Builder()
-                    .url("${SupabaseConfig.BASE_URL}$path")
+                    .url("\${SupabaseConfig.BASE_URL}$path")
                     .addHeader("apikey", SupabaseConfig.API_KEY)
-                    .addHeader("Authorization", "Bearer ${activeSession.accessToken}")
+                    .addHeader("Authorization", "Bearer \${activeSession.accessToken}")
                     .addHeader("Accept", "application/json")
                 if (prefer != null) builder.addHeader("Prefer", prefer)
                 val requestBody = body?.toRequestBody(jsonMediaType)
@@ -137,41 +139,40 @@ object SupabaseProfilesApi {
                     "POST" -> builder.post(requestBody ?: "{}".toRequestBody(jsonMediaType))
                     else -> throw IllegalArgumentException("Unsupported method: $method")
                 }
+
                 val result = try {
                     client.newCall(builder.build()).execute().use { response ->
                         val responseText = response.body?.string().orEmpty()
                         if (!response.isSuccessful) {
-                            val error = try { JSONObject(responseText).optString("message") } catch (_: Exception) { "" }
-                            ApiResult<T>(false, message = error.ifBlank { "Supabase request failed. HTTP ${response.code}" })
+                            val error = try {
+                                JSONObject(responseText).optString("message")
+                            } catch (_: Exception) { "" }
+                            ApiResult<T>(false, message = error.ifBlank {
+                                "Supabase request failed. HTTP \${response.code}"
+                            })
                         } else {
-                            try { ApiResult(true, parse(responseText), "Profile loaded.") }
-                            catch (e: Exception) { ApiResult<T>(false, message = "Could not parse profile: ${e.message ?: "Unknown error"}") }
+                            try {
+                                ApiResult(true, parse(responseText), "Profile request completed.")
+                            } catch (e: Exception) {
+                                ApiResult<T>(false, message = "Could not parse profile: \${e.message ?: "Unknown error"}")
+                            }
                         }
                     }
-                } catch (e: Exception) { ApiResult<T>(false, message = "Network error: ${e.message ?: "Unknown error"}") }
-                val expired = result.message.contains("JWT expired", true) || result.message.contains("token is expired", true)
-                if (!retried && !result.success && expired) {
-                    SupabaseAuth.refreshSession(activeSession.refreshToken) { refreshed ->
-                        val access = refreshed.accessToken
-                        val refresh = refreshed.refreshToken
-                        if (!refreshed.success || access.isNullOrBlank() || refresh.isNullOrBlank()) {
-                            android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                onResult(ApiResult(false, message = "Session expired. Please sign in again. ${refreshed.message}"))
-                            }
-                            return@refreshSession
-                        }
-                        val newSession = SupabaseSessionManager.Session(
-                            accessToken = access, refreshToken = refresh,
-                            userId = refreshed.userId ?: activeSession.userId,
-                            email = refreshed.email ?: activeSession.email
-                        )
-                        try {
-                            SupabaseSessionManager.save(appContext, newSession)
-                            send(newSession, true)
-                        } catch (e: Exception) {
-                            android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                onResult(ApiResult(false, message = "Could not save refreshed session: ${e.message ?: "Unknown error"}"))
-                            }
+                } catch (e: Exception) {
+                    ApiResult<T>(false, message = "Network error: \${e.message ?: "Unknown error"}")
+                }
+
+                val tokenExpired = result.message.contains("JWT expired", true) ||
+                    result.message.contains("token is expired", true) ||
+                    result.message.contains("invalid JWT", true)
+
+                if (!retried && !result.success && tokenExpired) {
+                    SupabaseSessionManager.refreshAfterUnauthorized(activeSession) { refreshResult ->
+                        val refreshed = refreshResult.session
+                        if (refreshResult.success && refreshed != null) {
+                            send(refreshed, true)
+                        } else {
+                            onResult(ApiResult(false, message = "Session refresh failed: \${refreshResult.message}"))
                         }
                     }
                 } else {
@@ -179,8 +180,10 @@ object SupabaseProfilesApi {
                 }
             }.start()
         }
+
         send(session, false)
     }
+
     private fun JSONObject.toProfile() = Profile(
         id = getString("id"),
         fullName = optString("full_name"),
