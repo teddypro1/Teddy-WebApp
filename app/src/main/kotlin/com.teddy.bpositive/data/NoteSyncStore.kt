@@ -170,6 +170,57 @@ object NoteSyncStore {
         return json.toSyncRecord(localNoteId)
     }
 
+    /** Finds a local sync record using its stable cross-device client ID. */
+    @Synchronized
+    fun findByClientId(
+        context: Context,
+        userId: String,
+        clientId: String
+    ): SyncRecord? {
+        if (userId.isBlank() || clientId.isBlank()) return null
+        val records = readRoot(context).optJSONObject(userId) ?: return null
+        val keys = records.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            val json = records.optJSONObject(key) ?: continue
+            if (json.optString("client_id") == clientId) {
+                val localId = json.optLong("local_note_id", key.toLongOrNull() ?: continue)
+                return json.toSyncRecord(localId)
+            }
+        }
+        return null
+    }
+
+    /** Registers a note received from the cloud without adding a pending upload. */
+    @Synchronized
+    fun registerCloudNote(
+        context: Context,
+        userId: String,
+        localNoteId: Long,
+        clientId: String,
+        cloudNoteId: Long,
+        title: String,
+        content: String,
+        isPinned: Boolean
+    ) {
+        require(userId.isNotBlank()) { "User ID cannot be empty." }
+        require(clientId.isNotBlank()) { "Client ID cannot be empty." }
+
+        val root = readRoot(context)
+        val userRecords = root.optJSONObject(userId) ?: JSONObject()
+        val record = userRecords.optJSONObject(localNoteId.toString()) ?: JSONObject()
+        record.put("local_note_id", localNoteId)
+        record.put("client_id", clientId)
+        record.put("cloud_note_id", cloudNoteId)
+        record.put("operation", JSONObject.NULL)
+        record.put("title", title)
+        record.put("content", content)
+        record.put("is_pinned", isPinned)
+        userRecords.put(localNoteId.toString(), record)
+        root.put(userId, userRecords)
+        writeRoot(context, root)
+    }
+
     /** Marks an UPSERT as synchronized and remembers its Supabase row ID. */
     @Synchronized
     fun markSynced(
