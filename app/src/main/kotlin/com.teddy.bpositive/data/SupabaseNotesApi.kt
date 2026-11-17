@@ -418,46 +418,62 @@ object SupabaseNotesApi {
         onResult: (ApiResult<T>) -> Unit,
         parse: (String) -> T
     ) {
-        Thread {
-            val requestBody = body?.toRequestBody(jsonMediaType)
-            val builder = Request.Builder()
-                .url("${SupabaseConfig.BASE_URL}$path")
-                .addHeader("apikey", SupabaseConfig.API_KEY)
-                .addHeader("Authorization", "Bearer ${session.accessToken}")
-                .addHeader("Accept", "application/json")
+        fun send(activeSession: SupabaseSessionManager.Session, retried: Boolean) {
+            Thread {
+                val requestBody = body?.toRequestBody(jsonMediaType)
+                val builder = Request.Builder()
+                    .url("\${SupabaseConfig.BASE_URL}$path")
+                    .addHeader("apikey", SupabaseConfig.API_KEY)
+                    .addHeader("Authorization", "Bearer \${activeSession.accessToken}")
+                    .addHeader("Accept", "application/json")
 
-            if (prefer != null) builder.addHeader("Prefer", prefer)
+                if (prefer != null) builder.addHeader("Prefer", prefer)
 
-            when (method) {
-                "GET" -> builder.get()
-                "POST" -> builder.post(requestBody ?: "{}".toRequestBody(jsonMediaType))
-                "PATCH" -> builder.patch(requestBody ?: "{}".toRequestBody(jsonMediaType))
-                "DELETE" -> builder.delete()
-                else -> throw IllegalArgumentException("Unsupported HTTP method: $method")
-            }
-
-            val result = try {
-                client.newCall(builder.build()).execute().use { response ->
-                    val responseText = response.body?.string().orEmpty()
-                    if (response.isSuccessful) {
-                        try {
-                            ApiResult(true, parse(responseText), "HTTP ${response.code}")
-                        } catch (e: Exception) {
-                            ApiResult<T>(false, message = "Could not parse server response: ${e.message ?: "Unknown error"}")
-                        }
-                    } else {
-                        ApiResult<T>(
-                            false,
-                            message = extractError(responseText, response.code)
-                        )
-                    }
+                when (method) {
+                    "GET" -> builder.get()
+                    "POST" -> builder.post(requestBody ?: "{}".toRequestBody(jsonMediaType))
+                    "PATCH" -> builder.patch(requestBody ?: "{}".toRequestBody(jsonMediaType))
+                    "DELETE" -> builder.delete()
+                    else -> throw IllegalArgumentException("Unsupported HTTP method: $method")
                 }
-            } catch (e: Exception) {
-                ApiResult<T>(false, message = "Network error: ${e.message ?: "Unknown error"}")
-            }
 
-            mainHandler.post { onResult(result) }
-        }.start()
+                val result = try {
+                    client.newCall(builder.build()).execute().use { response ->
+                        val responseText = response.body?.string().orEmpty()
+                        if (response.isSuccessful) {
+                            try {
+                                ApiResult(true, parse(responseText), "HTTP \${response.code}")
+                            } catch (e: Exception) {
+                                ApiResult<T>(false, message = "Could not parse server response: \${e.message ?: "Unknown error"}")
+                            }
+                        } else {
+                            ApiResult<T>(false, message = extractError(responseText, response.code))
+                        }
+                    }
+                } catch (e: Exception) {
+                    ApiResult<T>(false, message = "Network error: \${e.message ?: "Unknown error"}")
+                }
+
+                val tokenExpired = result.message.contains("JWT expired", true) ||
+                    result.message.contains("token is expired", true) ||
+                    result.message.contains("invalid JWT", true)
+
+                if (!retried && !result.success && tokenExpired) {
+                    SupabaseSessionManager.refreshAfterUnauthorized(activeSession) { refreshResult ->
+                        val refreshed = refreshResult.session
+                        if (refreshResult.success && refreshed != null) {
+                            send(refreshed, true)
+                        } else {
+                            onResult(ApiResult(false, message = "Session refresh failed: \${refreshResult.message}"))
+                        }
+                    }
+                } else {
+                    mainHandler.post { onResult(result) }
+                }
+            }.start()
+        }
+
+        send(session, false)
     }
 
     private fun extractError(body: String, statusCode: Int): String {
