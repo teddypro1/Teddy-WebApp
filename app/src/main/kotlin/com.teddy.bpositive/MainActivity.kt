@@ -112,7 +112,7 @@ fun TeddyNotesApp() {
 
     LaunchedEffect(activeSession) {
         val session = activeSession ?: return@LaunchedEffect
-        SupabaseProfilesApi.fetchOrCreateProfile(session) { result ->
+        SupabaseProfilesApi.fetchOrCreateProfile(context, session) { result ->
             if (result.success && result.data != null) {
                 currentProfile = result.data
                 profileFullName = result.data.fullName
@@ -1151,7 +1151,7 @@ fun TeddyNotesApp() {
                 TextButton(enabled = !isSavingProfile && profileFullName.isNotBlank(), onClick = {
                     val session = activeSession ?: return@TextButton
                     isSavingProfile = true
-                    SupabaseProfilesApi.saveProfile(session, profileFullName, profileUsername, profileBio, profileAvatarUrl) { result ->
+                    SupabaseProfilesApi.saveProfile(context, session, profileFullName, profileUsername, profileBio, profileAvatarUrl) { result ->
                         isSavingProfile = false
                         if (result.success && result.data != null) {
                             currentProfile = result.data
