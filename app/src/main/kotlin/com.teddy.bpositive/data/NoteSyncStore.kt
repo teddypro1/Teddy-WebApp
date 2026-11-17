@@ -221,6 +221,62 @@ object NoteSyncStore {
         writeRoot(context, root)
     }
 
+    /**
+     * Marks a queued UPSERT as synchronized only if it has not changed
+     * while the network request was in flight.
+     */
+    @Synchronized
+    fun markSyncedIfUnchanged(
+        context: Context,
+        userId: String,
+        expected: SyncRecord,
+        cloudNoteId: Long
+    ): Boolean {
+        val root = readRoot(context)
+        val userRecords = root.optJSONObject(userId) ?: return false
+        val json = userRecords.optJSONObject(expected.localNoteId.toString()) ?: return false
+        val current = json.toSyncRecord(expected.localNoteId)
+        if (
+            current.clientId != expected.clientId ||
+            current.operation != Operation.UPSERT ||
+            current.title != expected.title ||
+            current.content != expected.content ||
+            current.isPinned != expected.isPinned
+        ) return false
+
+        json.put("cloud_note_id", cloudNoteId)
+        json.put("operation", JSONObject.NULL)
+        userRecords.put(expected.localNoteId.toString(), json)
+        root.put(userId, userRecords)
+        writeRoot(context, root)
+        return true
+    }
+
+    /** Removes a DELETE tombstone only if it is still the queued operation. */
+    @Synchronized
+    fun markDeleteSyncedIfUnchanged(
+        context: Context,
+        userId: String,
+        expected: SyncRecord
+    ): Boolean {
+        val root = readRoot(context)
+        val userRecords = root.optJSONObject(userId) ?: return false
+        val json = userRecords.optJSONObject(expected.localNoteId.toString()) ?: return false
+        val current = json.toSyncRecord(expected.localNoteId)
+        if (
+            current.clientId != expected.clientId ||
+            current.operation != Operation.DELETE ||
+            current.title != expected.title ||
+            current.content != expected.content ||
+            current.isPinned != expected.isPinned
+        ) return false
+
+        userRecords.remove(expected.localNoteId.toString())
+        if (userRecords.length() == 0) root.remove(userId) else root.put(userId, userRecords)
+        writeRoot(context, root)
+        return true
+    }
+
     /** Marks an UPSERT as synchronized and remembers its Supabase row ID. */
     @Synchronized
     fun markSynced(
