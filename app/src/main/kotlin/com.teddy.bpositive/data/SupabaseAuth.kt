@@ -61,6 +61,20 @@ object SupabaseAuth {
         )
     }
 
+    fun refreshSession(
+        refreshToken: String,
+        onResult: (AuthResult) -> Unit
+    ) {
+        val payload = JSONObject()
+            .put("refresh_token", refreshToken)
+
+        executeAuthRequest(
+            path = "/auth/v1/token?grant_type=refresh_token",
+            payload = payload,
+            onResult = onResult
+        )
+    }
+
     fun signOut(
         accessToken: String,
         onResult: (AuthResult) -> Unit
