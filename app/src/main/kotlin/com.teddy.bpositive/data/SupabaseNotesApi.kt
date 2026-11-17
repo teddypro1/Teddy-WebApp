@@ -109,6 +109,108 @@ object SupabaseNotesApi {
         }
     }
 
+    /** Fetches the current server version for one stable client note ID. */
+    fun fetchNoteByClientId(
+        session: SupabaseSessionManager.Session,
+        clientId: String,
+        onResult: (ApiResult<CloudNote?>) -> Unit
+    ) {
+        val userId = session.userId
+        if (userId.isNullOrBlank() || clientId.isBlank()) {
+            onResult(ApiResult(false, message = "User ID or client ID is missing."))
+            return
+        }
+
+        execute(
+            method = "GET",
+            path = "/rest/v1/notes?select=id,user_id,client_id,title,content,is_pinned,created_at,updated_at,deleted_at&user_id=eq.$userId&client_id=eq.$clientId&limit=1",
+            session = session,
+            onResult = onResult
+        ) { body ->
+            val array = JSONArray(body)
+            if (array.length() == 0) null else array.getJSONObject(0).toCloudNote()
+        }
+    }
+
+    /**
+     * Updates a note only when its server updated_at still matches the version
+     * previously observed by this device. A successful empty response means
+     * the version no longer matches and the caller must fetch the latest row.
+     */
+    fun updateNoteIfUnchanged(
+        session: SupabaseSessionManager.Session,
+        noteId: Long,
+        expectedUpdatedAt: String,
+        title: String,
+        content: String,
+        isPinned: Boolean,
+        onResult: (ApiResult<CloudNote?>) -> Unit
+    ) {
+        val userId = session.userId
+        if (userId.isNullOrBlank() || expectedUpdatedAt.isBlank()) {
+            onResult(ApiResult(false, message = "User ID or base cloud version is missing."))
+            return
+        }
+
+        val encodedVersion = java.net.URLEncoder.encode(expectedUpdatedAt, "UTF-8")
+        val payload = JSONObject()
+            .put("title", title.trim())
+            .put("content", content)
+            .put("is_pinned", isPinned)
+            .put("deleted_at", JSONObject.NULL)
+
+        execute(
+            method = "PATCH",
+            path = "/rest/v1/notes?id=eq.$noteId&user_id=eq.$userId&updated_at=eq.$encodedVersion&select=id,user_id,client_id,title,content,is_pinned,created_at,updated_at,deleted_at",
+            session = session,
+            body = payload.toString(),
+            prefer = "return=representation",
+            onResult = onResult
+        ) { body ->
+            val array = JSONArray(body)
+            if (array.length() == 0) null else array.getJSONObject(0).toCloudNote()
+        }
+    }
+
+    /** Stores the losing local version as a separate, recoverable cloud conflict. */
+    fun createConflictCopy(
+        session: SupabaseSessionManager.Session,
+        originalClientId: String,
+        title: String,
+        content: String,
+        isPinned: Boolean,
+        baseCloudUpdatedAt: String?,
+        observedCloudUpdatedAt: String?,
+        onResult: (ApiResult<String?>) -> Unit
+    ) {
+        val userId = session.userId
+        if (userId.isNullOrBlank() || originalClientId.isBlank()) {
+            onResult(ApiResult(false, message = "User ID or original note ID is missing."))
+            return
+        }
+
+        val payload = JSONObject()
+            .put("user_id", userId)
+            .put("original_client_id", originalClientId)
+            .put("title", title)
+            .put("content", content)
+            .put("is_pinned", isPinned)
+            .put("base_cloud_updated_at", baseCloudUpdatedAt ?: JSONObject.NULL)
+            .put("observed_cloud_updated_at", observedCloudUpdatedAt ?: JSONObject.NULL)
+
+        execute(
+            method = "POST",
+            path = "/rest/v1/note_conflicts?select=id",
+            session = session,
+            body = payload.toString(),
+            prefer = "return=representation",
+            onResult = onResult
+        ) { body ->
+            val array = JSONArray(body)
+            if (array.length() == 0) null else array.getJSONObject(0).optString("id").takeIf { it.isNotBlank() }
+        }
+    }
+
     fun createNote(
         session: SupabaseSessionManager.Session,
         clientId: String,
