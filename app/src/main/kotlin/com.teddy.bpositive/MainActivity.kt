@@ -7,6 +7,7 @@ import com.teddy.bpositive.data.SupabaseAuthRepository
 import com.teddy.bpositive.data.SupabaseSessionManager
 import com.teddy.bpositive.data.NoteSyncStore
 import com.teddy.bpositive.data.NoteSyncRepository
+import com.teddy.bpositive.data.SupabaseNotesApi
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -125,21 +126,89 @@ fun TeddyNotesApp() {
         }
 
         NoteSyncRepository.syncPendingChanges(context, session) { result ->
-            if (result.success) {
-                preferences.edit().putBoolean(migrationKey, true).apply()
-                if (result.processed > 0) {
-                    Toast.makeText(
-                        context,
-                        "Notes synced to cloud successfully.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            } else {
+            if (!result.success) {
                 Toast.makeText(
                     context,
                     "Cloud sync pending: ${result.message}",
                     Toast.LENGTH_LONG
                 ).show()
+                return@syncPendingChanges
+            }
+
+            preferences.edit().putBoolean(migrationKey, true).apply()
+
+            SupabaseNotesApi.fetchNotes(session) { fetchResult ->
+                if (!fetchResult.success || fetchResult.data == null) {
+                    Toast.makeText(
+                        context,
+                        "Upload completed, but cloud notes could not be downloaded: ${fetchResult.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@fetchNotes
+                }
+
+                fetchResult.data.forEach { cloudNote ->
+                    val existingRecord = cloudNote.clientId?.let { clientId ->
+                        NoteSyncStore.findByClientId(context, userId, clientId)
+                    }
+
+                    if (cloudNote.deletedAt != null) {
+                        existingRecord?.let { record ->
+                            notes.removeAll { it.id == record.localNoteId }
+                        }
+                    } else {
+                        val clientId = cloudNote.clientId
+                        if (clientId.isNullOrBlank()) return@forEach
+
+                        val localId = existingRecord?.localNoteId ?: run {
+                            var candidate = System.currentTimeMillis()
+                            while (notes.any { it.id == candidate }) candidate++
+                            candidate
+                        }
+
+                        NoteSyncStore.registerCloudNote(
+                            context = context,
+                            userId = userId,
+                            localNoteId = localId,
+                            clientId = clientId,
+                            cloudNoteId = cloudNote.id,
+                            title = cloudNote.title,
+                            content = cloudNote.content,
+                            isPinned = cloudNote.isPinned
+                        )
+
+                        fun parseCloudTime(value: String?): Long {
+                            return try {
+                                if (value.isNullOrBlank()) System.currentTimeMillis()
+                                else java.time.Instant.parse(value).toEpochMilli()
+                            } catch (_: Exception) {
+                                System.currentTimeMillis()
+                            }
+                        }
+
+                        val localNote = Note(
+                            id = localId,
+                            title = cloudNote.title,
+                            content = cloudNote.content,
+                            isPinned = cloudNote.isPinned,
+                            createdAt = parseCloudTime(cloudNote.createdAt),
+                            updatedAt = parseCloudTime(cloudNote.updatedAt)
+                        )
+
+                        val localIndex = notes.indexOfFirst { it.id == localId }
+                        if (localIndex >= 0) notes[localIndex] = localNote
+                        else notes.add(localNote)
+                    }
+                }
+
+                saveNotes(context, notes)
+                if (result.processed > 0 || fetchResult.data.isNotEmpty()) {
+                    Toast.makeText(
+                        context,
+                        "Cloud notes synchronized successfully.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         }
     }
