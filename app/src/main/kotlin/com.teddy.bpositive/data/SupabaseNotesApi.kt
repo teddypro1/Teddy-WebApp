@@ -62,6 +62,53 @@ object SupabaseNotesApi {
         }
     }
 
+    /**
+     * Inserts a note or updates the existing row identified by
+     * (user_id, client_id). Supplying deletedAt creates/updates a tombstone.
+     *
+     * This operation is idempotent, so retrying a pending sync will not
+     * create duplicate cloud notes.
+     */
+    fun upsertNote(
+        session: SupabaseSessionManager.Session,
+        clientId: String,
+        title: String,
+        content: String,
+        isPinned: Boolean,
+        deletedAt: String? = null,
+        onResult: (ApiResult<CloudNote?>) -> Unit
+    ) {
+        val userId = session.userId
+        if (userId.isNullOrBlank()) {
+            onResult(ApiResult(false, message = "User ID is missing from the session."))
+            return
+        }
+        if (clientId.isBlank()) {
+            onResult(ApiResult(false, message = "Client ID cannot be empty."))
+            return
+        }
+
+        val payload = JSONObject()
+            .put("user_id", userId)
+            .put("client_id", clientId)
+            .put("title", title.trim())
+            .put("content", content)
+            .put("is_pinned", isPinned)
+            .put("deleted_at", deletedAt ?: JSONObject.NULL)
+
+        execute(
+            method = "POST",
+            path = "/rest/v1/notes?on_conflict=user_id,client_id&select=id,user_id,client_id,title,content,is_pinned,created_at,updated_at,deleted_at",
+            session = session,
+            body = payload.toString(),
+            prefer = "resolution=merge-duplicates,return=representation",
+            onResult = onResult
+        ) { body ->
+            val array = JSONArray(body)
+            if (array.length() == 0) null else array.getJSONObject(0).toCloudNote()
+        }
+    }
+
     fun createNote(
         session: SupabaseSessionManager.Session,
         clientId: String,
