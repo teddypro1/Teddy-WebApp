@@ -26,6 +26,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -790,7 +793,26 @@ fun TeddyNotesApp() {
                                 showProfileDialog = true
                             }
                         ) {
-                            Text("👤", fontSize = 21.sp)
+                            Box(
+                                modifier = Modifier.size(34.dp)
+                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    currentProfile?.fullName?.trim()?.firstOrNull()?.uppercase() ?: "👤",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                currentProfile?.avatarUrl?.takeIf { it.isNotBlank() }?.let { avatar ->
+                                    AsyncImage(
+                                        model = avatar,
+                                        contentDescription = "Profile picture",
+                                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                            }
                         }
 
                         IconButton(
@@ -1127,6 +1149,14 @@ fun TeddyNotesApp() {
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
+                        if (profileAvatarUrl.isNotBlank()) {
+                            AsyncImage(
+                                model = profileAvatarUrl,
+                                contentDescription = "Profile picture",
+                                modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
                     }
                     Text(activeSession?.email.orEmpty(), modifier = Modifier.align(Alignment.CenterHorizontally),
                         color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
