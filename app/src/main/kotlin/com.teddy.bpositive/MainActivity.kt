@@ -9,6 +9,7 @@ import com.teddy.bpositive.data.NoteSyncStore
 import com.teddy.bpositive.data.NoteSyncRepository
 import com.teddy.bpositive.data.SupabaseNotesApi
 import com.teddy.bpositive.data.SupabaseRealtimeSubscription
+import com.teddy.bpositive.data.SupabaseProfilesApi
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -101,6 +102,28 @@ fun TeddyNotesApp() {
     }
     val deletedNotes = remember { mutableStateListOf<SupabaseNotesApi.CloudNote>() }
     val conflictCopies = remember { mutableStateListOf<SupabaseNotesApi.ConflictCopy>() }
+    var currentProfile by remember { mutableStateOf<SupabaseProfilesApi.Profile?>(null) }
+    var showProfileDialog by rememberSaveable { mutableStateOf(false) }
+    var profileFullName by rememberSaveable { mutableStateOf("") }
+    var profileUsername by rememberSaveable { mutableStateOf("") }
+    var profileBio by rememberSaveable { mutableStateOf("") }
+    var profileAvatarUrl by rememberSaveable { mutableStateOf("") }
+    var isSavingProfile by remember { mutableStateOf(false) }
+
+    LaunchedEffect(activeSession) {
+        val session = activeSession ?: return@LaunchedEffect
+        SupabaseProfilesApi.fetchOrCreateProfile(session) { result ->
+            if (result.success && result.data != null) {
+                currentProfile = result.data
+                profileFullName = result.data.fullName
+                profileUsername = result.data.username.orEmpty()
+                profileBio = result.data.bio
+                profileAvatarUrl = result.data.avatarUrl.orEmpty()
+            } else {
+                Toast.makeText(context, "Could not load profile: " + result.message, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     LaunchedEffect(activeSession) {
         val session = activeSession ?: return@LaunchedEffect
@@ -758,6 +781,20 @@ fun TeddyNotesApp() {
 
                         IconButton(
                             onClick = {
+                                currentProfile?.let { profile ->
+                                    profileFullName = profile.fullName
+                                    profileUsername = profile.username.orEmpty()
+                                    profileBio = profile.bio
+                                    profileAvatarUrl = profile.avatarUrl.orEmpty()
+                                }
+                                showProfileDialog = true
+                            }
+                        ) {
+                            Text("👤", fontSize = 21.sp)
+                        }
+
+                        IconButton(
+                            onClick = {
                                 darkMode = !darkMode
 
                                 context.getSharedPreferences(
@@ -1067,6 +1104,69 @@ fun TeddyNotesApp() {
                 Spacer(Modifier.height(15.dp))
             }
         }
+    }
+
+    if (showProfileDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isSavingProfile) showProfileDialog = false },
+            title = { Text("My Profile", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.size(76.dp)
+                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                            .align(Alignment.CenterHorizontally),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            profileFullName.trim().firstOrNull()?.uppercase() ?: "👤",
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                    Text(activeSession?.email.orEmpty(), modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    OutlinedTextField(value = profileFullName, onValueChange = { profileFullName = it },
+                        label = { Text("Full Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = profileUsername,
+                        onValueChange = { value -> profileUsername = value.filter { it.isLetterOrDigit() || it == '_' || it == '.' } },
+                        label = { Text("Username") }, prefix = { Text("@") }, singleLine = true,
+                        modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = profileBio,
+                        onValueChange = { if (it.length <= 160) profileBio = it },
+                        label = { Text("Bio") }, supportingText = { Text(profileBio.length.toString() + "/160") },
+                        minLines = 2, maxLines = 4, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = profileAvatarUrl, onValueChange = { profileAvatarUrl = it },
+                        label = { Text("Avatar Image URL (optional)") }, singleLine = true,
+                        modifier = Modifier.fillMaxWidth())
+                    Text("Account created: " + (currentProfile?.createdAt ?: "Loading..."),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = !isSavingProfile && profileFullName.isNotBlank(), onClick = {
+                    val session = activeSession ?: return@TextButton
+                    isSavingProfile = true
+                    SupabaseProfilesApi.saveProfile(session, profileFullName, profileUsername, profileBio, profileAvatarUrl) { result ->
+                        isSavingProfile = false
+                        if (result.success && result.data != null) {
+                            currentProfile = result.data
+                            showProfileDialog = false
+                            Toast.makeText(context, "Profile updated successfully.", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Profile update failed: " + result.message, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }) { Text(if (isSavingProfile) "Saving..." else "Save Profile") }
+            },
+            dismissButton = {
+                TextButton(enabled = !isSavingProfile, onClick = { showProfileDialog = false }) { Text("Cancel") }
+            }
+        )
     }
 
     if (permanentDeleteTarget != null) {
