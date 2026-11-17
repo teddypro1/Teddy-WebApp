@@ -249,7 +249,7 @@ object NoteSyncStore {
         ) return false
 
         json.put("cloud_note_id", cloudNoteId)
-        if (expected.cloudUpdatedAt != null) json.put("cloud_updated_at", expected.cloudUpdatedAt)
+        if (cloudUpdatedAt != null) json.put("cloud_updated_at", cloudUpdatedAt)
         json.put("operation", JSONObject.NULL)
         userRecords.put(expected.localNoteId.toString(), json)
         root.put(userId, userRecords)
