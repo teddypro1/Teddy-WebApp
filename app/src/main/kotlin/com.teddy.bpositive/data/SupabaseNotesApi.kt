@@ -422,9 +422,9 @@ object SupabaseNotesApi {
             Thread {
                 val requestBody = body?.toRequestBody(jsonMediaType)
                 val builder = Request.Builder()
-                    .url("\${SupabaseConfig.BASE_URL}$path")
+                    .url("${SupabaseConfig.BASE_URL}$path")
                     .addHeader("apikey", SupabaseConfig.API_KEY)
-                    .addHeader("Authorization", "Bearer \${activeSession.accessToken}")
+                    .addHeader("Authorization", "Bearer ${activeSession.accessToken}")
                     .addHeader("Accept", "application/json")
 
                 if (prefer != null) builder.addHeader("Prefer", prefer)
@@ -442,16 +442,16 @@ object SupabaseNotesApi {
                         val responseText = response.body?.string().orEmpty()
                         if (response.isSuccessful) {
                             try {
-                                ApiResult(true, parse(responseText), "HTTP \${response.code}")
+                                ApiResult(true, parse(responseText), "HTTP ${response.code}")
                             } catch (e: Exception) {
-                                ApiResult<T>(false, message = "Could not parse server response: \${e.message ?: "Unknown error"}")
+                                ApiResult<T>(false, message = "Could not parse server response: ${e.message ?: "Unknown error"}")
                             }
                         } else {
                             ApiResult<T>(false, message = extractError(responseText, response.code))
                         }
                     }
                 } catch (e: Exception) {
-                    ApiResult<T>(false, message = "Network error: \${e.message ?: "Unknown error"}")
+                    ApiResult<T>(false, message = "Network error: ${e.message ?: "Unknown error"}")
                 }
 
                 val tokenExpired = result.message.contains("JWT expired", true) ||
@@ -464,7 +464,7 @@ object SupabaseNotesApi {
                         if (refreshResult.success && refreshed != null) {
                             send(refreshed, true)
                         } else {
-                            onResult(ApiResult(false, message = "Session refresh failed: \${refreshResult.message}"))
+                            onResult(ApiResult(false, message = "Session refresh failed: ${refreshResult.message}"))
                         }
                     }
                 } else {
