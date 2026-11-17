@@ -1,5 +1,6 @@
 package com.teddy.bpositive.data
 
+import android.content.Context
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -32,6 +33,7 @@ object SupabaseProfilesApi {
     )
 
     fun fetchOrCreateProfile(
+        context: Context,
         session: SupabaseSessionManager.Session,
         onResult: (ApiResult<Profile>) -> Unit
     ) {
@@ -44,6 +46,7 @@ object SupabaseProfilesApi {
         execute(
             method = "GET",
             path = "/rest/v1/profiles?select=id,full_name,username,bio,avatar_url,created_at,updated_at&id=eq.$userId&limit=1",
+            context = context,
             session = session,
             onResult = { result ->
                 if (!result.success) {
@@ -55,6 +58,7 @@ object SupabaseProfilesApi {
                     } else {
                         val initialName = session.email?.substringBefore("@").orEmpty()
                         saveProfile(
+                            context = context,
                             session = session,
                             fullName = initialName,
                             username = null,
@@ -72,6 +76,7 @@ object SupabaseProfilesApi {
     }
 
     fun saveProfile(
+        context: Context,
         session: SupabaseSessionManager.Session,
         fullName: String,
         username: String?,
@@ -93,6 +98,7 @@ object SupabaseProfilesApi {
             .put("avatar_url", avatarUrl?.trim()?.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
 
         execute(
+            context = context,
             method = "POST",
             path = "/rest/v1/profiles?on_conflict=id&select=id,full_name,username,bio,avatar_url,created_at,updated_at",
             session = session,
@@ -107,6 +113,7 @@ object SupabaseProfilesApi {
     }
 
     private fun <T> execute(
+        context: Context,
         method: String,
         path: String,
         session: SupabaseSessionManager.Session,
@@ -115,41 +122,65 @@ object SupabaseProfilesApi {
         onResult: (ApiResult<T>) -> Unit,
         parse: (String) -> T
     ) {
-        Thread {
-            val builder = Request.Builder()
-                .url("${SupabaseConfig.BASE_URL}$path")
-                .addHeader("apikey", SupabaseConfig.API_KEY)
-                .addHeader("Authorization", "Bearer ${session.accessToken}")
-                .addHeader("Accept", "application/json")
-            if (prefer != null) builder.addHeader("Prefer", prefer)
-            val requestBody = body?.toRequestBody(jsonMediaType)
-            when (method) {
-                "GET" -> builder.get()
-                "POST" -> builder.post(requestBody ?: "{}".toRequestBody(jsonMediaType))
-                else -> throw IllegalArgumentException("Unsupported method: $method")
-            }
-
-            val result = try {
-                client.newCall(builder.build()).execute().use { response ->
-                    val responseText = response.body?.string().orEmpty()
-                    if (!response.isSuccessful) {
-                        val error = try { JSONObject(responseText).optString("message") } catch (_: Exception) { "" }
-                        ApiResult<T>(false, message = error.ifBlank { "Supabase request failed. HTTP ${response.code}" })
-                    } else {
-                        try {
-                            ApiResult(true, parse(responseText), "Profile loaded.")
-                        } catch (e: Exception) {
-                            ApiResult<T>(false, message = "Could not parse profile: ${e.message ?: "Unknown error"}")
+        val appContext = context.applicationContext
+        fun send(activeSession: SupabaseSessionManager.Session, retried: Boolean) {
+            Thread {
+                val builder = Request.Builder()
+                    .url("${SupabaseConfig.BASE_URL}$path")
+                    .addHeader("apikey", SupabaseConfig.API_KEY)
+                    .addHeader("Authorization", "Bearer ${activeSession.accessToken}")
+                    .addHeader("Accept", "application/json")
+                if (prefer != null) builder.addHeader("Prefer", prefer)
+                val requestBody = body?.toRequestBody(jsonMediaType)
+                when (method) {
+                    "GET" -> builder.get()
+                    "POST" -> builder.post(requestBody ?: "{}".toRequestBody(jsonMediaType))
+                    else -> throw IllegalArgumentException("Unsupported method: $method")
+                }
+                val result = try {
+                    client.newCall(builder.build()).execute().use { response ->
+                        val responseText = response.body?.string().orEmpty()
+                        if (!response.isSuccessful) {
+                            val error = try { JSONObject(responseText).optString("message") } catch (_: Exception) { "" }
+                            ApiResult<T>(false, message = error.ifBlank { "Supabase request failed. HTTP ${response.code}" })
+                        } else {
+                            try { ApiResult(true, parse(responseText), "Profile loaded.") }
+                            catch (e: Exception) { ApiResult<T>(false, message = "Could not parse profile: ${e.message ?: "Unknown error"}") }
                         }
                     }
+                } catch (e: Exception) { ApiResult<T>(false, message = "Network error: ${e.message ?: "Unknown error"}") }
+                val expired = result.message.contains("JWT expired", true) || result.message.contains("token is expired", true)
+                if (!retried && !result.success && expired) {
+                    SupabaseAuth.refreshSession(activeSession.refreshToken) { refreshed ->
+                        val access = refreshed.accessToken
+                        val refresh = refreshed.refreshToken
+                        if (!refreshed.success || access.isNullOrBlank() || refresh.isNullOrBlank()) {
+                            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                onResult(ApiResult(false, message = "Session expired. Please sign in again. ${refreshed.message}"))
+                            }
+                            return@refreshSession
+                        }
+                        val newSession = SupabaseSessionManager.Session(
+                            accessToken = access, refreshToken = refresh,
+                            userId = refreshed.userId ?: activeSession.userId,
+                            email = refreshed.email ?: activeSession.email
+                        )
+                        try {
+                            SupabaseSessionManager.save(appContext, newSession)
+                            send(newSession, true)
+                        } catch (e: Exception) {
+                            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                onResult(ApiResult(false, message = "Could not save refreshed session: ${e.message ?: "Unknown error"}"))
+                            }
+                        }
+                    }
+                } else {
+                    android.os.Handler(android.os.Looper.getMainLooper()).post { onResult(result) }
                 }
-            } catch (e: Exception) {
-                ApiResult<T>(false, message = "Network error: ${e.message ?: "Unknown error"}")
-            }
-            android.os.Handler(android.os.Looper.getMainLooper()).post { onResult(result) }
-        }.start()
+            }.start()
+        }
+        send(session, false)
     }
-
     private fun JSONObject.toProfile() = Profile(
         id = getString("id"),
         fullName = optString("full_name"),
