@@ -133,10 +133,11 @@ class SupabaseRealtimeSubscription(
                         }
                     } else if (event == "phx_error" || event == "phx_close") {
                         val detail = message.optJSONObject("payload")?.toString().orEmpty().lowercase()
-                        webSocket.close(1011, "Realtime channel unavailable")
                         if (detail.contains("jwt") || detail.contains("token") ||
                             detail.contains("unauthorized") || detail.contains("expired")) {
                             refreshAndReconnect(activeSession)
+                        } else {
+                            webSocket.close(1011, "Realtime channel unavailable")
                         }
                     }
                 } catch (_: Exception) {
