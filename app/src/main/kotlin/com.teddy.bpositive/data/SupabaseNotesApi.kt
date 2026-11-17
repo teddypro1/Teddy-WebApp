@@ -212,6 +212,31 @@ object SupabaseNotesApi {
         }
     }
 
+    /**
+     * Permanently removes a note row. Supabase RLS must allow DELETE for its owner.
+     */
+    fun permanentlyDeleteNote(
+        session: SupabaseSessionManager.Session,
+        noteId: Long,
+        onResult: (ApiResult<Boolean>) -> Unit
+    ) {
+        val userId = session.userId
+        if (userId.isNullOrBlank()) {
+            onResult(ApiResult(false, message = "User ID is missing from the session."))
+            return
+        }
+
+        execute(
+            method = "DELETE",
+            path = "/rest/v1/notes?id=eq.$noteId&user_id=eq.$userId&select=id",
+            session = session,
+            prefer = "return=representation",
+            onResult = onResult
+        ) { body ->
+            JSONArray(body).length() > 0
+        }
+    }
+
     private fun <T> execute(
         method: String,
         path: String,
@@ -235,6 +260,7 @@ object SupabaseNotesApi {
                 "GET" -> builder.get()
                 "POST" -> builder.post(requestBody ?: "{}".toRequestBody(jsonMediaType))
                 "PATCH" -> builder.patch(requestBody ?: "{}".toRequestBody(jsonMediaType))
+                "DELETE" -> builder.delete()
                 else -> throw IllegalArgumentException("Unsupported HTTP method: $method")
             }
 
