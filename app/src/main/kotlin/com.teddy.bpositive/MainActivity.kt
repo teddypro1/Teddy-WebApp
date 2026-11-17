@@ -8,6 +8,7 @@ import com.teddy.bpositive.data.SupabaseSessionManager
 import com.teddy.bpositive.data.NoteSyncStore
 import com.teddy.bpositive.data.NoteSyncRepository
 import com.teddy.bpositive.data.SupabaseNotesApi
+import com.teddy.bpositive.data.SupabaseRealtimeSubscription
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -227,6 +228,88 @@ fun TeddyNotesApp() {
                     ).show()
                 }
             }
+        }
+    }
+
+    DisposableEffect(activeSession) {
+        val session = activeSession
+        if (session == null) {
+            onDispose { }
+        } else {
+            val subscription = SupabaseRealtimeSubscription(session) {
+                // A Realtime event is only a signal to refresh. Merge rules below
+                // protect any local note that still has a queued operation.
+                SupabaseNotesApi.fetchNotes(session) { fetchResult ->
+                    if (!fetchResult.success || fetchResult.data == null) return@fetchNotes
+
+                    val userId = session.userId.orEmpty()
+                    deletedNotes.clear()
+                    fetchResult.data.filter { it.deletedAt != null }.forEach { deletedNotes.add(it) }
+
+                    fetchResult.data.forEach { cloudNote ->
+                        val existingRecord = cloudNote.clientId?.let { clientId ->
+                            NoteSyncStore.findByClientId(context, userId, clientId)
+                        }
+                        if (existingRecord?.operation != null) return@forEach
+
+                        if (cloudNote.deletedAt != null) {
+                            existingRecord?.let { record ->
+                                notes.removeAll { it.id == record.localNoteId }
+                            }
+                        } else {
+                            val clientId = cloudNote.clientId
+                            if (clientId.isNullOrBlank()) return@forEach
+
+                            val localId = existingRecord?.localNoteId ?: run {
+                                var candidate = System.currentTimeMillis()
+                                while (notes.any { it.id == candidate }) candidate++
+                                candidate
+                            }
+
+                            NoteSyncStore.registerCloudNote(
+                                context = context,
+                                userId = userId,
+                                localNoteId = localId,
+                                clientId = clientId,
+                                cloudNoteId = cloudNote.id,
+                                title = cloudNote.title,
+                                content = cloudNote.content,
+                                isPinned = cloudNote.isPinned,
+                                cloudUpdatedAt = cloudNote.updatedAt
+                            )
+
+                            fun parseRealtimeTime(value: String?): Long = try {
+                                if (value.isNullOrBlank()) System.currentTimeMillis()
+                                else java.time.Instant.parse(value).toEpochMilli()
+                            } catch (_: Exception) {
+                                System.currentTimeMillis()
+                            }
+
+                            val refreshedNote = Note(
+                                id = localId,
+                                title = cloudNote.title,
+                                content = cloudNote.content,
+                                isPinned = cloudNote.isPinned,
+                                createdAt = parseRealtimeTime(cloudNote.createdAt),
+                                updatedAt = parseRealtimeTime(cloudNote.updatedAt)
+                            )
+                            val localIndex = notes.indexOfFirst { it.id == localId }
+                            if (localIndex >= 0) notes[localIndex] = refreshedNote
+                            else notes.add(refreshedNote)
+                        }
+                    }
+
+                    saveNotes(context, notes)
+                    SupabaseNotesApi.fetchConflictCopies(session) { conflictResult ->
+                        if (conflictResult.success && conflictResult.data != null) {
+                            conflictCopies.clear()
+                            conflictCopies.addAll(conflictResult.data)
+                        }
+                    }
+                }
+            }
+            subscription.start()
+            onDispose { subscription.stop() }
         }
     }
 
