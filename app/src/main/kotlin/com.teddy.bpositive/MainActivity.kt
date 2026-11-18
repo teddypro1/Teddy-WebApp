@@ -38,6 +38,7 @@ import com.teddy.bpositive.ui.dialogs.DeleteConfirmationDialog
 import com.teddy.bpositive.ui.dialogs.PermanentDeleteConfirmationDialog
 import com.teddy.bpositive.ui.components.AppBottomNavigationBar
 import com.teddy.bpositive.ui.components.WorkspaceTopBar
+import com.teddy.bpositive.ui.theme.TeddyAppTheme
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -53,7 +54,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
@@ -801,23 +801,7 @@ fun TeddyNotesApp() {
             notes.firstOrNull { it.id == note.id }?.let { syncNoteUpsert(it) }
         }
     }
-        MaterialTheme(
-        colorScheme = if (darkMode) {
-            darkColorScheme(
-                primary = Color(0xFF8BA9FF),
-                secondary = Color(0xFFB8C7FF),
-                background = Color(0xFF10131C),
-                surface = Color(0xFF1A1E29)
-            )
-        } else {
-            lightColorScheme(
-                primary = Color(0xFF3459D6),
-                secondary = Color(0xFF607CE5),
-                background = Color(0xFFF3F5FB),
-                surface = Color.White
-            )
-        }
-    ) {
+        TeddyAppTheme(darkMode = darkMode) {
 
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
