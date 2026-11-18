@@ -26,7 +26,7 @@ fun AdminPanelScreen(
     onSend: () -> Unit,
     onRefresh: () -> Unit
 ) {
-    var showBroadcastConfirmation by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val showBroadcastConfirmation = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -71,7 +71,7 @@ fun AdminPanelScreen(
                 Text("This sends a real notification to every registered Android device. Review the message before sending.",
                     color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                 Button(
-                    onClick = { showBroadcastConfirmation = true },
+                    onClick = { showBroadcastConfirmation.value = true },
                     enabled = !isLoading && !isSending && title.isNotBlank() && message.isNotBlank(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -122,9 +122,9 @@ fun AdminPanelScreen(
         Text("Build 3: Custom broadcast to all registered Android devices.",
             color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
 
-        if (showBroadcastConfirmation) {
+        if (showBroadcastConfirmation.value) {
             AlertDialog(
-                onDismissRequest = { showBroadcastConfirmation = false },
+                onDismissRequest = { showBroadcastConfirmation.value = false },
                 title = { Text("Send notification to all users?") },
                 text = { Text("Your notification will be sent to every Android device currently registered in Teddy-WebApp. This action cannot be undone.") },
                 confirmButton = {
