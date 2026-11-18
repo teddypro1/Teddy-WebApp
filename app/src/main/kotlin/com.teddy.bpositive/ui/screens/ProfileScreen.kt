@@ -27,13 +27,10 @@ fun ProfilePage(
     canEdit: Boolean = true,
     onEdit: () -> Unit
 ) {
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(contentPadding)
-            .consumeWindowInsets(contentPadding)
-    ) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val horizontalPadding = if (maxWidth < 360.dp) 14.dp else 18.dp
+        val topInset = contentPadding.calculateTopPadding()
+        val bottomInset = contentPadding.calculateBottomPadding()
 
         Column(
             modifier = Modifier
@@ -41,11 +38,14 @@ fun ProfilePage(
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = horizontalPadding, vertical = 22.dp),
+                .padding(
+                    start = horizontalPadding,
+                    top = topInset + 22.dp,
+                    end = horizontalPadding,
+                    bottom = bottomInset + 22.dp
+                ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("My Profile", fontSize = 26.sp, fontWeight = FontWeight.Bold)
-
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
                 Column(
                     modifier = Modifier
