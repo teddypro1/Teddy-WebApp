@@ -88,13 +88,21 @@ class SupabaseRealtimeSubscription(
                     .put("presence", JSONObject().put("key", ""))
                     .put(
                         "postgres_changes",
-                        org.json.JSONArray().put(
-                            JSONObject()
-                                .put("event", "*")
-                                .put("schema", "public")
-                                .put("table", "notes")
-                                .put("filter", "user_id=eq.${activeSession.userId}")
-                        )
+                        org.json.JSONArray()
+                            .put(
+                                JSONObject()
+                                    .put("event", "*")
+                                    .put("schema", "public")
+                                    .put("table", "notes")
+                                    .put("filter", "user_id=eq.${activeSession.userId}")
+                            )
+                            .put(
+                                JSONObject()
+                                    .put("event", "*")
+                                    .put("schema", "public")
+                                    .put("table", "profiles")
+                                    .put("filter", "id=eq.${activeSession.userId}")
+                            )
                     )
                     .put("private", false)
 
