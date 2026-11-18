@@ -1224,7 +1224,8 @@ fun TeddyNotesApp() {
                     }
                 }
             } else if (selectedTab == "Profile") {
-                ProfilePage(profile = currentProfile, email = activeSession?.email.orEmpty(), onEdit = {
+                ProfilePage(profile = currentProfile, email = activeSession?.email.orEmpty(),
+                    canEdit = hasValidatedInternet(context), onEdit = {
                     currentProfile?.let { profile ->
                         profileFullName = profile.fullName
                         profileUsername = profile.username.orEmpty()
@@ -1349,7 +1350,7 @@ fun TeddyNotesApp() {
                 }
             },
             confirmButton = {
-                TextButton(enabled = !isSavingProfile && profileFullName.isNotBlank(), onClick = {
+                TextButton(enabled = !isSavingProfile && profileFullName.isNotBlank() && hasValidatedInternet(context), onClick = {
                     val session = activeSession ?: return@TextButton
                     isSavingProfile = true
                     SupabaseProfilesApi.saveProfile(context, session, profileFullName, profileUsername, profileBio, profileAvatarUrl) { result ->
@@ -1418,7 +1419,7 @@ fun TeddyNotesApp() {
 
 
 @Composable
-fun ProfilePage(profile: SupabaseProfilesApi.Profile?, email: String, onEdit: () -> Unit) {
+fun ProfilePage(profile: SupabaseProfilesApi.Profile?, email: String, canEdit: Boolean = true, onEdit: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         .padding(horizontal = 18.dp, vertical = 22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("My Profile", fontSize = 26.sp, fontWeight = FontWeight.Bold)
@@ -1444,8 +1445,8 @@ fun ProfilePage(profile: SupabaseProfilesApi.Profile?, email: String, onEdit: ()
                     Text(profile?.bio.orEmpty(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
                 Spacer(Modifier.height(18.dp))
-                Button(onClick = onEdit, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
-                    Text("Edit Profile")
+                Button(onClick = onEdit, enabled = canEdit, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
+                    Text(if (canEdit) "Edit Profile" else "Profile editing requires internet")
                 }
             }
         }
@@ -2280,4 +2281,13 @@ fun loadNotes(
 
         emptyList()
     }
+}
+
+
+fun hasValidatedInternet(context: Context): Boolean {
+    val connectivity = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
+    val network = connectivity.activeNetwork ?: return false
+    val capabilities = connectivity.getNetworkCapabilities(network) ?: return false
+    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+        capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
 }
