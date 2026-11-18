@@ -91,23 +91,13 @@ fun HomeScreen(
                 content = content,
                 isEditing = editingId != null,
     
-                onTitleChange = {
-                    title = it
-                },
+                onTitleChange = onTitleChange,
     
-                onContentChange = {
-                    if (it.length <= 3000) {
-                        content = it
-                    }
-                },
+                onContentChange = onContentChange,
     
-                onSave = {
-                    saveNote()
-                },
+                onSave = onSave,
     
-                onCancel = {
-                    clearEditor()
-                }
+                onCancel = onCancel
             )
     
             Spacer(Modifier.height(25.dp))
@@ -136,9 +126,9 @@ fun HomeScreen(
                     } else if (showTrash) {
                         "Trash (${deletedNotes.size})"
                     } else if (showPinnedOnly) {
-                        "Pinned Notes ($pinnedNotes)"
+                        "Pinned Notes (${notes.count { it.isPinned }})
                     } else {
-                        "All Notes ($totalNotes)"
+                        "All Notes (${notes.size})
                     },
                     fontSize = 23.sp,
                     fontWeight = FontWeight.Bold
@@ -146,14 +136,7 @@ fun HomeScreen(
             }
     
             if (!showTrash && !showConflicts) Button(
-                onClick = {
-                    if (!showEditor) {
-                        editingId = null
-                        title = ""
-                        content = ""
-                        showEditor = true
-                    }
-                },
+                onClick = onNewNote,
                 shape = RoundedCornerShape(12.dp),
                 contentPadding = PaddingValues(
                     horizontal = 14.dp,
@@ -167,12 +150,7 @@ fun HomeScreen(
         Spacer(Modifier.height(16.dp))
     
         OutlinedButton(
-            onClick = {
-                showTrash = !showTrash
-                showConflicts = false
-                searchQuery = ""
-                onShowPinnedOnlyChange(false)
-            },
+            onClick = onToggleTrash,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(if (showTrash) "← Back to All Notes" else "🗑 Recently Deleted (${deletedNotes.size})")
@@ -181,13 +159,7 @@ fun HomeScreen(
         Spacer(Modifier.height(8.dp))
     
         OutlinedButton(
-            onClick = {
-                showConflicts = !showConflicts
-                showTrash = false
-                searchQuery = ""
-                showPinnedOnly = false
-                if (showConflicts) refreshConflictCopies()
-            },
+            onClick = onToggleConflicts,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(if (showConflicts) "← Back to All Notes" else "⚠ Conflict Copies (${conflictCopies.size})")
@@ -227,7 +199,7 @@ fun HomeScreen(
                 FilterChip(
                     selected = !showPinnedOnly,
                     onClick = {
-                        showPinnedOnly = false
+                        onShowPinnedOnlyChange(false)
                     },
                     label = {
                         Text("All Notes")
@@ -266,8 +238,8 @@ fun HomeScreen(
                 conflictCopies.forEach { copy ->
                     ConflictCopyCard(
                         conflict = copy,
-                        onRestore = { restoreConflictCopy(copy) },
-                        onDismiss = { dismissConflictCopy(copy) }
+                        onRestore = { onRestoreConflict(copy) },
+                        onDismiss = { onDismissConflict(copy) }
                     )
                     Spacer(Modifier.height(12.dp))
                 }
@@ -279,8 +251,8 @@ fun HomeScreen(
                 deletedNotes.forEach { cloudNote ->
                     TrashNoteCard(
                         note = cloudNote,
-                        onRestore = { restoreDeletedNote(cloudNote) },
-                        onDeletePermanently = { permanentDeleteTarget = cloudNote.id }
+                        onRestore = { onRestoreDeleted(cloudNote) },
+                        onDeletePermanently = { onDeletePermanently(cloudNote) }
                     )
                     Spacer(Modifier.height(12.dp))
                 }
@@ -291,9 +263,9 @@ fun HomeScreen(
             filteredNotes.forEach { note ->
                 NoteCard(
                     note = note,
-                    onEdit = { editNote(note) },
-                    onPin = { togglePin(note) },
-                    onDelete = { deleteTarget = note.id }
+                    onEdit = { onEditNote(note) },
+                    onPin = { onTogglePin(note) },
+                    onDelete = { onDeleteNote(note) }
                 )
                 Spacer(Modifier.height(12.dp))
             }
