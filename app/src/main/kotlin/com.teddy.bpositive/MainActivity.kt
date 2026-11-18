@@ -22,6 +22,7 @@ import com.teddy.bpositive.utils.parseCloudTimestampMillis
 import com.teddy.bpositive.utils.hasValidatedInternet
 import com.teddy.bpositive.utils.filterAndSortNotes
 import com.teddy.bpositive.utils.parseCloudTimeMillis
+import com.teddy.bpositive.utils.toggleNotePinned
 import com.teddy.bpositive.ui.components.ProfileInfoRow
 import com.teddy.bpositive.ui.components.TrashNoteCard
 import com.teddy.bpositive.ui.components.ConflictCopyCard
