@@ -129,12 +129,12 @@ fun AdminPanelScreen(
                 text = { Text("Your notification will be sent to every Android device currently registered in Teddy-WebApp. This action cannot be undone.") },
                 confirmButton = {
                     TextButton(onClick = {
-                        showBroadcastConfirmation = false
+                        showBroadcastConfirmation.value = false
                         onSend()
                     }) { Text("Send to all") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showBroadcastConfirmation = false }) { Text("Cancel") }
+                    TextButton(onClick = { showBroadcastConfirmation.value = false }) { Text("Cancel") }
                 }
             )
         }
