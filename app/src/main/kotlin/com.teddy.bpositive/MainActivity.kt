@@ -2,6 +2,11 @@ package com.teddy.bpositive
 
 import android.os.Bundle
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import com.teddy.bpositive.data.SupabaseAuthRepository
 import com.teddy.bpositive.data.SupabaseSessionManager
@@ -108,15 +113,16 @@ fun TeddyNotesApp() {
     val conflictCopies = remember(userId) { mutableStateListOf<SupabaseNotesApi.ConflictCopy>() }
     var currentProfile by remember(userId) { mutableStateOf<SupabaseProfilesApi.Profile?>(null) }
     var showProfileDialog by rememberSaveable { mutableStateOf(false) }
-    var profileFullName by rememberSaveable { mutableStateOf("") }
-    var profileUsername by rememberSaveable { mutableStateOf("") }
-    var profileBio by rememberSaveable { mutableStateOf("") }
-    var profileAvatarUrl by rememberSaveable { mutableStateOf("") }
+    var profileFullName by remember(userId) { mutableStateOf("") }
+    var profileUsername by remember(userId) { mutableStateOf("") }
+    var profileBio by remember(userId) { mutableStateOf("") }
+    var profileAvatarUrl by remember(userId) { mutableStateOf("") }
     var isSavingProfile by remember { mutableStateOf(false) }
 
     LaunchedEffect(activeSession) {
         val session = activeSession ?: return@LaunchedEffect
         SupabaseProfilesApi.fetchOrCreateProfile(context, session) { result ->
+            if (activeSession?.userId != session.userId) return@fetchOrCreateProfile
             if (result.success && result.data != null) {
                 currentProfile = result.data
                 profileFullName = result.data.fullName
@@ -137,6 +143,7 @@ fun TeddyNotesApp() {
         // Only this account's namespaced local notes and queue may be synchronized.
         // Unscoped legacy notes are deliberately never imported into a newly signed-in account.
         NoteSyncRepository.syncPendingChanges(context, session) { result ->
+            if (activeSession?.userId != session.userId) return@syncPendingChanges
             if (!result.success) {
                 Toast.makeText(
                     context,
@@ -246,6 +253,7 @@ fun TeddyNotesApp() {
                 // A Realtime event is only a signal to refresh. Merge rules below
                 // protect any local note that still has a queued operation.
                 SupabaseNotesApi.fetchNotes(session) { fetchResult ->
+                    if (activeSession?.userId != session.userId) return@fetchNotes
                     if (!fetchResult.success || fetchResult.data == null) return@fetchNotes
 
                     val userId = session.userId.orEmpty()
@@ -316,6 +324,75 @@ fun TeddyNotesApp() {
             }
             subscription.start()
             onDispose { subscription.stop() }
+        }
+    }
+
+    // Resume queued offline note changes as soon as Android reports validated internet.
+    DisposableEffect(activeSession) {
+        val session = activeSession
+        val connectivity = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val mainHandler = Handler(Looper.getMainLooper())
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
+                val hasWorkingInternet =
+                    capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                    capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                if (!hasWorkingInternet || session == null) return
+
+                mainHandler.post {
+                    if (activeSession?.userId != session.userId) return@post
+                    NoteSyncRepository.syncPendingChanges(context, session) { syncResult ->
+                        if (activeSession?.userId != session.userId || !syncResult.success) return@syncPendingChanges
+                        // Realtime subscription also refreshes on reconnect; this fetch
+                        // guarantees the foreground UI reconciles immediately after queue drain.
+                        SupabaseNotesApi.fetchNotes(session) { cloudResult ->
+                            if (activeSession?.userId != session.userId ||
+                                !cloudResult.success || cloudResult.data == null) return@fetchNotes
+                            cloudResult.data.forEach { cloudNote ->
+                                val record = cloudNote.clientId?.let {
+                                    NoteSyncStore.findByClientId(context, session.userId.orEmpty(), it)
+                                }
+                                if (record?.operation != null) return@forEach
+                                if (cloudNote.deletedAt != null) {
+                                    record?.let { notes.removeAll { note -> note.id == it.localNoteId } }
+                                } else {
+                                    val clientId = cloudNote.clientId ?: return@forEach
+                                    val localId = record?.localNoteId ?: System.currentTimeMillis()
+                                    fun parseTime(value: String?): Long = try {
+                                        if (value.isNullOrBlank()) System.currentTimeMillis()
+                                        else java.time.Instant.parse(value).toEpochMilli()
+                                    } catch (_: Exception) { System.currentTimeMillis() }
+                                    val refreshed = Note(
+                                        id = localId,
+                                        title = cloudNote.title,
+                                        content = cloudNote.content,
+                                        isPinned = cloudNote.isPinned,
+                                        createdAt = parseTime(cloudNote.createdAt),
+                                        updatedAt = parseTime(cloudNote.updatedAt)
+                                    )
+                                    val index = notes.indexOfFirst { it.id == localId }
+                                    if (index >= 0) notes[index] = refreshed else notes.add(refreshed)
+                                    NoteSyncStore.registerCloudNote(
+                                        context, session.userId.orEmpty(), localId, clientId,
+                                        cloudNote.id, cloudNote.title, cloudNote.content,
+                                        cloudNote.isPinned, cloudNote.updatedAt
+                                    )
+                                }
+                            }
+                            saveNotes(context, session.userId.orEmpty(), notes)
+                        }
+                    }
+                }
+            }
+        }
+
+        try {
+            connectivity.registerDefaultNetworkCallback(callback)
+        } catch (_: Exception) {
+            // Realtime reconnect remains a secondary recovery path on older devices.
+        }
+        onDispose {
+            try { connectivity.unregisterNetworkCallback(callback) } catch (_: Exception) { }
         }
     }
 
