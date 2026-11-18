@@ -55,7 +55,7 @@ object AdminRepository {
             val total = data?.optInt("total", 0) ?: 0
             val historySaved = data?.optBoolean("history_saved", false) == true
             val message = if (response.success) {
-                "Sent to $sent of $total registered Admin device(s)." +
+                "Sent to $sent of $total registered Android device(s)." +
                     if (historySaved) " History saved." else " History could not be saved."
             } else response.message
             onResult(Result(response.success, message.takeIf { response.success }, message))
