@@ -134,6 +134,7 @@ fun TeddyNotesApp() {
     var profileBio by remember(userId) { mutableStateOf("") }
     var profileAvatarUrl by remember(userId) { mutableStateOf("") }
     var isSavingProfile by remember { mutableStateOf(false) }
+    var hasShownSyncSuccessToast by rememberSaveable(userId) { mutableStateOf(false) }
 
     LaunchedEffect(activeSession) {
         val session = activeSession ?: return@LaunchedEffect
@@ -245,7 +246,8 @@ fun TeddyNotesApp() {
                 }
 
                 saveNotes(context, userId, notes)
-                if (result.processed > 0 || fetchResult.data.isNotEmpty()) {
+                if (result.processed > 0 && !hasShownSyncSuccessToast) {
+                    hasShownSyncSuccessToast = true
                     Toast.makeText(
                         context,
                         "Cloud notes synchronized successfully.",
