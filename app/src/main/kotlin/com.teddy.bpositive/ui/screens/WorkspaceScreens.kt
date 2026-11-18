@@ -77,13 +77,15 @@ fun SettingsScreen(
                 OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) { Text("Sign Out") }
             }
         }
-        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
-            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Notifications", fontWeight = FontWeight.SemiBold)
+        if (isAdmin) {
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Notifications", fontWeight = FontWeight.SemiBold)
                 Text("Check whether push notifications can reach this device.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                OutlinedButton(onClick = onSendTestNotification, modifier = Modifier.fillMaxWidth()) {
-                    Text("Send test notification")
+                    OutlinedButton(onClick = onSendTestNotification, modifier = Modifier.fillMaxWidth()) {
+                        Text("Send test notification")
+                    }
                 }
             }
         }
