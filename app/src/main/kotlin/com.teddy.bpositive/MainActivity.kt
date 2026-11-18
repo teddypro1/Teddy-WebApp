@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
 import com.teddy.bpositive.data.FcmTokenManager
+import com.teddy.bpositive.data.FcmTokenRepository
 import com.teddy.bpositive.data.SupabaseAuthRepository
 import com.teddy.bpositive.data.SupabaseSessionManager
 import com.teddy.bpositive.data.NoteSyncStore
@@ -170,6 +171,15 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var profileBio by remember(userId) { mutableStateOf("") }
     var profileAvatarUrl by remember(userId) { mutableStateOf("") }
     var isSavingProfile by remember { mutableStateOf(false) }
+
+    LaunchedEffect(activeSession) {
+        val session = activeSession ?: return@LaunchedEffect
+        FcmTokenRepository.registerCurrentDevice(context, session) { success, message ->
+            if (!success) {
+                android.util.Log.w("TeddyFCM", message)
+            }
+        }
+    }
 
     LaunchedEffect(activeSession) {
         val session = activeSession ?: return@LaunchedEffect
@@ -969,6 +979,9 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         showTrash = false
                         showConflicts = false
                         selectedTab = "Home"
+                        activeSession?.let { session ->
+                            FcmTokenRepository.unregisterCurrentDevice(context, session)
+                        }
                         SupabaseSessionManager.clear(context)
                         activeSession = null
                     }
