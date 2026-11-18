@@ -126,9 +126,9 @@ fun HomeScreen(
                     } else if (showTrash) {
                         "Trash (${deletedNotes.size})"
                     } else if (showPinnedOnly) {
-                        "Pinned Notes (${notes.count { it.isPinned }})
+                        "Pinned Notes (${notes.count { it.isPinned }})"
                     } else {
-                        "All Notes (${notes.size})
+                        "All Notes (${notes.size})"
                     },
                     fontSize = 23.sp,
                     fontWeight = FontWeight.Bold
