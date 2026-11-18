@@ -123,7 +123,7 @@ fun TeddyNotesApp() {
         val session = activeSession ?: return@LaunchedEffect
         SupabaseProfilesApi.fetchOrCreateProfile(context, session) { result ->
             if (activeSession?.userId != session.userId) return@fetchOrCreateProfile
-            if (result.success && result.data != null) {
+            if (result.success && result.data != null && result.data.id == session.userId) {
                 currentProfile = result.data
                 profileFullName = result.data.fullName
                 profileUsername = result.data.username.orEmpty()
@@ -164,7 +164,7 @@ fun TeddyNotesApp() {
                 }
 
                 deletedNotes.clear()
-                fetchResult.data.filter { it.deletedAt != null }.forEach { deletedNotes.add(it) }
+                fetchResult.data.filter { it.userId == session.userId && it.deletedAt != null }.forEach { deletedNotes.add(it) }
 
                 SupabaseNotesApi.fetchConflictCopies(session) { conflictResult ->
                     if (conflictResult.success && conflictResult.data != null) {
@@ -173,7 +173,7 @@ fun TeddyNotesApp() {
                     }
                 }
 
-                fetchResult.data.forEach { cloudNote ->
+                fetchResult.data.filter { it.userId == session.userId }.forEach { cloudNote ->
                     val existingRecord = cloudNote.clientId?.let { clientId ->
                         NoteSyncStore.findByClientId(context, userId, clientId)
                     }
@@ -258,9 +258,9 @@ fun TeddyNotesApp() {
 
                     val userId = session.userId.orEmpty()
                     deletedNotes.clear()
-                    fetchResult.data.filter { it.deletedAt != null }.forEach { deletedNotes.add(it) }
+                    fetchResult.data.filter { it.userId == session.userId && it.deletedAt != null }.forEach { deletedNotes.add(it) }
 
-                    fetchResult.data.forEach { cloudNote ->
+                    fetchResult.data.filter { it.userId == session.userId }.forEach { cloudNote ->
                         val existingRecord = cloudNote.clientId?.let { clientId ->
                             NoteSyncStore.findByClientId(context, userId, clientId)
                         }
@@ -348,7 +348,7 @@ fun TeddyNotesApp() {
                         SupabaseNotesApi.fetchNotes(session) { cloudResult ->
                             if (activeSession?.userId != session.userId ||
                                 !cloudResult.success || cloudResult.data == null) return@fetchNotes
-                            cloudResult.data.forEach { cloudNote ->
+                            cloudResult.data.filter { it.userId == session.userId }.forEach { cloudNote ->
                                 val record = cloudNote.clientId?.let {
                                     NoteSyncStore.findByClientId(context, session.userId.orEmpty(), it)
                                 }
