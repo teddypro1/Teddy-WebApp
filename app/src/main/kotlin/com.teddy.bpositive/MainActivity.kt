@@ -28,13 +28,15 @@ import com.teddy.bpositive.ui.components.StatsCard
 import com.teddy.bpositive.ui.components.NoteEditor
 import com.teddy.bpositive.ui.components.EmptyNotes
 import com.teddy.bpositive.ui.components.NoteCard
-import com.teddy.bpositive.ui.components.DeleteConfirmationDialog
 import com.teddy.bpositive.ui.screens.ProfilePage
 import com.teddy.bpositive.ui.screens.AuthScreen
 import com.teddy.bpositive.ui.screens.TrashScreen
 import com.teddy.bpositive.ui.screens.SettingsScreen
 import com.teddy.bpositive.ui.screens.HomeScreen
 import com.teddy.bpositive.ui.dialogs.ProfileEditorDialog
+import com.teddy.bpositive.ui.dialogs.DeleteConfirmationDialog
+import com.teddy.bpositive.ui.dialogs.PermanentDeleteConfirmationDialog
+import com.teddy.bpositive.ui.components.AppBottomNavigationBar
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -819,29 +821,21 @@ fun TeddyNotesApp() {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 8.dp) {
-                    listOf(Triple("Home", "⌂", "Home"), Triple("Trash", "▤", "Trash"),
-                        Triple("Profile", "●", "Profile"), Triple("Settings", "⚙", "Settings")).forEach { (tab, symbol, label) ->
-                        NavigationBarItem(
-                            selected = selectedTab == tab,
-                            onClick = {
-                                selectedTab = tab
-                                if (tab == "Trash") {
-                                    showTrash = true
-                                    showConflicts = false
-                                    showPinnedOnly = false
-                                    searchQuery = ""
-                                } else if (tab == "Home") {
-                                    showTrash = false
-                                    showConflicts = false
-                                }
-                            },
-                            icon = { Text(symbol, fontSize = 20.sp) },
-                            label = { Text(label, maxLines = 1) },
-                            alwaysShowLabel = true
-                        )
+                AppBottomNavigationBar(
+                    selectedTab = selectedTab,
+                    onTabSelected = { tab ->
+                        selectedTab = tab
+                        if (tab == "Trash") {
+                            showTrash = true
+                            showConflicts = false
+                            showPinnedOnly = false
+                            searchQuery = ""
+                        } else if (tab == "Home") {
+                            showTrash = false
+                            showConflicts = false
+                        }
                     }
-                }
+                )
             },
             topBar = {
                 CenterAlignedTopAppBar(
@@ -1083,19 +1077,12 @@ fun TeddyNotesApp() {
 
     if (permanentDeleteTarget != null) {
         val target = deletedNotes.firstOrNull { it.id == permanentDeleteTarget }
-        AlertDialog(
-            onDismissRequest = { permanentDeleteTarget = null },
-            title = { Text("Delete permanently?") },
-            text = { Text("This note will be permanently removed from your cloud database. This action cannot be undone.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (target != null) permanentlyDeleteNote(target)
-                    permanentDeleteTarget = null
-                }) { Text("Delete permanently", color = MaterialTheme.colorScheme.error) }
+        PermanentDeleteConfirmationDialog(
+            onConfirm = {
+                if (target != null) permanentlyDeleteNote(target)
+                permanentDeleteTarget = null
             },
-            dismissButton = {
-                TextButton(onClick = { permanentDeleteTarget = null }) { Text("Cancel") }
-            }
+            onCancel = { permanentDeleteTarget = null }
         )
     }
 
