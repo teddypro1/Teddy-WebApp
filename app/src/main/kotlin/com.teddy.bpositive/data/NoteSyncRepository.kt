@@ -180,7 +180,7 @@ object NoteSyncRepository {
                 SupabaseNotesApi.updateNoteIfUnchanged(
                     session = session,
                     noteId = cloudNote.id,
-                    expectedUpdatedAt = record.cloudUpdatedAt!!,
+                    expectedUpdatedAt = record.cloudUpdatedAt,
                     title = record.title,
                     content = record.content,
                     isPinned = record.isPinned

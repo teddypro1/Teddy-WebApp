@@ -43,7 +43,7 @@ fun ProfilePage(profile: SupabaseProfilesApi.Profile?, email: String, canEdit: B
                 Text(email, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 if (!profile?.bio.isNullOrBlank()) {
                     Spacer(Modifier.height(10.dp))
-                    Text(profile?.bio.orEmpty(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Text(profile.bio.orEmpty(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
                 Spacer(Modifier.height(18.dp))
                 Button(onClick = onEdit, enabled = canEdit, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {

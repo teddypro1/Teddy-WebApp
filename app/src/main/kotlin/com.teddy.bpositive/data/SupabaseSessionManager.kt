@@ -137,8 +137,8 @@ object SupabaseSessionManager {
                 authResult.success && !authResult.accessToken.isNullOrBlank() &&
                     !authResult.refreshToken.isNullOrBlank() -> {
                     val refreshed = Session(
-                        accessToken = authResult.accessToken!!,
-                        refreshToken = authResult.refreshToken!!,
+                        accessToken = authResult.accessToken,
+                        refreshToken = authResult.refreshToken,
                         userId = authResult.userId ?: rejectedSession.userId,
                         email = authResult.email ?: rejectedSession.email
                     )
