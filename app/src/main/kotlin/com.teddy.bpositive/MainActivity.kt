@@ -174,9 +174,12 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
 
     LaunchedEffect(activeSession) {
         val session = activeSession ?: return@LaunchedEffect
+        android.util.Log.i("TeddyFCM", "Authenticated session detected; registering this device")
         FcmTokenRepository.registerCurrentDevice(context, session) { success, message ->
-            if (!success) {
-                android.util.Log.w("TeddyFCM", message)
+            if (success) {
+                android.util.Log.i("TeddyFCM", message)
+            } else {
+                android.util.Log.e("TeddyFCM", message)
             }
         }
     }
