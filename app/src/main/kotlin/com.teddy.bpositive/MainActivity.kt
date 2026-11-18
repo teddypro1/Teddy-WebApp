@@ -72,18 +72,37 @@ import java.util.Locale
 
 
 class MainActivity : ComponentActivity() {
+    private var suppressInitialSyncSuccessToast = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val previousOrientation = savedInstanceState?.getInt(KEY_LAST_ORIENTATION)
+            ?: android.content.res.Configuration.ORIENTATION_UNDEFINED
+        suppressInitialSyncSuccessToast =
+            previousOrientation != android.content.res.Configuration.ORIENTATION_UNDEFINED &&
+            previousOrientation != resources.configuration.orientation
+
         setContent {
-            TeddyNotesApp()
+            TeddyNotesApp(
+                suppressInitialSyncSuccessToast = suppressInitialSyncSuccessToast
+            )
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putInt(KEY_LAST_ORIENTATION, resources.configuration.orientation)
+        super.onSaveInstanceState(outState)
+    }
+
+    companion object {
+        private const val KEY_LAST_ORIENTATION = "teddy_last_saved_orientation"
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TeddyNotesApp() {
+fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
 
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -134,7 +153,6 @@ fun TeddyNotesApp() {
     var profileBio by remember(userId) { mutableStateOf("") }
     var profileAvatarUrl by remember(userId) { mutableStateOf("") }
     var isSavingProfile by remember { mutableStateOf(false) }
-    var hasShownSyncSuccessToast by rememberSaveable(userId) { mutableStateOf(false) }
 
     LaunchedEffect(activeSession) {
         val session = activeSession ?: return@LaunchedEffect
@@ -246,8 +264,10 @@ fun TeddyNotesApp() {
                 }
 
                 saveNotes(context, userId, notes)
-                if (result.processed > 0 && !hasShownSyncSuccessToast) {
-                    hasShownSyncSuccessToast = true
+                if (
+                    (result.processed > 0 || fetchResult.data.isNotEmpty()) &&
+                    !suppressInitialSyncSuccessToast
+                ) {
                     Toast.makeText(
                         context,
                         "Cloud notes synchronized successfully.",
