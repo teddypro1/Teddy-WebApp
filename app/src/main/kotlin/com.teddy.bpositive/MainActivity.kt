@@ -44,6 +44,7 @@ import com.teddy.bpositive.ui.components.AppBottomNavigationBar
 import com.teddy.bpositive.ui.components.WorkspaceTopBar
 import com.teddy.bpositive.ui.theme.TeddyAppTheme
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -75,9 +76,23 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     private var suppressInitialSyncSuccessToast = false
 
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (!isGranted) {
+                android.util.Log.i("TeddyFCM", "Notification permission was not granted")
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FcmTokenManager.initialize(this)
+        if (
+            android.os.Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
 
         val previousOrientation = savedInstanceState?.getInt(KEY_LAST_ORIENTATION)
             ?: android.content.res.Configuration.ORIENTATION_UNDEFINED
