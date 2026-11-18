@@ -31,6 +31,8 @@ import com.teddy.bpositive.ui.components.NoteCard
 import com.teddy.bpositive.ui.components.DeleteConfirmationDialog
 import com.teddy.bpositive.ui.screens.ProfilePage
 import com.teddy.bpositive.ui.screens.AuthScreen
+import com.teddy.bpositive.ui.screens.TrashScreen
+import com.teddy.bpositive.ui.screens.SettingsScreen
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -1226,20 +1228,12 @@ fun TeddyNotesApp() {
                 Spacer(Modifier.height(15.dp))
             }
             } else if (selectedTab == "Trash") {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(padding)
-                        .verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 20.dp)
-                ) {
-                    Text("Recently Deleted", fontSize = 26.sp, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(6.dp))
-                    Text("Restore notes or permanently remove them.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(18.dp))
-                    if (deletedNotes.isEmpty()) EmptyNotes() else deletedNotes.forEach { cloudNote ->
-                        TrashNoteCard(note = cloudNote, onRestore = { restoreDeletedNote(cloudNote) },
-                            onDeletePermanently = { permanentDeleteTarget = cloudNote.id })
-                        Spacer(Modifier.height(12.dp))
-                    }
-                }
+                TrashScreen(
+                    deletedNotes = deletedNotes,
+                    contentPadding = padding,
+                    onRestore = { restoreDeletedNote(it) },
+                    onDeletePermanently = { permanentDeleteTarget = it.id }
+                )
             } else if (selectedTab == "Profile") {
                 ProfilePage(profile = currentProfile, email = activeSession?.email.orEmpty(),
                     canEdit = hasValidatedInternet(context), onEdit = {
@@ -1252,67 +1246,38 @@ fun TeddyNotesApp() {
                     showProfileDialog = true
                 })
             } else if (selectedTab == "Settings") {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
-                        .padding(horizontal = 18.dp, vertical = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Text("Settings", fontSize = 26.sp, fontWeight = FontWeight.Bold)
-                    Text("Customize your Teddy WebApp experience.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Appearance", fontWeight = FontWeight.SemiBold)
-                                Text(if (darkMode) "Dark mode is enabled" else "Light mode is enabled",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                            }
-                            Switch(checked = darkMode, onCheckedChange = { enabled ->
-                                darkMode = enabled
-                                context.getSharedPreferences("teddy_settings", Context.MODE_PRIVATE).edit()
-                                    .putBoolean("dark_mode", enabled).apply()
-                            })
-                        }
+                SettingsScreen(
+                    darkMode = darkMode,
+                    accountEmail = activeSession?.email.orEmpty(),
+                    contentPadding = padding,
+                    onDarkModeChange = { enabled ->
+                        darkMode = enabled
+                        context.getSharedPreferences("teddy_settings", Context.MODE_PRIVATE).edit()
+                            .putBoolean("dark_mode", enabled).apply()
+                    },
+                    onSignOut = {
+                        deletedNotes.clear()
+                        conflictCopies.clear()
+                        notes.clear()
+                        currentProfile = null
+                        profileFullName = ""
+                        profileUsername = ""
+                        profileBio = ""
+                        profileAvatarUrl = ""
+                        showProfileDialog = false
+                        showEditor = false
+                        editingId = null
+                        title = ""
+                        content = ""
+                        searchQuery = ""
+                        showPinnedOnly = false
+                        showTrash = false
+                        showConflicts = false
+                        selectedTab = "Home"
+                        SupabaseSessionManager.clear(context)
+                        activeSession = null
                     }
-                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
-                        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Account", fontWeight = FontWeight.SemiBold)
-                            Text(activeSession?.email.orEmpty(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            OutlinedButton(onClick = {
-                                // Immediately detach all account-owned UI state before showing AuthScreen.
-                                deletedNotes.clear()
-                                conflictCopies.clear()
-                                notes.clear()
-                                currentProfile = null
-                                profileFullName = ""
-                                profileUsername = ""
-                                profileBio = ""
-                                profileAvatarUrl = ""
-                                showProfileDialog = false
-                                showEditor = false
-                                editingId = null
-                                title = ""
-                                content = ""
-                                searchQuery = ""
-                                showPinnedOnly = false
-                                showTrash = false
-                                showConflicts = false
-                                selectedTab = "Home"
-                                // Keep the old unscoped backup inert for possible recovery;
-                                // it is never loaded or uploaded under any account.
-                                SupabaseSessionManager.clear(context)
-                                activeSession = null
-                            }, modifier = Modifier.fillMaxWidth()) { Text("Sign Out") }
-                        }
-                    }
-                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
-                        Column(modifier = Modifier.padding(18.dp)) {
-                            Text("Teddy WebApp", fontWeight = FontWeight.SemiBold)
-                            Text("Your thoughts, organized beautifully.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                            Text("Version 1.0", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                        }
-                    }
-                }
+                )
             }
         }
     }
