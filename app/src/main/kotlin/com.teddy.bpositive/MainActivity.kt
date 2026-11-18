@@ -320,6 +320,22 @@ fun TeddyNotesApp() {
                             conflictCopies.addAll(conflictResult.data)
                         }
                     }
+
+                    // Profile changes are delivered through the same user-scoped
+                    // Realtime channel and reloaded with the current authenticated session.
+                    SupabaseProfilesApi.fetchOrCreateProfile(context, session) { profileResult ->
+                        if (activeSession?.userId == session.userId &&
+                            profileResult.success && profileResult.data?.id == session.userId) {
+                            val profile = profileResult.data
+                            currentProfile = profile
+                            if (!showProfileDialog) {
+                                profileFullName = profile.fullName
+                                profileUsername = profile.username.orEmpty()
+                                profileBio = profile.bio
+                                profileAvatarUrl = profile.avatarUrl.orEmpty()
+                            }
+                        }
+                    }
                 }
             }
             subscription.start()
