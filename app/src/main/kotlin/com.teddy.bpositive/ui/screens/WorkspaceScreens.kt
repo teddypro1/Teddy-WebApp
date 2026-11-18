@@ -45,6 +45,8 @@ fun TrashScreen(
 fun SettingsScreen(
     darkMode: Boolean,
     accountEmail: String,
+    isAdmin: Boolean,
+    onOpenAdminPanel: () -> Unit,
     onDarkModeChange: (Boolean) -> Unit,
     onSignOut: () -> Unit,
     onSendTestNotification: () -> Unit,
@@ -82,6 +84,18 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 OutlinedButton(onClick = onSendTestNotification, modifier = Modifier.fillMaxWidth()) {
                     Text("Send test notification")
+                }
+            }
+        }
+        if (isAdmin) {
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Administrator", fontWeight = FontWeight.SemiBold)
+                    Text("Verified admin access is enabled for this account.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                    Button(onClick = onOpenAdminPanel, modifier = Modifier.fillMaxWidth()) {
+                        Text("Open Admin Panel")
+                    }
                 }
             }
         }
