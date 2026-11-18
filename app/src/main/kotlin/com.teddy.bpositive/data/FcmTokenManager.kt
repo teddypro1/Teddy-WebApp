@@ -14,17 +14,32 @@ object FcmTokenManager {
     private const val TAG = "TeddyFCM"
 
     fun initialize(context: Context) {
+        Log.i(TAG, "FCM initialization started")
         createNotificationChannel(context)
+
+        val hasGooglePlayServices = try {
+            context.packageManager.getPackageInfo("com.google.android.gms", 0)
+            true
+        } catch (_: Exception) {
+            false
+        }
+        Log.i(TAG, "Google Play services package present: $hasGooglePlayServices")
+
         FirebaseMessaging.getInstance().token
             .addOnCompleteListener { task ->
                 if (!task.isSuccessful) {
-                    Log.w(TAG, "Could not retrieve FCM token", task.exception)
+                    Log.e(TAG, "FCM token retrieval FAILED", task.exception)
                     return@addOnCompleteListener
                 }
 
-                val token = task.result ?: return@addOnCompleteListener
+                val token = task.result
+                if (token.isNullOrBlank()) {
+                    Log.e(TAG, "FCM token retrieval returned an empty token")
+                    return@addOnCompleteListener
+                }
+
                 saveToken(context, token)
-                Log.d(TAG, "FCM registration token retrieved")
+                Log.i(TAG, "FCM token retrieved successfully; length=${token.length}")
             }
     }
 
