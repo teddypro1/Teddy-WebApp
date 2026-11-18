@@ -34,6 +34,7 @@ import com.teddy.bpositive.ui.screens.AuthScreen
 import com.teddy.bpositive.ui.screens.TrashScreen
 import com.teddy.bpositive.ui.screens.SettingsScreen
 import com.teddy.bpositive.ui.screens.HomeScreen
+import com.teddy.bpositive.ui.dialogs.ProfileEditorDialog
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -1048,72 +1049,34 @@ fun TeddyNotesApp() {
     }
 
     if (showProfileDialog) {
-        AlertDialog(
-            onDismissRequest = { if (!isSavingProfile) showProfileDialog = false },
-            title = { Text("My Profile", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp).verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.size(76.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                            .align(Alignment.CenterHorizontally),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            profileFullName.trim().firstOrNull()?.uppercase() ?: "👤",
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        if (profileAvatarUrl.isNotBlank()) {
-                            AsyncImage(
-                                model = profileAvatarUrl,
-                                contentDescription = "Profile picture",
-                                modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
+        ProfileEditorDialog(
+            fullName = profileFullName,
+            username = profileUsername,
+            bio = profileBio,
+            avatarUrl = profileAvatarUrl,
+            email = activeSession?.email.orEmpty(),
+            createdAt = currentProfile?.createdAt ?: "Loading...",
+            isSaving = isSavingProfile,
+            canSave = hasValidatedInternet(context),
+            onFullNameChange = { profileFullName = it },
+            onUsernameChange = { value -> profileUsername = value.filter { it.isLetterOrDigit() || it == '_' || it == '.' } },
+            onBioChange = { if (it.length <= 160) profileBio = it },
+            onAvatarUrlChange = { profileAvatarUrl = it },
+            onDismiss = { if (!isSavingProfile) showProfileDialog = false },
+            onSave = {
+                val session = activeSession ?: return@ProfileEditorDialog
+                isSavingProfile = true
+                SupabaseProfilesApi.saveProfile(context, session, profileFullName, profileUsername, profileBio, profileAvatarUrl) { result ->
+                    if (activeSession?.userId != session.userId) return@saveProfile
+                    isSavingProfile = false
+                    if (result.success && result.data != null) {
+                        currentProfile = result.data
+                        showProfileDialog = false
+                        Toast.makeText(context, "Profile updated successfully.", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Profile update failed: " + result.message, Toast.LENGTH_LONG).show()
                     }
-                    Text(activeSession?.email.orEmpty(), modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                    OutlinedTextField(value = profileFullName, onValueChange = { profileFullName = it },
-                        label = { Text("Full Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = profileUsername,
-                        onValueChange = { value -> profileUsername = value.filter { it.isLetterOrDigit() || it == '_' || it == '.' } },
-                        label = { Text("Username (without @)") }, singleLine = true,
-                        modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = profileBio,
-                        onValueChange = { if (it.length <= 160) profileBio = it },
-                        label = { Text("Bio") }, supportingText = { Text(profileBio.length.toString() + "/160") },
-                        minLines = 2, maxLines = 4, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = profileAvatarUrl, onValueChange = { profileAvatarUrl = it },
-                        label = { Text("Avatar Image URL (optional)") }, singleLine = true,
-                        modifier = Modifier.fillMaxWidth())
-                    Text("Account created: " + (currentProfile?.createdAt ?: "Loading..."),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                 }
-            },
-            confirmButton = {
-                TextButton(enabled = !isSavingProfile && profileFullName.isNotBlank() && hasValidatedInternet(context), onClick = {
-                    val session = activeSession ?: return@TextButton
-                    isSavingProfile = true
-                    SupabaseProfilesApi.saveProfile(context, session, profileFullName, profileUsername, profileBio, profileAvatarUrl) { result ->
-                        isSavingProfile = false
-                        if (result.success && result.data != null) {
-                            currentProfile = result.data
-                            showProfileDialog = false
-                            Toast.makeText(context, "Profile updated successfully.", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(context, "Profile update failed: " + result.message, Toast.LENGTH_LONG).show()
-                        }
-                    }
-                }) { Text(if (isSavingProfile) "Saving..." else "Save Profile") }
-            },
-            dismissButton = {
-                TextButton(enabled = !isSavingProfile, onClick = { showProfileDialog = false }) { Text("Cancel") }
             }
         )
     }
