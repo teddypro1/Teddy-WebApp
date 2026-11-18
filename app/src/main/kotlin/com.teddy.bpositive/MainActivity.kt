@@ -10,6 +10,7 @@ import android.os.Looper
 import android.widget.Toast
 import com.teddy.bpositive.data.FcmTokenManager
 import com.teddy.bpositive.data.FcmTokenRepository
+import com.teddy.bpositive.data.AdminRepository
 import com.teddy.bpositive.data.SupabaseAuthRepository
 import com.teddy.bpositive.data.SupabaseSessionManager
 import com.teddy.bpositive.data.NoteSyncStore
@@ -37,6 +38,7 @@ import com.teddy.bpositive.ui.screens.ProfilePage
 import com.teddy.bpositive.ui.screens.AuthScreen
 import com.teddy.bpositive.ui.screens.TrashScreen
 import com.teddy.bpositive.ui.screens.SettingsScreen
+import com.teddy.bpositive.ui.screens.AdminPanelScreen
 import com.teddy.bpositive.ui.screens.HomeScreen
 import com.teddy.bpositive.ui.dialogs.ProfileEditorDialog
 import com.teddy.bpositive.ui.dialogs.DeleteConfirmationDialog
@@ -126,6 +128,14 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
 
     var isCheckingSession by remember { mutableStateOf(true) }
     var activeSession by remember { mutableStateOf<SupabaseSessionManager.Session?>(null) }
+    var isAdmin by remember { mutableStateOf(false) }
+    var isCheckingAdmin by remember { mutableStateOf(false) }
+    var isSendingAdminNotification by remember { mutableStateOf(false) }
+    var isLoadingAdminHistory by remember { mutableStateOf(false) }
+    var adminTitle by rememberSaveable { mutableStateOf("") }
+    var adminMessage by rememberSaveable { mutableStateOf("") }
+    var adminStatusMessage by remember { mutableStateOf("") }
+    var adminHistory by remember { mutableStateOf<List<AdminRepository.NotificationRecord>>(emptyList()) }
     val isAuthenticated = activeSession != null
 
     LaunchedEffect(Unit) {
@@ -171,6 +181,37 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var profileBio by remember(userId) { mutableStateOf("") }
     var profileAvatarUrl by remember(userId) { mutableStateOf("") }
     var isSavingProfile by remember { mutableStateOf(false) }
+
+    LaunchedEffect(activeSession) {
+        val session = activeSession
+        if (session == null) {
+            isAdmin = false
+            isCheckingAdmin = false
+            isSendingAdminNotification = false
+            isLoadingAdminHistory = false
+            adminHistory = emptyList()
+            adminStatusMessage = ""
+            return@LaunchedEffect
+        }
+        isCheckingAdmin = true
+        AdminRepository.checkAdmin(session) { result ->
+            if (activeSession?.userId != session.userId) return@checkAdmin
+            isCheckingAdmin = false
+            isAdmin = result.success && result.data == true
+            if (isAdmin) {
+                isLoadingAdminHistory = true
+                AdminRepository.loadHistory(session) { historyResult ->
+                    if (activeSession?.userId != session.userId) return@loadHistory
+                    isLoadingAdminHistory = false
+                    if (historyResult.success) adminHistory = historyResult.data.orEmpty()
+                    else adminStatusMessage = historyResult.message
+                }
+            } else {
+                adminHistory = emptyList()
+                if (!result.success) adminStatusMessage = result.message
+            }
+        }
+    }
 
     LaunchedEffect(activeSession) {
         val session = activeSession ?: return@LaunchedEffect
@@ -495,6 +536,9 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var showTrash by rememberSaveable { mutableStateOf(false) }
     var showConflicts by rememberSaveable { mutableStateOf(false) }
     var selectedTab by rememberSaveable { mutableStateOf("Home") }
+    LaunchedEffect(isAdmin, isCheckingAdmin) {
+        if (!isAdmin && !isCheckingAdmin && selectedTab == "Admin") selectedTab = "Settings"
+    }
     var permanentDeleteTarget by remember { mutableStateOf<Long?>(null) }
 
     var sortNewest by rememberSaveable {
@@ -837,6 +881,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
             bottomBar = {
                 AppBottomNavigationBar(
                     selectedTab = selectedTab,
+                    showAdmin = isAdmin,
                     onTabSelected = { tab ->
                         selectedTab = tab
                         if (tab == "Trash") {
@@ -953,10 +998,62 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     }
                     showProfileDialog = true
                 })
+            } else if (selectedTab == "Admin" && isAdmin) {
+                AdminPanelScreen(
+                    accountEmail = activeSession?.email.orEmpty(),
+                    isLoading = isLoadingAdminHistory || isCheckingAdmin,
+                    isSending = isSendingAdminNotification,
+                    title = adminTitle,
+                    message = adminMessage,
+                    history = adminHistory,
+                    statusMessage = adminStatusMessage,
+                    onTitleChange = { adminTitle = it.take(100) },
+                    onMessageChange = { adminMessage = it.take(500) },
+                    onSend = {
+                        val session = activeSession ?: return@AdminPanelScreen
+                        val titleToSend = adminTitle.trim()
+                        val bodyToSend = adminMessage.trim()
+                        if (titleToSend.isNotBlank() && bodyToSend.isNotBlank()) {
+                            isSendingAdminNotification = true
+                            adminStatusMessage = "Sending notification..."
+                            AdminRepository.sendNotification(session, titleToSend, bodyToSend) { result ->
+                                if (activeSession?.userId != session.userId) return@sendNotification
+                                isSendingAdminNotification = false
+                                adminStatusMessage = result.message
+                                if (result.success) {
+                                    adminTitle = ""
+                                    adminMessage = ""
+                                    isLoadingAdminHistory = true
+                                    AdminRepository.loadHistory(session) { historyResult ->
+                                        if (activeSession?.userId != session.userId) return@loadHistory
+                                        isLoadingAdminHistory = false
+                                        if (historyResult.success) adminHistory = historyResult.data.orEmpty()
+                                        else adminStatusMessage = historyResult.message
+                                    }
+                                }
+                                Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    },
+                    onRefresh = {
+                        val session = activeSession ?: return@AdminPanelScreen
+                        isLoadingAdminHistory = true
+                        AdminRepository.loadHistory(session) { result ->
+                            if (activeSession?.userId != session.userId) return@loadHistory
+                            isLoadingAdminHistory = false
+                            if (result.success) {
+                                adminHistory = result.data.orEmpty()
+                                adminStatusMessage = "History refreshed."
+                            } else adminStatusMessage = result.message
+                        }
+                    }
+                )
             } else if (selectedTab == "Settings") {
                 SettingsScreen(
                     darkMode = darkMode,
                     accountEmail = activeSession?.email.orEmpty(),
+                    isAdmin = isAdmin,
+                    onOpenAdminPanel = { selectedTab = "Admin" },
                     contentPadding = padding,
                     onDarkModeChange = { enabled ->
                         darkMode = enabled
