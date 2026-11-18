@@ -143,41 +143,67 @@ object NoteSyncRepository {
         record: NoteSyncStore.SyncRecord,
         onComplete: (Boolean, String) -> Unit
     ) {
-        val hasBaseVersion = record.cloudNoteId != null && !record.cloudUpdatedAt.isNullOrBlank()
-        if (hasBaseVersion) {
-            SupabaseNotesApi.updateNoteIfUnchanged(
-                session = session,
-                noteId = record.cloudNoteId!!,
-                expectedUpdatedAt = record.cloudUpdatedAt!!,
-                title = record.title,
-                content = record.content,
-                isPinned = record.isPinned
-            ) { result ->
-                if (!result.success) {
-                    onComplete(false, "Sync stopped for local note ${record.localNoteId}: ${result.message}")
-                } else if (result.data != null) {
-                    markUpsertSynced(context, session, record, result.data, onComplete)
-                } else {
-                    preserveLocalConflictAndAdoptCloud(context, session, record, record.cloudUpdatedAt, onComplete)
-                }
+        // Read the server row before writing. A retry/reconnect may leave a queued
+        // UPSERT whose payload is already identical to Cloud. Treat that as synced
+        // without issuing PATCH/UPSERT, because database updated_at triggers fire
+        // on writes even when the note's visible fields have not changed.
+        SupabaseNotesApi.fetchNoteByClientId(session, record.clientId) { cloudResult ->
+            if (!cloudResult.success) {
+                onComplete(false, "Could not inspect cloud note \${record.localNoteId}: \${cloudResult.message}")
+                return@fetchNoteByClientId
             }
-            return
-        }
 
-        // Older local metadata may not have a recorded server version. Inspect
-        // the cloud row first rather than blindly overwriting it with an upsert.
-        SupabaseNotesApi.fetchNoteByClientId(session, record.clientId) { result ->
-            if (!result.success) {
-                onComplete(false, "Could not inspect cloud version for note ${record.localNoteId}: ${result.message}")
-            } else if (result.data == null) {
+            val cloudNote = cloudResult.data
+            if (cloudNote == null) {
                 uploadNewNote(context, session, record, onComplete)
+                return@fetchNoteByClientId
+            }
+
+            val contentAlreadyMatches =
+                cloudNote.userId == session.userId &&
+                cloudNote.deletedAt == null &&
+                cloudNote.title == record.title.trim() &&
+                cloudNote.content == record.content &&
+                cloudNote.isPinned == record.isPinned
+
+            if (contentAlreadyMatches) {
+                // No content mutation is needed. Adopt the latest server version
+                // and clear only this exact queued operation.
+                markUpsertSynced(context, session, record, cloudNote, onComplete)
+                return@fetchNoteByClientId
+            }
+
+            val hasBaseVersion = record.cloudNoteId == cloudNote.id &&
+                !record.cloudUpdatedAt.isNullOrBlank()
+
+            if (hasBaseVersion) {
+                SupabaseNotesApi.updateNoteIfUnchanged(
+                    session = session,
+                    noteId = cloudNote.id,
+                    expectedUpdatedAt = record.cloudUpdatedAt!!,
+                    title = record.title,
+                    content = record.content,
+                    isPinned = record.isPinned
+                ) { result ->
+                    if (!result.success) {
+                        onComplete(false, "Sync stopped for local note \${record.localNoteId}: \${result.message}")
+                    } else if (result.data != null) {
+                        markUpsertSynced(context, session, record, result.data, onComplete)
+                    } else {
+                        preserveLocalConflictAndAdoptCloud(
+                            context, session, record, record.cloudUpdatedAt, onComplete
+                        )
+                    }
+                }
             } else {
+                // No trusted base version exists. Preserve the local version as a
+                // conflict instead of overwriting an existing server row.
                 preserveConflictCopy(
                     context,
                     session,
                     record,
-                    baseCloudUpdatedAt = null,
-                    latestCloud = result.data,
+                    baseCloudUpdatedAt = record.cloudUpdatedAt,
+                    latestCloud = cloudNote,
                     onComplete = onComplete
                 )
             }
