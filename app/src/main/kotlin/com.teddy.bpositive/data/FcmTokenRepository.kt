@@ -104,6 +104,42 @@ object FcmTokenRepository {
         }.start()
     }
 
+    /** Sends a one-time test push through the authenticated Supabase Edge Function. */
+    fun sendTestNotification(
+        session: SupabaseSessionManager.Session,
+        onResult: ((Boolean, String) -> Unit)? = null
+    ) {
+        val payload = JSONObject()
+            .put("title", "Teddy WebApp")
+            .put("body", "Push notification test successful!")
+
+        Thread {
+            val request = Request.Builder()
+                .url("${SupabaseConfig.BASE_URL}/functions/v1/send-push-notification")
+                .addHeader("apikey", SupabaseConfig.API_KEY)
+                .addHeader("Authorization", "Bearer ${session.accessToken}")
+                .addHeader("Content-Type", "application/json")
+                .post(payload.toString().toRequestBody(jsonMediaType))
+                .build()
+
+            val result = try {
+                client.newCall(request).execute().use { response ->
+                    val responseBody = response.body?.string().orEmpty()
+                    val data = runCatching { JSONObject(responseBody) }.getOrNull()
+                    if (response.isSuccessful && data?.optBoolean("success") == true) {
+                        true to "Test notification accepted by FCM (${data.optInt("sent")}/${data.optInt("total")} devices)."
+                    } else {
+                        false to (data?.optString("error")?.takeIf { it.isNotBlank() }
+                            ?: "Push test failed. HTTP ${response.code}.")
+                    }
+                }
+            } catch (e: Exception) {
+                false to "Push test network error: ${e.message ?: "Unknown error"}"
+            }
+            mainHandler.post { onResult?.invoke(result.first, result.second) }
+        }.start()
+    }
+
     /**
      * Best-effort removal for the current installation before local sign-out.
      * The local token is retained so a later sign-in can register it again.
