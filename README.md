@@ -172,6 +172,14 @@ Teddy-WebApp/
 5. Make related source changes together in focused commits.
 6. Update this README when implemented features, architecture, or repository structure materially change.
 
-## License
+## License and Copyright
 
-No license has been selected yet. All rights are reserved by the repository owner unless a license is added.
+**Proprietary software — All Rights Reserved.**
+
+Copyright © 2026 Teddy-WebApp. All rights reserved.
+
+No open-source license is granted for this project. Except for the limited rights GitHub's Terms of Service grant to users to view and fork public repositories within GitHub, no permission is granted to reproduce, modify, distribute, sublicense, or commercially exploit this project's source code or substantial portions of it without prior written permission from the copyright owner.
+
+Making this repository public does not place the project in the public domain and does not grant a general license to reuse its source code.
+
+The Android application may be distributed separately through official releases. Any permission to install or use a released application binary does not grant permission to reuse, copy, modify, or redistribute the source code.
