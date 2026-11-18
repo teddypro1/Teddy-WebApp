@@ -8,6 +8,7 @@ import android.net.NetworkCapabilities
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
+import com.teddy.bpositive.data.FcmTokenManager
 import com.teddy.bpositive.data.SupabaseAuthRepository
 import com.teddy.bpositive.data.SupabaseSessionManager
 import com.teddy.bpositive.data.NoteSyncStore
@@ -76,6 +77,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FcmTokenManager.initialize(this)
 
         val previousOrientation = savedInstanceState?.getInt(KEY_LAST_ORIENTATION)
             ?: android.content.res.Configuration.ORIENTATION_UNDEFINED
