@@ -46,6 +46,20 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+
+private fun parseCloudTimestampMillis(value: String?): Long? {
+    if (value.isNullOrBlank()) return null
+    return try {
+        java.time.OffsetDateTime.parse(value).toInstant().toEpochMilli()
+    } catch (_: Exception) {
+        try {
+            java.time.Instant.parse(value).toEpochMilli()
+        } catch (_: Exception) {
+            null
+        }
+    }
+}
+
 data class Note(
     val id: Long,
     val title: String,
@@ -208,22 +222,18 @@ fun TeddyNotesApp() {
                             cloudUpdatedAt = cloudNote.updatedAt
                         )
 
-                        fun parseCloudTime(value: String?): Long {
-                            return try {
-                                if (value.isNullOrBlank()) System.currentTimeMillis()
-                                else java.time.Instant.parse(value).toEpochMilli()
-                            } catch (_: Exception) {
-                                System.currentTimeMillis()
-                            }
-                        }
-
+                        val previousLocalNote = notes.firstOrNull { it.id == localId }
                         val localNote = Note(
                             id = localId,
                             title = cloudNote.title,
                             content = cloudNote.content,
                             isPinned = cloudNote.isPinned,
-                            createdAt = parseCloudTime(cloudNote.createdAt),
-                            updatedAt = parseCloudTime(cloudNote.updatedAt)
+                            createdAt = parseCloudTimestampMillis(cloudNote.createdAt)
+                                ?: previousLocalNote?.createdAt
+                                ?: System.currentTimeMillis(),
+                            updatedAt = parseCloudTimestampMillis(cloudNote.updatedAt)
+                                ?: previousLocalNote?.updatedAt
+                                ?: System.currentTimeMillis()
                         )
 
                         val localIndex = notes.indexOfFirst { it.id == localId }
@@ -292,20 +302,18 @@ fun TeddyNotesApp() {
                                 cloudUpdatedAt = cloudNote.updatedAt
                             )
 
-                            fun parseRealtimeTime(value: String?): Long = try {
-                                if (value.isNullOrBlank()) System.currentTimeMillis()
-                                else java.time.Instant.parse(value).toEpochMilli()
-                            } catch (_: Exception) {
-                                System.currentTimeMillis()
-                            }
-
+                            val previousLocalNote = notes.firstOrNull { it.id == localId }
                             val refreshedNote = Note(
                                 id = localId,
                                 title = cloudNote.title,
                                 content = cloudNote.content,
                                 isPinned = cloudNote.isPinned,
-                                createdAt = parseRealtimeTime(cloudNote.createdAt),
-                                updatedAt = parseRealtimeTime(cloudNote.updatedAt)
+                                createdAt = parseCloudTimestampMillis(cloudNote.createdAt)
+                                    ?: previousLocalNote?.createdAt
+                                    ?: System.currentTimeMillis(),
+                                updatedAt = parseCloudTimestampMillis(cloudNote.updatedAt)
+                                    ?: previousLocalNote?.updatedAt
+                                    ?: System.currentTimeMillis()
                             )
                             val localIndex = notes.indexOfFirst { it.id == localId }
                             if (localIndex >= 0) notes[localIndex] = refreshedNote
@@ -374,17 +382,18 @@ fun TeddyNotesApp() {
                                 } else {
                                     val clientId = cloudNote.clientId ?: return@forEach
                                     val localId = record?.localNoteId ?: System.currentTimeMillis()
-                                    fun parseTime(value: String?): Long = try {
-                                        if (value.isNullOrBlank()) System.currentTimeMillis()
-                                        else java.time.Instant.parse(value).toEpochMilli()
-                                    } catch (_: Exception) { System.currentTimeMillis() }
+                                    val previousLocalNote = notes.firstOrNull { it.id == localId }
                                     val refreshed = Note(
                                         id = localId,
                                         title = cloudNote.title,
                                         content = cloudNote.content,
                                         isPinned = cloudNote.isPinned,
-                                        createdAt = parseTime(cloudNote.createdAt),
-                                        updatedAt = parseTime(cloudNote.updatedAt)
+                                        createdAt = parseCloudTimestampMillis(cloudNote.createdAt)
+                                            ?: previousLocalNote?.createdAt
+                                            ?: System.currentTimeMillis(),
+                                        updatedAt = parseCloudTimestampMillis(cloudNote.updatedAt)
+                                            ?: previousLocalNote?.updatedAt
+                                            ?: System.currentTimeMillis()
                                     )
                                     val index = notes.indexOfFirst { it.id == localId }
                                     if (index >= 0) notes[index] = refreshed else notes.add(refreshed)
