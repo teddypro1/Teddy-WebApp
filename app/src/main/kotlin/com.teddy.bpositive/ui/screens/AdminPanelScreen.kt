@@ -26,6 +26,8 @@ fun AdminPanelScreen(
     onSend: () -> Unit,
     onRefresh: () -> Unit
 ) {
+    var showBroadcastConfirmation by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
     Column(
         modifier = Modifier.fillMaxSize()
             .verticalScroll(rememberScrollState())
@@ -64,10 +66,12 @@ fun AdminPanelScreen(
                     maxLines = 5,
                     supportingText = { Text("${message.length}/500 characters") }
                 )
-                Text("Audience: only this Admin account's registered Android devices.",
+                Text("Audience: all users with a registered Android device.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                Text("This sends a real notification to every registered Android device. Review the message before sending.",
+                    color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                 Button(
-                    onClick = onSend,
+                    onClick = { showBroadcastConfirmation = true },
                     enabled = !isLoading && !isSending && title.isNotBlank() && message.isNotBlank(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -105,6 +109,8 @@ fun AdminPanelScreen(
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(item.title, fontWeight = FontWeight.SemiBold)
                         Text(item.body, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Audience: ${if (item.audience == "all_users") "All users" else "Admin devices"}",
+                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("Delivered: ${item.sentCount}/${item.totalDevices}  •  Failed: ${item.failedCount}",
                             fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                         Text(item.createdAt.replace("T", " ").removeSuffix("Z"),
@@ -113,7 +119,24 @@ fun AdminPanelScreen(
                 }
             }
         }
-        Text("Broadcast to all users is not enabled in this build.",
+        Text("Build 3: Custom broadcast to all registered Android devices.",
             color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+
+        if (showBroadcastConfirmation) {
+            AlertDialog(
+                onDismissRequest = { showBroadcastConfirmation = false },
+                title = { Text("Send notification to all users?") },
+                text = { Text("Your notification will be sent to every Android device currently registered in Teddy-WebApp. This action cannot be undone.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showBroadcastConfirmation = false
+                        onSend()
+                    }) { Text("Send to all") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showBroadcastConfirmation = false }) { Text("Cancel") }
+                }
+            )
+        }
     }
 }
