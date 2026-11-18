@@ -34,11 +34,16 @@ fun ProfilePage(
 
         Column(
             modifier = Modifier
-                .widthIn(max = 640.dp)
-                .fillMaxWidth()
-                .align(Alignment.TopCenter)
+                .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(
+        ) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 640.dp)
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter)
+                        .padding(
                     start = horizontalPadding,
                     top = topInset + 22.dp,
                     end = horizontalPadding,
@@ -135,6 +140,8 @@ fun ProfilePage(
                         "Account Created",
                         profile?.createdAt.orEmpty().ifBlank { "Unavailable" }
                     )
+                }
+            }
                 }
             }
         }
