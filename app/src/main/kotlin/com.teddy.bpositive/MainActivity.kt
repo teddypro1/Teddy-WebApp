@@ -37,6 +37,7 @@ import com.teddy.bpositive.ui.dialogs.ProfileEditorDialog
 import com.teddy.bpositive.ui.dialogs.DeleteConfirmationDialog
 import com.teddy.bpositive.ui.dialogs.PermanentDeleteConfirmationDialog
 import com.teddy.bpositive.ui.components.AppBottomNavigationBar
+import com.teddy.bpositive.ui.components.WorkspaceTopBar
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -838,97 +839,27 @@ fun TeddyNotesApp() {
                 )
             },
             topBar = {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .background(
-                                        Color(0xFF5377E8),
-                                        RoundedCornerShape(13.dp)
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "T",
-                                    color = Color.White,
-                                    fontSize = 25.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Spacer(Modifier.width(12.dp))
-
-                            Column {
-                                Text(
-                                    "Teddy WebApp",
-                                    fontSize = 19.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    "Personal Workspace",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                WorkspaceTopBar(
+                    fullName = currentProfile?.fullName.orEmpty(),
+                    avatarUrl = currentProfile?.avatarUrl.orEmpty(),
+                    darkMode = darkMode,
+                    onProfileClick = {
+                        currentProfile?.let { profile ->
+                            profileFullName = profile.fullName
+                            profileUsername = profile.username.orEmpty()
+                            profileBio = profile.bio
+                            profileAvatarUrl = profile.avatarUrl.orEmpty()
                         }
+                        showProfileDialog = true
                     },
-
-                    actions = {
-
-                        IconButton(
-                            onClick = {
-                                currentProfile?.let { profile ->
-                                    profileFullName = profile.fullName
-                                    profileUsername = profile.username.orEmpty()
-                                    profileBio = profile.bio
-                                    profileAvatarUrl = profile.avatarUrl.orEmpty()
-                                }
-                                showProfileDialog = true
-                            }
-                        ) {
-                            Box(
-                                modifier = Modifier.size(34.dp)
-                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    currentProfile?.fullName?.trim()?.firstOrNull()?.uppercase() ?: "👤",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                currentProfile?.avatarUrl?.takeIf { it.isNotBlank() }?.let { avatar ->
-                                    AsyncImage(
-                                        model = avatar,
-                                        contentDescription = "Profile picture",
-                                        modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
-                            }
-                        }
-
-                        IconButton(
-                            onClick = {
-                                darkMode = !darkMode
-
-                                context.getSharedPreferences(
-                                    "teddy_settings",
-                                    Context.MODE_PRIVATE
-                                ).edit()
-                                    .putBoolean("dark_mode", darkMode)
-                                    .apply()
-                            }
-                        ) {
-                            Text(
-                                if (darkMode) "☀️" else "🌙",
-                                fontSize = 21.sp
-                            )
-                        }
+                    onToggleDarkMode = {
+                        darkMode = !darkMode
+                        context.getSharedPreferences(
+                            "teddy_settings",
+                            Context.MODE_PRIVATE
+                        ).edit()
+                            .putBoolean("dark_mode", darkMode)
+                            .apply()
                     }
                 )
             }
