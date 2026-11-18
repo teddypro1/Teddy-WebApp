@@ -98,14 +98,15 @@ fun TeddyNotesApp() {
         return
     }
 
-    val notes = remember {
+    val userId = activeSession?.userId.orEmpty()
+    val notes = remember(userId) {
         mutableStateListOf<Note>().apply {
-            addAll(loadNotes(context))
+            addAll(loadNotes(context, userId))
         }
     }
-    val deletedNotes = remember { mutableStateListOf<SupabaseNotesApi.CloudNote>() }
-    val conflictCopies = remember { mutableStateListOf<SupabaseNotesApi.ConflictCopy>() }
-    var currentProfile by remember { mutableStateOf<SupabaseProfilesApi.Profile?>(null) }
+    val deletedNotes = remember(userId) { mutableStateListOf<SupabaseNotesApi.CloudNote>() }
+    val conflictCopies = remember(userId) { mutableStateListOf<SupabaseNotesApi.ConflictCopy>() }
+    var currentProfile by remember(userId) { mutableStateOf<SupabaseProfilesApi.Profile?>(null) }
     var showProfileDialog by rememberSaveable { mutableStateOf(false) }
     var profileFullName by rememberSaveable { mutableStateOf("") }
     var profileUsername by rememberSaveable { mutableStateOf("") }
@@ -133,27 +134,8 @@ fun TeddyNotesApp() {
         val userId = session.userId.orEmpty()
         if (userId.isBlank()) return@LaunchedEffect
 
-        val preferences = context.getSharedPreferences(
-            "teddy_note_sync_metadata",
-            Context.MODE_PRIVATE
-        )
-        val migrationKey = "legacy_notes_migrated_${session.userId}"
-
-        // Queue local notes that do not yet have sync metadata.
-        // This also recovers notes created before CRUD sync was wired.
-        loadNotes(context).forEach { note ->
-            if (NoteSyncStore.getRecord(context, userId, note.id) == null) {
-                NoteSyncStore.enqueueUpsert(
-                    context = context,
-                    userId = userId,
-                    localNoteId = note.id,
-                    title = note.title,
-                    content = note.content,
-                    isPinned = note.isPinned
-                )
-            }
-        }
-
+        // Only this account's namespaced local notes and queue may be synchronized.
+        // Unscoped legacy notes are deliberately never imported into a newly signed-in account.
         NoteSyncRepository.syncPendingChanges(context, session) { result ->
             if (!result.success) {
                 Toast.makeText(
@@ -163,8 +145,6 @@ fun TeddyNotesApp() {
                 ).show()
                 return@syncPendingChanges
             }
-
-            preferences.edit().putBoolean(migrationKey, true).apply()
 
             SupabaseNotesApi.fetchNotes(session) { fetchResult ->
                 if (!fetchResult.success || fetchResult.data == null) {
@@ -245,7 +225,7 @@ fun TeddyNotesApp() {
                     }
                 }
 
-                saveNotes(context, notes)
+                saveNotes(context, userId, notes)
                 if (result.processed > 0 || fetchResult.data.isNotEmpty()) {
                     Toast.makeText(
                         context,
@@ -325,7 +305,7 @@ fun TeddyNotesApp() {
                         }
                     }
 
-                    saveNotes(context, notes)
+                    saveNotes(context, userId, notes)
                     SupabaseNotesApi.fetchConflictCopies(session) { conflictResult ->
                         if (conflictResult.success && conflictResult.data != null) {
                             conflictCopies.clear()
@@ -405,7 +385,7 @@ fun TeddyNotesApp() {
         }
 
     fun saveChanges() {
-        saveNotes(context, notes)
+        saveNotes(context, userId, notes)
     }
 
     fun syncNoteUpsert(note: Note) {
@@ -1204,6 +1184,27 @@ fun TeddyNotesApp() {
                             Text("Account", fontWeight = FontWeight.SemiBold)
                             Text(activeSession?.email.orEmpty(), color = MaterialTheme.colorScheme.onSurfaceVariant)
                             OutlinedButton(onClick = {
+                                // Immediately detach all account-owned UI state before showing AuthScreen.
+                                deletedNotes.clear()
+                                conflictCopies.clear()
+                                notes.clear()
+                                currentProfile = null
+                                profileFullName = ""
+                                profileUsername = ""
+                                profileBio = ""
+                                profileAvatarUrl = ""
+                                showProfileDialog = false
+                                showEditor = false
+                                editingId = null
+                                title = ""
+                                content = ""
+                                searchQuery = ""
+                                showPinnedOnly = false
+                                showTrash = false
+                                showConflicts = false
+                                selectedTab = "Home"
+                                context.getSharedPreferences("teddy_notes", Context.MODE_PRIVATE)
+                                    .edit().remove("notes_data").commit()
                                 SupabaseSessionManager.clear(context)
                                 activeSession = null
                             }, modifier = Modifier.fillMaxWidth()) { Text("Sign Out") }
@@ -2108,8 +2109,10 @@ fun DeleteConfirmationDialog(
 }
 fun saveNotes(
     context: Context,
+    userId: String,
     notes: List<Note>
 ) {
+    if (userId.isBlank()) return
 
     try {
 
@@ -2134,8 +2137,8 @@ fun saveNotes(
             "teddy_notes",
             Context.MODE_PRIVATE
         ).edit()
-            .putString("notes_data", jsonArray.toString())
-            .apply()
+            .putString("notes_data_$userId", jsonArray.toString())
+            .commit()
 
     } catch (e: Exception) {
 
@@ -2148,8 +2151,10 @@ fun saveNotes(
 }
 
 fun loadNotes(
-    context: Context
+    context: Context,
+    userId: String
 ): List<Note> {
+    if (userId.isBlank()) return emptyList()
 
     return try {
 
@@ -2159,7 +2164,7 @@ fun loadNotes(
         )
 
         val savedData = preferences.getString(
-            "notes_data",
+            "notes_data_$userId",
             "[]"
         ) ?: "[]"
 
