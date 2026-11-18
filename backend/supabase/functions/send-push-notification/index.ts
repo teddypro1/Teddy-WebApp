@@ -48,8 +48,27 @@ Deno.serve(async (req: Request) => {
     const isAdmin = Array.isArray(adminRows) && adminRows.some((row: { user_id?: string }) => row.user_id === user.id);
     const action = typeof input.action === "string" ? input.action : "send";
     if (action === "check_admin") return json({ success: true, is_admin: isAdmin });
-    if (action !== "send") return json({ error: "Unsupported action." }, 400);
     if (!isAdmin) return json({ error: "Administrator access required." }, 403);
+
+    if (action === "history") {
+      const historyResponse = await fetch(
+        `${supabaseUrl}/rest/v1/notification_history?select=id,title,body,audience,total_devices,sent_count,failed_count,created_at&admin_user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=50`,
+        {
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+          },
+        },
+      );
+      if (!historyResponse.ok) {
+        console.error("Notification history lookup failed:", historyResponse.status);
+        return json({ error: "Could not load notification history." }, 502);
+      }
+      const history = await historyResponse.json();
+      return json({ success: true, history: Array.isArray(history) ? history : [] });
+    }
+
+    if (action !== "send") return json({ error: "Unsupported action." }, 400);
 
     const title = typeof input.title === "string" ? input.title.trim().slice(0, 100) : "";
     const body = typeof input.body === "string" ? input.body.trim().slice(0, 500) : "";
