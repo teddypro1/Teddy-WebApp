@@ -963,6 +963,15 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         context.getSharedPreferences("teddy_settings", Context.MODE_PRIVATE).edit()
                             .putBoolean("dark_mode", enabled).apply()
                     },
+                    onSendTestNotification = {
+                        val session = activeSession
+                        if (session != null) {
+                            FcmTokenRepository.sendTestNotification(session) { success, message ->
+                                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                                android.util.Log.i("TeddyFCM", "Push test result: success=$success; $message")
+                            }
+                        }
+                    },
                     onSignOut = {
                         deletedNotes.clear()
                         conflictCopies.clear()
