@@ -324,9 +324,9 @@ fun TeddyNotesApp() {
                     // Profile changes are delivered through the same user-scoped
                     // Realtime channel and reloaded with the current authenticated session.
                     SupabaseProfilesApi.fetchOrCreateProfile(context, session) { profileResult ->
+                        val profile = profileResult.data ?: return@fetchOrCreateProfile
                         if (activeSession?.userId == session.userId &&
-                            profileResult.success && profileResult.data?.id == session.userId) {
-                            val profile = profileResult.data
+                            profileResult.success && profile.id == session.userId) {
                             currentProfile = profile
                             if (!showProfileDialog) {
                                 profileFullName = profile.fullName
