@@ -15,6 +15,11 @@ import com.teddy.bpositive.data.NoteSyncRepository
 import com.teddy.bpositive.data.SupabaseNotesApi
 import com.teddy.bpositive.data.SupabaseRealtimeSubscription
 import com.teddy.bpositive.data.SupabaseProfilesApi
+import com.teddy.bpositive.model.Note
+import com.teddy.bpositive.data.LocalNotesStorage.loadNotes
+import com.teddy.bpositive.data.LocalNotesStorage.saveNotes
+import com.teddy.bpositive.utils.parseCloudTimestampMillis
+import com.teddy.bpositive.utils.hasValidatedInternet
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -40,34 +45,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import org.json.JSONArray
-import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-
-private fun parseCloudTimestampMillis(value: String?): Long? {
-    if (value.isNullOrBlank()) return null
-    return try {
-        java.time.OffsetDateTime.parse(value).toInstant().toEpochMilli()
-    } catch (_: Exception) {
-        try {
-            java.time.Instant.parse(value).toEpochMilli()
-        } catch (_: Exception) {
-            null
-        }
-    }
-}
-
-data class Note(
-    val id: Long,
-    val title: String,
-    val content: String,
-    val isPinned: Boolean,
-    val createdAt: Long,
-    val updatedAt: Long
-)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -2209,110 +2190,4 @@ fun DeleteConfirmationDialog(
             }
         }
     )
-}
-fun saveNotes(
-    context: Context,
-    userId: String,
-    notes: List<Note>
-) {
-    if (userId.isBlank()) return
-
-    try {
-
-        val jsonArray = JSONArray()
-
-        notes.forEach { note ->
-
-            val jsonObject = JSONObject().apply {
-
-                put("id", note.id)
-                put("title", note.title)
-                put("content", note.content)
-                put("isPinned", note.isPinned)
-                put("createdAt", note.createdAt)
-                put("updatedAt", note.updatedAt)
-            }
-
-            jsonArray.put(jsonObject)
-        }
-
-        context.getSharedPreferences(
-            "teddy_notes",
-            Context.MODE_PRIVATE
-        ).edit()
-            .putString("notes_data_$userId", jsonArray.toString())
-            .commit()
-
-    } catch (e: Exception) {
-
-        Toast.makeText(
-            context,
-            "Unable to save notes.",
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-}
-
-fun loadNotes(
-    context: Context,
-    userId: String
-): List<Note> {
-    if (userId.isBlank()) return emptyList()
-
-    return try {
-
-        val preferences = context.getSharedPreferences(
-            "teddy_notes",
-            Context.MODE_PRIVATE
-        )
-
-        val savedData = preferences.getString(
-            "notes_data_$userId",
-            "[]"
-        ) ?: "[]"
-
-        val jsonArray = JSONArray(savedData)
-
-        val loadedNotes = mutableListOf<Note>()
-
-        for (i in 0 until jsonArray.length()) {
-
-            val jsonObject = jsonArray.getJSONObject(i)
-
-            val note = Note(
-
-                id = jsonObject.optLong("id"),
-
-                title = jsonObject.optString("title"),
-
-                content = jsonObject.optString("content"),
-
-                isPinned = jsonObject.optBoolean(
-                    "isPinned",
-                    false
-                ),
-
-                createdAt = jsonObject.optLong("createdAt"),
-
-                updatedAt = jsonObject.optLong("updatedAt")
-            )
-
-            loadedNotes.add(note)
-        }
-
-        loadedNotes
-
-    } catch (e: Exception) {
-
-        emptyList()
-    }
-}
-
-
-fun hasValidatedInternet(context: Context): Boolean {
-    val connectivity = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
-    val network = connectivity.activeNetwork ?: return false
-    val capabilities = connectivity.getNetworkCapabilities(network) ?: return false
-    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-        capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
 }
