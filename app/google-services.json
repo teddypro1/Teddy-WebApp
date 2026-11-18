@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "998497655534",
+    "project_id": "teddy-webapp-70df3",
+    "storage_bucket": "teddy-webapp-70df3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:998497655534:android:0b53041a3f4edd416271ff",
+        "android_client_info": {
+          "package_name": "com.teddy.bpositive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBq7_b4LAo2YQaqkmWLStLo0QZnb0zVouM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
