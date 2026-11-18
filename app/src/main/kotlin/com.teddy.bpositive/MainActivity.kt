@@ -129,6 +129,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var isCheckingSession by remember { mutableStateOf(true) }
     var activeSession by remember { mutableStateOf<SupabaseSessionManager.Session?>(null) }
     var isAdmin by remember { mutableStateOf(false) }
+    var adminVerifiedUserId by remember { mutableStateOf<String?>(null) }
     var isCheckingAdmin by remember { mutableStateOf(false) }
     var isSendingAdminNotification by remember { mutableStateOf(false) }
     var isLoadingAdminHistory by remember { mutableStateOf(false) }
@@ -160,6 +161,13 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     if (!isAuthenticated) {
         AuthScreen(
             onAuthenticated = { session ->
+                isAdmin = false
+                adminVerifiedUserId = null
+                isCheckingAdmin = true
+                isSendingAdminNotification = false
+                isLoadingAdminHistory = false
+                adminHistory = emptyList()
+                adminStatusMessage = ""
                 activeSession = session
             }
         )
@@ -167,6 +175,8 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     }
 
     val userId = activeSession?.userId.orEmpty()
+    val hasVerifiedAdminAccess =
+        isAdmin && !isCheckingAdmin && adminVerifiedUserId == userId
     val notes = remember(userId) {
         mutableStateListOf<Note>().apply {
             addAll(loadNotes(context, userId))
@@ -184,21 +194,24 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
 
     LaunchedEffect(activeSession) {
         val session = activeSession
+        isAdmin = false
+        adminVerifiedUserId = null
+        isSendingAdminNotification = false
+        isLoadingAdminHistory = false
+        adminHistory = emptyList()
+        adminStatusMessage = ""
         if (session == null) {
-            isAdmin = false
             isCheckingAdmin = false
-            isSendingAdminNotification = false
-            isLoadingAdminHistory = false
-            adminHistory = emptyList()
-            adminStatusMessage = ""
             return@LaunchedEffect
         }
         isCheckingAdmin = true
         AdminRepository.checkAdmin(session) { result ->
             if (activeSession?.userId != session.userId) return@checkAdmin
+            val verifiedAdmin = result.success && result.data == true
             isCheckingAdmin = false
-            isAdmin = result.success && result.data == true
-            if (isAdmin) {
+            isAdmin = verifiedAdmin
+            adminVerifiedUserId = if (verifiedAdmin) session.userId else null
+            if (verifiedAdmin) {
                 isLoadingAdminHistory = true
                 AdminRepository.loadHistory(session) { historyResult ->
                     if (activeSession?.userId != session.userId) return@loadHistory
@@ -536,8 +549,8 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var showTrash by rememberSaveable { mutableStateOf(false) }
     var showConflicts by rememberSaveable { mutableStateOf(false) }
     var selectedTab by rememberSaveable { mutableStateOf("Home") }
-    LaunchedEffect(isAdmin, isCheckingAdmin) {
-        if (!isAdmin && !isCheckingAdmin && selectedTab == "Admin") selectedTab = "Settings"
+    LaunchedEffect(hasVerifiedAdminAccess) {
+        if (!hasVerifiedAdminAccess && selectedTab == "Admin") selectedTab = "Settings"
     }
     var permanentDeleteTarget by remember { mutableStateOf<Long?>(null) }
 
@@ -881,7 +894,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
             bottomBar = {
                 AppBottomNavigationBar(
                     selectedTab = selectedTab,
-                    showAdmin = isAdmin,
+                    showAdmin = hasVerifiedAdminAccess,
                     onTabSelected = { tab ->
                         selectedTab = tab
                         if (tab == "Trash") {
@@ -998,7 +1011,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     }
                     showProfileDialog = true
                 })
-            } else if (selectedTab == "Admin" && isAdmin) {
+            } else if (selectedTab == "Admin" && hasVerifiedAdminAccess) {
                 AdminPanelScreen(
                     accountEmail = activeSession?.email.orEmpty(),
                     isLoading = isLoadingAdminHistory || isCheckingAdmin,
@@ -1052,7 +1065,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                 SettingsScreen(
                     darkMode = darkMode,
                     accountEmail = activeSession?.email.orEmpty(),
-                    isAdmin = isAdmin,
+                    isAdmin = hasVerifiedAdminAccess,
                     onOpenAdminPanel = { selectedTab = "Admin" },
                     contentPadding = padding,
                     onDarkModeChange = { enabled ->
@@ -1088,6 +1101,13 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         showTrash = false
                         showConflicts = false
                         selectedTab = "Home"
+                        isAdmin = false
+                        adminVerifiedUserId = null
+                        isCheckingAdmin = false
+                        isSendingAdminNotification = false
+                        isLoadingAdminHistory = false
+                        adminHistory = emptyList()
+                        adminStatusMessage = ""
                         activeSession?.let { session ->
                             FcmTokenRepository.unregisterCurrentDevice(context, session)
                         }
