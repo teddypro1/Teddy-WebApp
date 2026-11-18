@@ -887,18 +887,16 @@ fun TeddyNotesApp() {
                     onDeletePermanently = { permanentDeleteTarget = it.id }
                 )
             } else if (selectedTab == "Profile") {
-                Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                    ProfilePage(profile = currentProfile, email = activeSession?.email.orEmpty(),
-                        canEdit = hasValidatedInternet(context), onEdit = {
-                        currentProfile?.let { profile ->
-                            profileFullName = profile.fullName
-                            profileUsername = profile.username.orEmpty()
-                            profileBio = profile.bio
-                            profileAvatarUrl = profile.avatarUrl.orEmpty()
-                        }
-                        showProfileDialog = true
-                    })
-                }
+                ProfilePage(profile = currentProfile, email = activeSession?.email.orEmpty(),
+                    canEdit = hasValidatedInternet(context), onEdit = {
+                    currentProfile?.let { profile ->
+                        profileFullName = profile.fullName
+                        profileUsername = profile.username.orEmpty()
+                        profileBio = profile.bio
+                        profileAvatarUrl = profile.avatarUrl.orEmpty()
+                    }
+                    showProfileDialog = true
+                })
             } else if (selectedTab == "Settings") {
                 SettingsScreen(
                     darkMode = darkMode,
