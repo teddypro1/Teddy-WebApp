@@ -1281,8 +1281,8 @@ fun TeddyNotesApp() {
                                 showTrash = false
                                 showConflicts = false
                                 selectedTab = "Home"
-                                context.getSharedPreferences("teddy_notes", Context.MODE_PRIVATE)
-                                    .edit().remove("notes_data").commit()
+                                // Keep the old unscoped backup inert for possible recovery;
+                                // it is never loaded or uploaded under any account.
                                 SupabaseSessionManager.clear(context)
                                 activeSession = null
                             }, modifier = Modifier.fillMaxWidth()) { Text("Sign Out") }
