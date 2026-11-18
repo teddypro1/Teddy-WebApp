@@ -124,23 +124,39 @@ object SupabaseSessionManager {
         if (!shouldStartRefresh) return
 
         SupabaseAuth.refreshSession(rejectedSession.refreshToken) { authResult ->
-            val access = authResult.accessToken
-            val refresh = authResult.refreshToken
-            val result = if (authResult.success && !access.isNullOrBlank() && !refresh.isNullOrBlank()) {
-                val refreshed = Session(
-                    accessToken = access,
-                    refreshToken = refresh,
-                    userId = authResult.userId ?: rejectedSession.userId,
-                    email = authResult.email ?: rejectedSession.email
-                )
-                try {
-                    save(context, refreshed)
-                    RefreshResult(true, refreshed, "Session refreshed successfully.")
-                } catch (e: Exception) {
-                    RefreshResult(false, message = "Could not save refreshed session: ${e.message ?: "Unknown error"}")
+            // A refresh may finish after the user signs out or switches accounts.
+            // Never allow that stale response to recreate/overwrite another account's session.
+            val currentSession = load(context)
+            val result = when {
+                currentSession == null || currentSession.userId != rejectedSession.userId -> {
+                    RefreshResult(false, message = "Session changed or signed out; stale refresh discarded.")
                 }
-            } else {
-                RefreshResult(false, message = authResult.message.ifBlank { "Session refresh failed." })
+                currentSession.accessToken != rejectedSession.accessToken -> {
+                    RefreshResult(true, currentSession, "A newer session is already active.")
+                }
+                authResult.success && !authResult.accessToken.isNullOrBlank() &&
+                    !authResult.refreshToken.isNullOrBlank() -> {
+                    val refreshed = Session(
+                        accessToken = authResult.accessToken!!,
+                        refreshToken = authResult.refreshToken!!,
+                        userId = authResult.userId ?: rejectedSession.userId,
+                        email = authResult.email ?: rejectedSession.email
+                    )
+                    try {
+                        // Recheck immediately before persisting to close the sign-out race.
+                        val latest = load(context)
+                        if (latest == null || latest.userId != rejectedSession.userId ||
+                            latest.accessToken != rejectedSession.accessToken) {
+                            RefreshResult(false, message = "Session changed while refreshing; stale refresh discarded.")
+                        } else {
+                            save(context, refreshed)
+                            RefreshResult(true, refreshed, "Session refreshed successfully.")
+                        }
+                    } catch (e: Exception) {
+                        RefreshResult(false, message = "Could not save refreshed session: ${e.message ?: "Unknown error"}")
+                    }
+                }
+                else -> RefreshResult(false, message = authResult.message.ifBlank { "Session refresh failed." })
             }
 
             val callbacks = synchronized(this) {
