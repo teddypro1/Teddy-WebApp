@@ -887,8 +887,12 @@ fun TeddyNotesApp() {
                     onDeletePermanently = { permanentDeleteTarget = it.id }
                 )
             } else if (selectedTab == "Profile") {
-                ProfilePage(profile = currentProfile, email = activeSession?.email.orEmpty(),
-                    canEdit = hasValidatedInternet(context), onEdit = {
+                ProfilePage(
+                    profile = currentProfile,
+                    email = activeSession?.email.orEmpty(),
+                    contentPadding = padding,
+                    canEdit = hasValidatedInternet(context),
+                    onEdit = {
                     currentProfile?.let { profile ->
                         profileFullName = profile.fullName
                         profileUsername = profile.username.orEmpty()
