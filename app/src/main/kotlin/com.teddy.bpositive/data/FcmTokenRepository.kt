@@ -33,21 +33,24 @@ object FcmTokenRepository {
             return
         }
 
+        Log.i(TAG, "Starting FCM token retrieval for signed-in user")
         FirebaseMessaging.getInstance().token
             .addOnCompleteListener { task ->
                 if (!task.isSuccessful) {
                     val message = task.exception?.message ?: "Could not retrieve FCM token."
-                    Log.w(TAG, message, task.exception)
+                    Log.e(TAG, "FCM token retrieval FAILED during Supabase registration", task.exception)
                     onResult?.invoke(false, message)
                     return@addOnCompleteListener
                 }
 
                 val token = task.result
                 if (token.isNullOrBlank()) {
+                    Log.e(TAG, "FCM returned an empty token during Supabase registration")
                     onResult?.invoke(false, "FCM registration token is empty.")
                     return@addOnCompleteListener
                 }
 
+                Log.i(TAG, "FCM token obtained for Supabase registration; length=${token.length}")
                 FcmTokenManager.saveToken(context.applicationContext, token)
                 registerToken(session, token, onResult)
             }
@@ -69,6 +72,7 @@ object FcmTokenRepository {
             .put("fcm_token", token)
             .put("platform", "android")
 
+        Log.i(TAG, "Sending FCM token registration request to Supabase")
         Thread {
             val request = Request.Builder()
                 .url("${SupabaseConfig.BASE_URL}$TABLE_PATH?on_conflict=fcm_token")
@@ -82,12 +86,16 @@ object FcmTokenRepository {
             val result = try {
                 client.newCall(request).execute().use { response ->
                     if (response.isSuccessful) {
+                        Log.i(TAG, "Supabase accepted FCM token registration; HTTP ${response.code}")
                         true to "FCM token registered."
                     } else {
-                        false to "FCM token registration failed. HTTP ${response.code}: ${response.body?.string().orEmpty()}"
+                        val errorBody = response.body?.string().orEmpty()
+                        Log.e(TAG, "Supabase rejected FCM token registration; HTTP ${response.code}: $errorBody")
+                        false to "FCM token registration failed. HTTP ${response.code}: $errorBody"
                     }
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Supabase FCM registration network error", e)
                 false to "FCM token registration network error: ${e.message ?: "Unknown error"}"
             }
 
