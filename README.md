@@ -1,101 +1,176 @@
 # Teddy WebApp
 
-A lightweight full-stack personal workspace application.
+A personal workspace application currently implemented as an Android app, with notes, profile management, cloud synchronization, and offline support.
 
-> **Current status:** Android UI prototype (v1.0). The current Android app stores notes locally on the device. Cloud synchronization, authentication, the backend API, and the website are planned—not implemented yet.
+> **Current status:** Android application with Supabase authentication and cloud-backed notes is implemented. The separate website and Cloudflare Workers API are still planned and have not been implemented.
 
 ## Project overview
 
-Teddy WebApp is being developed as a personal workspace that will eventually be accessible from both an Android application and a website, using a shared backend and database.
+Teddy WebApp is intended to provide a personal workspace across Android and the web. The Android client is currently the active application. It connects directly to Supabase for authentication, database operations, profile data, and realtime updates.
 
-## Current Android application
+The website and a shared Cloudflare Workers API remain future work; they are not part of the current running architecture.
 
-The Android project is built with Kotlin and Jetpack Compose.
+## Android application
 
-### Current features
+### Technology
 
+- **Language:** Kotlin
+- **UI:** Jetpack Compose
+- **Design system:** Material 3
+- **Backend services:** Supabase Auth and Supabase PostgreSQL
+- **Networking:** OkHttp
+- **Profile images:** Coil Compose
+- **Local persistence:** SharedPreferences
+- **Session protection:** Android Keystore-backed AES-GCM encryption
+
+### Implemented features
+
+#### Notes and workspace
 - Create and edit notes
 - Pin and unpin notes
-- Search notes by title or content
+- Search notes by title and content
 - Filter pinned notes
-- Sort notes by most recently updated or oldest updated
-- View total and pinned note counts
-- Switch between light and dark themes
-- Delete notes with confirmation
-- Persist notes and the theme preference locally on the device
+- Sort notes by latest or oldest update
+- View note statistics
+- Delete notes to Trash
+- Restore notes from Trash
+- Permanently delete notes with confirmation
+- Light and dark themes
+- Home, Trash, Profile, and Settings navigation
 
-### Current implementation
+#### Accounts and profiles
+- Email/password sign-up and sign-in through Supabase Auth
+- Restore an existing authenticated session
+- Refresh expired access tokens and retry eligible unauthorized requests
+- Sign out and clear account-specific visible state
+- View and edit profile information
+- Profile name, username, bio, and avatar URL
 
-- **Application ID / package:** `com.teddy.bpositive`
-- **Main screen implementation:** `app/src/main/kotlin/com/teddy/bpositive/MainActivity.kt`
-- **UI toolkit:** Jetpack Compose with Material 3
-- **Local note storage:** SharedPreferences with JSON serialization
+#### Cloud synchronization and offline support
+- Per-account local note storage
+- Queue local note changes while offline
+- Synchronize pending changes when validated internet connectivity returns
+- Realtime note updates through Supabase Realtime
+- Profile refresh when relevant realtime updates arrive
+- Conflict detection for concurrent edits, with separate conflict copies
+- Restore a conflict copy as a new note
+- Preserve local account data between sign-outs while keeping accounts isolated
 
-## Planned architecture
+### Important implementation notes
 
-The intended architecture is:
+- Local note data is scoped by authenticated user ID. One account's local notes must not be displayed or uploaded as another account's data.
+- Supabase Row Level Security (RLS) is used to restrict user-owned records.
+- The Android application must use only the Supabase publishable/anon client key. Never embed a Supabase service-role key in the app.
+- Session credentials are protected using Android Keystore-backed encryption.
+- The app currently communicates with Supabase directly. A Cloudflare Workers API is not currently in the request path.
 
-| Layer | Planned technology | Responsibility |
-|---|---|---|
-| Android app | Kotlin, Jetpack Compose | Native mobile experience |
-| Website | HTML, CSS, JavaScript | Browser-based experience |
-| Backend API | Cloudflare Workers | Shared API and server-side logic |
-| Database | Supabase PostgreSQL | Persistent application data |
-| Authentication | Supabase Auth | User accounts and sessions |
-| Web hosting | Cloudflare Pages | Website deployment |
-| Source control | GitHub | Version history and collaboration |
+## Android source structure
 
-The Android app and website are intended to use the same backend and user data. The final design of the API and authentication flow will be documented before implementation.
+Main source root: `app/src/main/kotlin/com.teddy.bpositive/`
 
-## Development roadmap
+```text
+com.teddy.bpositive/
+├── MainActivity.kt
+├── data/
+│   ├── LocalNotesStorage.kt
+│   ├── NoteSyncRepository.kt
+│   ├── NoteSyncStore.kt
+│   ├── SupabaseAuth.kt
+│   ├── SupabaseAuthRepository.kt
+│   ├── SupabaseClient.kt
+│   ├── SupabaseConfig.kt
+│   ├── SupabaseNotesApi.kt
+│   ├── SupabaseProfilesApi.kt
+│   ├── SupabaseRealtimeSubscription.kt
+│   └── SupabaseSessionManager.kt
+├── model/
+│   └── Note.kt
+├── ui/
+│   ├── components/
+│   │   ├── AppBottomNavigationBar.kt
+│   │   ├── NoteComponents.kt
+│   │   └── WorkspaceTopBar.kt
+│   ├── dialogs/
+│   │   ├── NoteDeletionDialogs.kt
+│   │   └── ProfileEditorDialog.kt
+│   ├── screens/
+│   │   ├── AuthScreen.kt
+│   │   ├── HomeScreen.kt
+│   │   ├── ProfileScreen.kt
+│   │   └── WorkspaceScreens.kt
+│   └── theme/
+│       └── TeddyAppTheme.kt
+└── utils/
+    ├── DateTimeUtils.kt
+    ├── NetworkUtils.kt
+    └── NoteUtils.kt
+```
 
-1. Establish the repository structure and project documentation.
-2. Design the Supabase database schema and Row Level Security (RLS) policies.
-3. Implement user authentication.
-4. Integrate the Android app with the backend while preserving the existing UI.
-5. Build the Cloudflare Workers API.
-6. Develop and deploy the website using Cloudflare Pages.
-7. Test synchronization, access control, error handling, and security.
+### Package responsibilities
 
-Roadmap items are goals, not claims that those features are already available.
+| Package | Responsibility |
+|---|---|
+| `data/` | Local storage, Supabase APIs, authentication, session handling, sync queue, conflict handling, and realtime subscription |
+| `model/` | Core note data model |
+| `ui/components/` | Reusable UI components and workspace navigation/top bar |
+| `ui/dialogs/` | Note deletion and profile editing dialogs |
+| `ui/screens/` | Authentication, Home, Profile, Trash, and Settings screens |
+| `ui/theme/` | Material 3 light and dark theme |
+| `utils/` | Date/time, network, filtering, sorting, and note transformation helpers |
+
+`MainActivity.kt` remains the Android entry point and coordinates app-level state and screen composition. The codebase has been separated into focused packages, but it is not yet a fully ViewModel-based architecture.
+
+## Supabase data and access control
+
+The Android app uses Supabase Auth and PostgreSQL. The implemented data model includes:
+
+- `notes`: user-owned notes, client IDs, timestamps, pin state, and soft-delete state
+- `profiles`: user profile information
+- `note_conflicts`: preserved copies of conflicting note edits
+
+Row Level Security policies are used to scope user data to the authenticated user. Database schema, indexes, triggers, and policies are managed in the Supabase project.
+
+The notes synchronization flow uses a per-user local queue and client identifiers to reconcile local and cloud records. Realtime events are filtered by the active user's ID.
+
+## Planned work
+
+The following are future directions, not current implemented features:
+
+1. Build the separate web application.
+2. Decide whether a Cloudflare Workers API is needed for the shared Android/web backend contract.
+3. Document and test a stable cross-platform API contract if the Worker layer is introduced.
+4. Expand automated testing for synchronization, conflict handling, session lifecycle, and account isolation.
+5. Consider a ViewModel-based state-management layer as the application grows.
 
 ## Security principles
 
-- Never commit passwords, API secrets, private keys, or environment files.
-- Never place a Supabase service-role key in the Android app or browser code.
-- Enforce user-level data access with database Row Level Security policies.
-- Keep server-only secrets in the appropriate server-side secret store.
+- Never commit passwords, access tokens, private keys, or environment files.
+- Never include a Supabase service-role key in Android or browser code.
+- Keep Row Level Security enabled for user-owned data.
+- Validate the authenticated user before accessing account-specific data.
+- Keep session handling and local account data isolated by user.
+- Use HTTPS for remote service communication.
 
-## Repository structure
+## Repository layout
 
 ```text
 Teddy-WebApp/
-├── app/                         # Existing Android application
-│   ├── src/
-│   │   └── main/
-│   │       ├── kotlin/com/teddy/bpositive/
-│   │       │   └── MainActivity.kt
-│   │       └── res/
-│   ├── module.toml
-│   └── proguard-rules.pro
-├── backend/
-│   └── README.md                # Planned Worker API; not implemented
-├── docs/
-│   └── architecture.md          # Planned system architecture
-├── web/
-│   └── README.md                # Planned website; not implemented
+├── app/                 # Android application
+├── backend/             # Planning notes for a possible Worker API
+├── docs/                # Architecture documentation
+├── web/                 # Website planning notes; app not implemented
 ├── .gitignore
 └── README.md
 ```
 
-The `backend/` and `web/` directories currently contain planning notes only. No backend service or website application has been implemented yet.
+## Development workflow
 
-## Development notes
-
-- The current UI is being treated as **UI v1.0** and is temporarily frozen while backend planning begins.
-- Avoid breaking existing note-taking functionality when adding cloud features.
-- Record meaningful changes in Git commits.
-- Update this README as implementation status and project structure evolve.
+1. Open the Android project in CodeAssist or a compatible Android development environment.
+2. Pull the latest changes from the `main` branch.
+3. Sync Gradle dependencies.
+4. Build and test the Android application.
+5. Make related source changes together in focused commits.
+6. Update this README when implemented features, architecture, or repository structure materially change.
 
 ## License
 
