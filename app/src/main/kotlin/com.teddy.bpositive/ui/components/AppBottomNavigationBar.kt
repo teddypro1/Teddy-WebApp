@@ -13,19 +13,21 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun AppBottomNavigationBar(
     selectedTab: String,
-    onTabSelected: (String) -> Unit
+    onTabSelected: (String) -> Unit,
+    showAdmin: Boolean = false
 ) {
     NavigationBar(
         modifier = Modifier.fillMaxWidth(),
         containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 8.dp
     ) {
-        listOf(
+        (listOf(
             Triple("Home", "⌂", "Home"),
             Triple("Trash", "▤", "Trash"),
             Triple("Profile", "●", "Profile"),
             Triple("Settings", "⚙", "Settings")
-        ).forEach { (tab, symbol, label) ->
+        ) + if (showAdmin) listOf(Triple("Admin", "✦", "Admin")) else emptyList())
+            .forEach { (tab, symbol, label) ->
             NavigationBarItem(
                 selected = selectedTab == tab,
                 onClick = { onTabSelected(tab) },
