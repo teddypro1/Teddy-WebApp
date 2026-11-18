@@ -20,6 +20,8 @@ import com.teddy.bpositive.data.LocalNotesStorage.loadNotes
 import com.teddy.bpositive.data.LocalNotesStorage.saveNotes
 import com.teddy.bpositive.utils.parseCloudTimestampMillis
 import com.teddy.bpositive.utils.hasValidatedInternet
+import com.teddy.bpositive.utils.filterAndSortNotes
+import com.teddy.bpositive.utils.parseCloudTimeMillis
 import com.teddy.bpositive.ui.components.ProfileInfoRow
 import com.teddy.bpositive.ui.components.TrashNoteCard
 import com.teddy.bpositive.ui.components.ConflictCopyCard
@@ -469,21 +471,12 @@ fun TeddyNotesApp() {
     val totalNotes = notes.size
     val pinnedNotes = notes.count { it.isPinned }
 
-    val filteredNotes = notes
-        .filter {
-            (!showPinnedOnly || it.isPinned) &&
-            (
-                it.title.contains(searchQuery, ignoreCase = true) ||
-                it.content.contains(searchQuery, ignoreCase = true)
-            )
-        }
-        .let {
-            if (sortNewest) {
-                it.sortedByDescending { note -> note.updatedAt }
-            } else {
-                it.sortedBy { note -> note.updatedAt }
-            }
-        }
+    val filteredNotes = filterAndSortNotes(
+        notes = notes,
+        searchQuery = searchQuery,
+        showPinnedOnly = showPinnedOnly,
+        sortNewest = sortNewest
+    )
 
     fun saveChanges() {
         saveNotes(context, userId, notes)
@@ -568,20 +561,13 @@ fun TeddyNotesApp() {
 
             var localId = System.currentTimeMillis()
             while (notes.any { it.id == localId }) localId++
-            fun cloudTime(value: String?): Long = try {
-                if (value.isNullOrBlank()) System.currentTimeMillis()
-                else java.time.Instant.parse(value).toEpochMilli()
-            } catch (_: Exception) {
-                System.currentTimeMillis()
-            }
-
             val localNote = Note(
                 id = localId,
                 title = restored.title,
                 content = restored.content,
                 isPinned = restored.isPinned,
-                createdAt = cloudTime(restored.createdAt),
-                updatedAt = cloudTime(restored.updatedAt)
+                createdAt = parseCloudTimeMillis(restored.createdAt),
+                updatedAt = parseCloudTimeMillis(restored.updatedAt)
             )
             notes.add(0, localNote)
             NoteSyncStore.registerCloudNote(
@@ -655,20 +641,13 @@ fun TeddyNotesApp() {
                 return@upsertNote
             }
 
-            fun cloudTime(value: String?): Long = try {
-                if (value.isNullOrBlank()) System.currentTimeMillis()
-                else java.time.Instant.parse(value).toEpochMilli()
-            } catch (_: Exception) {
-                System.currentTimeMillis()
-            }
-
             val localNote = Note(
                 id = localId,
                 title = restored.title,
                 content = restored.content,
                 isPinned = restored.isPinned,
-                createdAt = cloudTime(restored.createdAt),
-                updatedAt = cloudTime(restored.updatedAt)
+                createdAt = parseCloudTimeMillis(restored.createdAt),
+                updatedAt = parseCloudTimeMillis(restored.updatedAt)
             )
             val localIndex = notes.indexOfFirst { it.id == localId }
             if (localIndex >= 0) notes[localIndex] = localNote else notes.add(0, localNote)
@@ -792,10 +771,7 @@ fun TeddyNotesApp() {
         }
 
         if (index != -1) {
-            notes[index] = note.copy(
-                isPinned = !note.isPinned,
-                updatedAt = System.currentTimeMillis()
-            )
+            notes[index] = toggleNotePinned(note)
 
             saveChanges()
             notes.firstOrNull { it.id == note.id }?.let { syncNoteUpsert(it) }
