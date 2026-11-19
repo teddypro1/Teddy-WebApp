@@ -133,10 +133,12 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var isCheckingAdmin by remember { mutableStateOf(false) }
     var isSendingAdminNotification by remember { mutableStateOf(false) }
     var isLoadingAdminHistory by remember { mutableStateOf(false) }
+    var isLoadingAdminDirectory by remember { mutableStateOf(false) }
     var adminTitle by rememberSaveable { mutableStateOf("") }
     var adminMessage by rememberSaveable { mutableStateOf("") }
     var adminStatusMessage by remember { mutableStateOf("") }
     var adminHistory by remember { mutableStateOf<List<AdminRepository.NotificationRecord>>(emptyList()) }
+    var adminDirectory by remember { mutableStateOf<List<AdminRepository.UserRecord>>(emptyList()) }
     val isAuthenticated = activeSession != null
 
     LaunchedEffect(Unit) {
@@ -166,7 +168,9 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                 isCheckingAdmin = true
                 isSendingAdminNotification = false
                 isLoadingAdminHistory = false
+                isLoadingAdminDirectory = false
                 adminHistory = emptyList()
+                adminDirectory = emptyList()
                 adminStatusMessage = ""
                 activeSession = session
             }
@@ -198,7 +202,9 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         adminVerifiedUserId = null
         isSendingAdminNotification = false
         isLoadingAdminHistory = false
+        isLoadingAdminDirectory = false
         adminHistory = emptyList()
+        adminDirectory = emptyList()
         adminStatusMessage = ""
         if (session == null) {
             isCheckingAdmin = false
@@ -213,11 +219,18 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
             adminVerifiedUserId = if (verifiedAdmin) session.userId else null
             if (verifiedAdmin) {
                 isLoadingAdminHistory = true
+                isLoadingAdminDirectory = true
                 AdminRepository.loadHistory(session) { historyResult ->
                     if (activeSession?.userId != session.userId) return@loadHistory
                     isLoadingAdminHistory = false
                     if (historyResult.success) adminHistory = historyResult.data.orEmpty()
                     else adminStatusMessage = historyResult.message
+                }
+                AdminRepository.loadUserDirectory(session) { directoryResult ->
+                    if (activeSession?.userId != session.userId) return@loadUserDirectory
+                    isLoadingAdminDirectory = false
+                    if (directoryResult.success) adminDirectory = directoryResult.data.orEmpty()
+                    else adminStatusMessage = directoryResult.message
                 }
             } else {
                 adminHistory = emptyList()
@@ -1019,6 +1032,8 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     title = adminTitle,
                     message = adminMessage,
                     history = adminHistory,
+                    directory = adminDirectory,
+                    isLoadingDirectory = isLoadingAdminDirectory,
                     statusMessage = adminStatusMessage,
                     onTitleChange = { adminTitle = it.take(100) },
                     onMessageChange = { adminMessage = it.take(500) },
@@ -1059,6 +1074,18 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                             if (result.success) {
                                 adminHistory = result.data.orEmpty()
                                 adminStatusMessage = "History refreshed."
+                            } else adminStatusMessage = result.message
+                        }
+                    },
+                    onRefreshDirectory = {
+                        val session = activeSession ?: return@AdminPanelScreen
+                        isLoadingAdminDirectory = true
+                        AdminRepository.loadUserDirectory(session) { result ->
+                            if (activeSession?.userId != session.userId) return@loadUserDirectory
+                            isLoadingAdminDirectory = false
+                            if (result.success) {
+                                adminDirectory = result.data.orEmpty()
+                                adminStatusMessage = "User directory refreshed."
                             } else adminStatusMessage = result.message
                         }
                     }
@@ -1108,7 +1135,9 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         isCheckingAdmin = false
                         isSendingAdminNotification = false
                         isLoadingAdminHistory = false
+                        isLoadingAdminDirectory = false
                         adminHistory = emptyList()
+                        adminDirectory = emptyList()
                         adminStatusMessage = ""
                         activeSession?.let { session ->
                             FcmTokenRepository.unregisterCurrentDevice(context, session)
