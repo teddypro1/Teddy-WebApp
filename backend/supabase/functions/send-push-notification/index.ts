@@ -261,6 +261,85 @@ Deno.serve(async (req: Request) => {
     if (action === "check_admin") return json({ success: true, is_admin: isAdmin });
     if (!isAdmin) return json({ error: "Administrator access required." }, 403);
 
+    if (action === "user_directory") {
+      const authUsers: any[] = [];
+      const pageSize = 1000;
+      for (let page = 1; page <= 100; page++) {
+        const usersResponse = await fetch(
+          supabaseUrl + "/auth/v1/admin/users?page=" + page + "&per_page=" + pageSize,
+          { headers: { apikey: serviceRoleKey, Authorization: "Bearer " + serviceRoleKey } },
+        );
+        if (!usersResponse.ok) {
+          console.error("User directory Auth lookup failed:", usersResponse.status);
+          return json({ error: "Could not load user accounts." }, 502);
+        }
+        const usersData = await usersResponse.json();
+        const pageUsers = Array.isArray(usersData?.users) ? usersData.users : [];
+        authUsers.push(...pageUsers);
+        if (pageUsers.length < pageSize) break;
+      }
+
+      const profileById = new Map<string, { full_name: string; username: string | null }>();
+      const deviceCountByUser = new Map<string, number>();
+      for (let index = 0; index < authUsers.length; index += 100) {
+        const ids = authUsers.slice(index, index + 100)
+          .map((account: any) => account?.id)
+          .filter((id: unknown): id is string => typeof id === "string");
+        if (ids.length === 0) continue;
+        const idFilter = "in.(" + ids.join(",") + ")";
+        const profileUrl = new URL(supabaseUrl + "/rest/v1/profiles");
+        profileUrl.searchParams.set("select", "id,full_name,username");
+        profileUrl.searchParams.set("id", idFilter);
+        const profileResponse = await fetch(profileUrl.toString(), {
+          headers: { apikey: serviceRoleKey, Authorization: "Bearer " + serviceRoleKey },
+        });
+        if (!profileResponse.ok) {
+          console.error("User directory profile lookup failed:", profileResponse.status);
+          return json({ error: "Could not load user profiles." }, 502);
+        }
+        const profiles = await profileResponse.json();
+        for (const profile of Array.isArray(profiles) ? profiles : []) {
+          profileById.set(profile.id, {
+            full_name: typeof profile.full_name === "string" ? profile.full_name : "",
+            username: typeof profile.username === "string" ? profile.username : null,
+          });
+        }
+
+        const tokenUrl = new URL(supabaseUrl + "/rest/v1/device_tokens");
+        tokenUrl.searchParams.set("select", "user_id");
+        tokenUrl.searchParams.set("platform", "eq.android");
+        tokenUrl.searchParams.set("user_id", idFilter);
+        const tokenResponse = await fetch(tokenUrl.toString(), {
+          headers: { apikey: serviceRoleKey, Authorization: "Bearer " + serviceRoleKey },
+        });
+        if (!tokenResponse.ok) {
+          console.error("User directory device lookup failed:", tokenResponse.status);
+          return json({ error: "Could not load registered device status." }, 502);
+        }
+        const tokens = await tokenResponse.json();
+        for (const token of Array.isArray(tokens) ? tokens : []) {
+          deviceCountByUser.set(token.user_id, (deviceCountByUser.get(token.user_id) ?? 0) + 1);
+        }
+      }
+
+      const users = authUsers
+        .filter((account: any) => typeof account?.id === "string" && typeof account?.email === "string")
+        .map((account: any) => {
+          const profile = profileById.get(account.id);
+          return {
+            id: account.id,
+            email: account.email,
+            full_name: profile?.full_name?.trim() || "Unnamed user",
+            username: profile?.username ?? null,
+            created_at: account.created_at ?? null,
+            android_device_count: deviceCountByUser.get(account.id) ?? 0,
+          };
+        })
+        .sort((left: any, right: any) => left.email.localeCompare(right.email));
+
+      return json({ success: true, users, total: users.length });
+    }
+
     if (action === "history") {
       const historyResponse = await fetch(
         `${supabaseUrl}/rest/v1/notification_history?select=id,title,body,audience,total_devices,sent_count,failed_count,delivery_details,created_at&admin_user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=50`,
