@@ -29,6 +29,7 @@ fun AdminPanelScreen(
     onTitleChange: (String) -> Unit,
     onMessageChange: (String) -> Unit,
     onSend: (String, List<String>) -> Unit,
+    onSendTopic: (String) -> Unit,
     onRefresh: () -> Unit,
     onRefreshDirectory: () -> Unit
 ) {
@@ -115,6 +116,25 @@ fun AdminPanelScreen(
                 )
                 Text("Accepted means FCM accepted the message request; it is not a device-open/read receipt.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+            }
+        }
+
+        var selectedTopic = remember { mutableStateOf("all_users") }
+        Text("Send to FCM Topic", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Send the title and message above to devices subscribed to a topic.")
+                listOf("all_users" to "All users", "announcements" to "Announcements", "updates" to "Updates").forEach { (value, label) ->
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        RadioButton(selected = selectedTopic.value == value, onClick = { selectedTopic.value = value })
+                        Text(label)
+                    }
+                }
+                Button(
+                    onClick = { onSendTopic(selectedTopic.value) },
+                    enabled = !isSending && title.isNotBlank() && message.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Send to topic") }
             }
         }
 
