@@ -1022,14 +1022,16 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     statusMessage = adminStatusMessage,
                     onTitleChange = { adminTitle = it.take(100) },
                     onMessageChange = { adminMessage = it.take(500) },
-                    onSend = {
+                    onSend = { audience, recipientEmails ->
                         val session = activeSession ?: return@AdminPanelScreen
                         val titleToSend = adminTitle.trim()
                         val bodyToSend = adminMessage.trim()
                         if (titleToSend.isNotBlank() && bodyToSend.isNotBlank()) {
                             isSendingAdminNotification = true
                             adminStatusMessage = "Sending notification..."
-                            AdminRepository.sendNotification(session, titleToSend, bodyToSend) { result ->
+                            AdminRepository.sendNotification(
+                                session, titleToSend, bodyToSend, audience, recipientEmails
+                            ) { result ->
                                 if (activeSession?.userId != session.userId) return@sendNotification
                                 isSendingAdminNotification = false
                                 adminStatusMessage = result.message
