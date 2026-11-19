@@ -26,7 +26,9 @@ fun AdminPanelScreen(
     onSend: () -> Unit,
     onRefresh: () -> Unit
 ) {
-    val showBroadcastConfirmation = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val showBroadcastConfirmation = androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf(false)
+    }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -80,8 +82,20 @@ fun AdminPanelScreen(
                     ) else Text("Send notification")
                 }
                 if (statusMessage.isNotBlank()) {
-                    Text(statusMessage, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Text(
+                            statusMessage,
+                            modifier = Modifier.padding(12.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp,
+                            lineHeight = 18.sp
+                        )
+                    }
                 }
             }
         }
@@ -111,15 +125,20 @@ fun AdminPanelScreen(
                         Text(item.body, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("Audience: ${if (item.audience == "all_users") "All users" else "Admin devices"}",
                             fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Delivered: ${item.sentCount}/${item.totalDevices}  •  Failed: ${item.failedCount}",
+                        Text("FCM accepted: ${item.sentCount}/${item.totalDevices}  •  Failed: ${item.failedCount}",
                             fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                        if (item.deliveryDetails.isNotEmpty()) {
+                            HorizontalDivider()
+                            Text("Device delivery details", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                            DeliveryDetails(item.deliveryDetails)
+                        }
                         Text(item.createdAt.replace("T", " ").removeSuffix("Z"),
                             fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
         }
-        Text("Build 3: Custom broadcast to all registered Android devices.",
+        Text("Build 4: FCM delivery diagnostics, safe stale-token cleanup and token refresh sync.",
             color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
 
         if (showBroadcastConfirmation.value) {
@@ -137,6 +156,48 @@ fun AdminPanelScreen(
                     TextButton(onClick = { showBroadcastConfirmation.value = false }) { Text("Cancel") }
                 }
             )
+        }
+    }
+}
+
+@Composable
+private fun DeliveryDetails(details: List<AdminRepository.DeliveryDetail>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        details.forEach { detail ->
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                val statusColor = if (detail.success) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.error
+                Text(
+                    (if (detail.success) "✓ FCM accepted" else "✕ FCM failed") +
+                        " · Account …${detail.userId.takeLast(6)} · Token …${detail.tokenSuffix}",
+                    color = statusColor,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 12.sp
+                )
+                if (!detail.success) {
+                    val code = detail.errorCode ?: "UNKNOWN_ERROR"
+                    Text(
+                        "$code · HTTP ${detail.httpStatus} · ${AdminRepository.friendlyError(code, detail.staleTokenRemoved)}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp
+                    )
+                    detail.errorMessage?.takeIf { it.isNotBlank() }?.let {
+                        Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                    }
+                    Text(
+                        "Attempts: ${detail.attempts}" +
+                            if (detail.staleTokenRemoved) " · Invalid token removed" else "",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp
+                    )
+                } else {
+                    Text(
+                        "HTTP ${detail.httpStatus}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp
+                    )
+                }
+            }
         }
     }
 }
