@@ -279,17 +279,61 @@ Deno.serve(async (req: Request) => {
     const body = typeof input.body === "string" ? input.body.trim().slice(0, 500) : "";
     if (!title || !body) return json({ error: "Both title and body are required." }, 400);
 
-    const tokensResponse = await fetch(
-      `${supabaseUrl}/rest/v1/device_tokens?select=id,fcm_token,user_id,platform&platform=eq.android`,
-      { headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` } },
-    );
+    const audience = input.audience === "selected_users" ? "selected_users" : "all_users";
+    let selectedUserIds: string[] | null = null;
+    if (audience === "selected_users") {
+      const rawEmails = Array.isArray(input.recipient_emails) ? input.recipient_emails : [];
+      const emails = [...new Set(rawEmails
+        .filter((value: unknown): value is string => typeof value === "string")
+        .map((value: string) => value.trim().toLowerCase())
+        .filter((value: string) => value.length > 3 && value.length <= 254))];
+      if (emails.length === 0 || emails.length > 100) {
+        return json({ error: "Select between 1 and 100 recipient email addresses." }, 400);
+      }
+
+      // Auth Admin API is server-only. Never expose the service-role key to Android.
+      const authUsersResponse = await fetch(
+        `${supabaseUrl}/auth/v1/admin/users?page=1&per_page=1000`,
+        { headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` } },
+      );
+      if (!authUsersResponse.ok) {
+        console.error("Recipient account lookup failed:", authUsersResponse.status);
+        return json({ error: "Could not resolve recipient accounts." }, 502);
+      }
+      const authUsersData = await authUsersResponse.json();
+      const authUsers = Array.isArray(authUsersData?.users) ? authUsersData.users : [];
+      const emailToId = new Map<string, string>(
+        authUsers
+          .filter((account: any) => typeof account?.email === "string" && typeof account?.id === "string")
+          .map((account: any) => [account.email.toLowerCase(), account.id]),
+      );
+      const unknownEmails = emails.filter((email) => !emailToId.has(email));
+      if (unknownEmails.length > 0) {
+        return json({ error: `Account not found: ${unknownEmails.join(", ")}` }, 404);
+      }
+      selectedUserIds = [...new Set(emails.map((email) => emailToId.get(email) as string))];
+    }
+
+    const tokenUrl = new URL(`${supabaseUrl}/rest/v1/device_tokens`);
+    tokenUrl.searchParams.set("select", "id,fcm_token,user_id,platform");
+    tokenUrl.searchParams.set("platform", "eq.android");
+    if (selectedUserIds) {
+      tokenUrl.searchParams.set("user_id", `in.(${selectedUserIds.join(",")})`);
+    }
+    const tokensResponse = await fetch(tokenUrl.toString(), {
+      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
+    });
     if (!tokensResponse.ok) {
       console.error("Registered device lookup failed:", tokensResponse.status);
       return json({ error: "Could not load registered Android devices." }, 502);
     }
     const rows = await tokensResponse.json() as DeviceRow[];
     if (!Array.isArray(rows) || rows.length === 0) {
-      return json({ error: "No registered Android devices were found." }, 404);
+      return json({
+        error: audience === "selected_users"
+          ? "Selected accounts have no registered Android devices."
+          : "No registered Android devices were found.",
+      }, 404);
     }
 
     const serviceAccountRaw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
@@ -371,7 +415,7 @@ Deno.serve(async (req: Request) => {
         admin_user_id: user.id,
         title,
         body,
-        audience: "all_users",
+        audience,
         total_devices: rows.length,
         sent_count: sent,
         failed_count: failed,
