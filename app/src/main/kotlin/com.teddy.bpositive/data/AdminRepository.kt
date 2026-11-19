@@ -83,6 +83,7 @@ object AdminRepository {
             val total = data?.optInt("total", 0) ?: 0
             val failed = data?.optInt("failed", (total - sent).coerceAtLeast(0)) ?: 0
             val historySaved = data?.optBoolean("history_saved", false) == true
+            val inboxSaved = data?.optInt("inbox_saved", 0) ?: 0
             val details = parseDeliveryDetails(data?.optJSONArray("results"))
             val summary = if (response.success) {
                 "FCM accepted $sent of $total device message(s); failed: $failed." +
