@@ -50,6 +50,9 @@ fun SettingsScreen(
     onDarkModeChange: (Boolean) -> Unit,
     onSignOut: () -> Unit,
     onSendTestNotification: () -> Unit,
+    topicPreferences: com.teddy.bpositive.data.TopicRepository.Preferences,
+    topicStatus: String,
+    onTopicChange: (String, Boolean) -> Unit,
     contentPadding: PaddingValues
 ) {
     Column(
@@ -75,6 +78,26 @@ fun SettingsScreen(
                 Text("Account", fontWeight = FontWeight.SemiBold)
                 Text(accountEmail, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) { Text("Sign Out") }
+            }
+        }
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Notification topics", fontWeight = FontWeight.SemiBold)
+                Text("Choose the announcement categories this account should receive on its registered Android devices.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) { Text("All users"); Text("General announcements", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    Switch(checked = topicPreferences.allUsers, onCheckedChange = { onTopicChange("all_users", it) })
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) { Text("Announcements"); Text("Important notices", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    Switch(checked = topicPreferences.announcements, onCheckedChange = { onTopicChange("announcements", it) })
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) { Text("Updates"); Text("App and feature updates", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    Switch(checked = topicPreferences.updates, onCheckedChange = { onTopicChange("updates", it) })
+                }
+                if (topicStatus.isNotBlank()) Text(topicStatus, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
         }
         if (isAdmin) {
