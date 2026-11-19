@@ -317,8 +317,15 @@ fun AdminPanelScreen(
                         Text(item.body, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("Audience: ${when (item.audience) { "all_users" -> "All users"; "selected_users" -> "Selected users"; "topic_all_users" -> "Topic: All users"; "topic_announcements" -> "Topic: Announcements"; "topic_updates" -> "Topic: Updates"; else -> "Admin devices" }}",
                             fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("FCM accepted: ${item.sentCount}/${item.totalDevices}  •  Failed: ${item.failedCount}",
-                            fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                        if (item.audience.startsWith("topic_")) {
+                            Text("FCM topic message accepted: ${item.sentCount}",
+                                fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                            Text("FCM does not provide per-device delivery receipts for topic broadcasts.",
+                                fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            Text("FCM accepted: ${item.sentCount}/${item.totalDevices}  •  Failed: ${item.failedCount}",
+                                fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                        }
                         if (item.deliveryDetails.isNotEmpty()) {
                             HorizontalDivider()
                             Text("Device delivery details", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
