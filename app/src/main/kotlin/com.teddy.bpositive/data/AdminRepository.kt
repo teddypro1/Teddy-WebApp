@@ -179,6 +179,7 @@ object AdminRepository {
         return buildList {
             for (index in 0 until rows.length()) {
                 val row = rows.optJSONObject(index) ?: continue
+                if (row.optString("type") == "topic") continue
                 add(
                     DeliveryDetail(
                         userId = row.optString("user_id"),
