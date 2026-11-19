@@ -3,6 +3,7 @@ package com.teddy.bpositive.data
 import android.content.Context
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessaging
+import java.util.UUID
 
 /**
  * Stores the current installation token and keeps a small queue of tokens
@@ -12,6 +13,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 object FcmTokenManager {
     private const val PREFS_NAME = "teddy_fcm"
     private const val TOKEN_KEY = "registration_token"
+    private const val INSTALLATION_ID_KEY = "installation_id"
     private const val PENDING_OLD_TOKENS_KEY = "pending_old_registration_tokens"
     private const val TAG = "TeddyFCM"
 
@@ -44,6 +46,19 @@ object FcmTokenManager {
                 saveToken(context, token)
                 Log.i(TAG, "FCM token retrieved successfully; length=${token.length}")
             }
+    }
+
+
+    /** Stable identifier for this app installation; it survives account changes and app restarts. */
+    @Synchronized
+    fun getInstallationId(context: Context): String {
+        val prefs = context.applicationContext
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val existing = prefs.getString(INSTALLATION_ID_KEY, null)
+        if (!existing.isNullOrBlank()) return existing
+        val created = UUID.randomUUID().toString()
+        prefs.edit().putString(INSTALLATION_ID_KEY, created).commit()
+        return created
     }
 
     @Synchronized
