@@ -25,12 +25,12 @@ fun AdminPanelScreen(
     statusMessage: String,
     onTitleChange: (String) -> Unit,
     onMessageChange: (String) -> Unit,
-    onSend: () -> Unit,
+    onSend: (String, List<String>) -> Unit,
     onRefresh: () -> Unit
 ) {
     val showBroadcastConfirmation = remember { mutableStateOf(false) }
     val historyFilter = remember { mutableStateOf("All") }
-    val historySearch = remember { mutableStateOf("") }
+    val historySearch = remember { mutableStateOf("") }\n    val audience = remember { mutableStateOf("all_users") }\n    val recipientEmails = remember { mutableStateOf("") }\n    val parsedEmails = recipientEmails.value.split(",", ";", "\\n").map { it.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() }
 
     val totalDevices = history.sumOf { it.totalDevices }
     val totalAccepted = history.sumOf { it.sentCount }
@@ -123,13 +123,46 @@ fun AdminPanelScreen(
                     maxLines = 5,
                     supportingText = { Text("${message.length}/500 characters") }
                 )
-                Text("Audience: all users with a registered Android device.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                Text("This sends a real notification to every registered Android device. Review the message before sending.",
+                Text("Choose recipients", fontWeight = FontWeight.SemiBold)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        RadioButton(
+                            selected = audience.value == "all_users",
+                            onClick = { audience.value = "all_users" }
+                        )
+                        Text("All users", fontSize = 13.sp)
+                    }
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        RadioButton(
+                            selected = audience.value == "selected_users",
+                            onClick = { audience.value = "selected_users" }
+                        )
+                        Text("Specific users", fontSize = 13.sp)
+                    }
+                }
+                if (audience.value == "selected_users") {
+                    OutlinedTextField(
+                        value = recipientEmails.value,
+                        onValueChange = { recipientEmails.value = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Recipient email address(es)") },
+                        placeholder = { Text("user1@email.com, user2@email.com") },
+                        minLines = 2,
+                        maxLines = 4,
+                        supportingText = { Text("Separate multiple addresses with commas. Up to 100 accounts.") }
+                    )
+                    Text("Only selected accounts with registered Android devices will receive this notification.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                } else {
+                    Text("All accounts with registered Android devices will be targeted.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                }
+                Text("This sends a real notification. Review the audience and message before sending.",
                     color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                 Button(
                     onClick = { showBroadcastConfirmation.value = true },
-                    enabled = !isLoading && !isSending && title.isNotBlank() && message.isNotBlank(),
+                    enabled = !isLoading && !isSending && title.isNotBlank() && message.isNotBlank() &&
+                        (audience.value == "all_users" || parsedEmails.isNotEmpty()),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     if (isSending) CircularProgressIndicator(
@@ -197,7 +230,7 @@ fun AdminPanelScreen(
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(item.title, fontWeight = FontWeight.SemiBold)
                         Text(item.body, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Audience: ${if (item.audience == "all_users") "All users" else "Admin devices"}",
+                        Text("Audience: ${when (item.audience) { "all_users" -> "All users"; "selected_users" -> "Selected users"; else -> "Admin devices" }}",
                             fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("FCM accepted: ${item.sentCount}/${item.totalDevices}  •  Failed: ${item.failedCount}",
                             fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
@@ -230,8 +263,8 @@ fun AdminPanelScreen(
         if (showBroadcastConfirmation.value) {
             AlertDialog(
                 onDismissRequest = { showBroadcastConfirmation.value = false },
-                title = { Text("Send notification to all users?") },
-                text = { Text("Your notification will be sent to every Android device currently registered in Teddy-WebApp. This action cannot be undone.") },
+                title = { Text(if (audience.value == "all_users") "Send notification to all users?" else "Send to selected users?") },
+                text = { Text(if (audience.value == "all_users") "Your notification will be sent to every Android device currently registered in Teddy-WebApp. This action cannot be undone." else "Recipients: ${parsedEmails.joinToString(", ")}. Only registered devices belonging to these accounts will be targeted.") },
                 confirmButton = {
                     TextButton(onClick = {
                         showBroadcastConfirmation.value = false
