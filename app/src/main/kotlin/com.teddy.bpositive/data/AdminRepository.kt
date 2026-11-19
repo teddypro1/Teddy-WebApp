@@ -86,7 +86,7 @@ object AdminRepository {
             val inboxSaved = data?.optInt("inbox_saved", 0) ?: 0
             val details = parseDeliveryDetails(data?.optJSONArray("results"))
             val summary = if (response.success) {
-                "FCM accepted $sent of $total device message(s); failed: $failed." +
+                "Inbox saved for $inboxSaved account(s). FCM accepted $sent of $total device message(s); failed: $failed." +
                     if (historySaved) " Detailed history saved." else " Detailed history could not be saved."
             } else response.message
             val diagnosticText = details.joinToString("\n") { detail ->
