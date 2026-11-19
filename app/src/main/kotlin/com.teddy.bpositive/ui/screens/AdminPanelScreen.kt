@@ -274,8 +274,8 @@ fun AdminPanelScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         showBroadcastConfirmation.value = false
-                        onSend()
-                    }) { Text("Send to all") }
+                        onSend(audience.value, parsedEmails)
+                    }) { Text(if (audience.value == "all_users") "Send to all" else "Send to selected") }
                 },
                 dismissButton = {
                     TextButton(onClick = { showBroadcastConfirmation.value = false }) { Text("Cancel") }
