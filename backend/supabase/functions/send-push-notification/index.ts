@@ -6,16 +6,205 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
 function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
+
 async function readJson(req: Request) {
   try { return await req.json(); } catch { return null; }
+}
+
+type DeviceRow = {
+  id: string;
+  user_id: string;
+  fcm_token: string;
+  platform: string;
+};
+
+type DeliveryResult = {
+  user_id: string;
+  token_suffix: string;
+  success: boolean;
+  http_status: number;
+  error_code: string | null;
+  error_message: string | null;
+  fcm_message_name: string | null;
+  attempts: number;
+  stale_token_removed: boolean;
+};
+
+function getFcmError(body: any, httpStatus: number) {
+  const error = body?.error ?? {};
+  const details = Array.isArray(error.details) ? error.details : [];
+  const fcmDetail = details.find((item: any) =>
+    item?.["@type"] === "type.googleapis.com/google.firebase.fcm.v1.FcmError"
+  );
+  const badRequest = details.find((item: any) =>
+    item?.["@type"] === "type.googleapis.com/google.rpc.BadRequest"
+  );
+  let code = typeof fcmDetail?.errorCode === "string"
+    ? fcmDetail.errorCode
+    : typeof error.status === "string" ? error.status : null;
+  if (!code) {
+    if (httpStatus === 401) code = "UNAUTHENTICATED";
+    else if (httpStatus === 403) code = "PERMISSION_DENIED";
+    else if (httpStatus === 404) code = "NOT_FOUND";
+    else if (httpStatus === 429) code = "QUOTA_EXCEEDED";
+    else if (httpStatus >= 500) code = "FCM_SERVER_ERROR";
+    else if (httpStatus === 400) code = "INVALID_ARGUMENT";
+  }
+  const fieldHint = badRequest?.fieldViolations?.[0]?.description;
+  const message = typeof error.message === "string"
+    ? error.message
+    : typeof fieldHint === "string" ? fieldHint : "FCM rejected this device message.";
+  return { code, message: message.slice(0, 240) };
+}
+
+function retryDelay(response: Response | null, attempt: number) {
+  const retryAfter = response?.headers.get("Retry-After");
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds)) return Math.min(Math.max(seconds * 1000, 250), 5000);
+    const date = Date.parse(retryAfter);
+    if (Number.isFinite(date)) return Math.min(Math.max(date - Date.now(), 250), 5000);
+  }
+  return Math.min(500 * (2 ** attempt) + Math.floor(Math.random() * 250), 3000);
+}
+
+async function sendToDevice(
+  row: DeviceRow,
+  projectId: string,
+  accessToken: string,
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  title: string,
+  body: string,
+): Promise<DeliveryResult> {
+  let lastStatus = 0;
+  let lastCode: string | null = null;
+  let lastMessage: string | null = null;
+  let messageName: string | null = null;
+  let attempts = 0;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    attempts++;
+    let response: Response | null = null;
+    try {
+      response = await fetch(
+        `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: {
+              token: row.fcm_token,
+              notification: { title, body },
+              data: { title, body },
+              android: { priority: "HIGH", ttl: "604800s" },
+            },
+          }),
+        },
+      );
+      const responseBody = await response.json().catch(() => ({}));
+      lastStatus = response.status;
+
+      if (response.ok) {
+        messageName = typeof responseBody?.name === "string" ? responseBody.name : null;
+        return {
+          user_id: row.user_id,
+          token_suffix: row.fcm_token.slice(-6),
+          success: true,
+          http_status: response.status,
+          error_code: null,
+          error_message: null,
+          fcm_message_name: messageName,
+          attempts,
+          stale_token_removed: false,
+        };
+      }
+
+      const error = getFcmError(responseBody, response.status);
+      lastCode = error.code;
+      lastMessage = error.message;
+      const retryable = response.status === 429 || response.status === 500 || response.status === 503;
+      if (!retryable || attempt === 2) break;
+      await new Promise((resolve) => setTimeout(resolve, retryDelay(response, attempt)));
+    } catch (error) {
+      lastStatus = 0;
+      lastCode = "NETWORK_ERROR";
+      lastMessage = error instanceof Error ? error.message.slice(0, 240) : "Network error while contacting FCM.";
+      if (attempt === 2) break;
+      await new Promise((resolve) => setTimeout(resolve, retryDelay(response, attempt)));
+    }
+  }
+
+  let staleTokenRemoved = false;
+  // Only UNREGISTERED proves that this installation token is no longer valid.
+  // Do not delete on INVALID_ARGUMENT or SENDER_ID_MISMATCH.
+  if (lastCode === "UNREGISTERED") {
+    const deleteResponse = await fetch(
+      `${supabaseUrl}/rest/v1/device_tokens?id=eq.${encodeURIComponent(row.id)}`,
+      {
+        method: "DELETE",
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+          Prefer: "return=minimal",
+        },
+      },
+    );
+    staleTokenRemoved = deleteResponse.ok;
+    if (!deleteResponse.ok) {
+      console.error("Stale FCM token cleanup failed", {
+        user_id: row.user_id,
+        token_suffix: row.fcm_token.slice(-6),
+        http_status: deleteResponse.status,
+      });
+    }
+  }
+
+  return {
+    user_id: row.user_id,
+    token_suffix: row.fcm_token.slice(-6),
+    success: false,
+    http_status: lastStatus,
+    error_code: lastCode,
+    error_message: lastMessage,
+    fcm_message_name: null,
+    attempts,
+    stale_token_removed: staleTokenRemoved,
+  };
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (true) {
+      const index = nextIndex++;
+      if (index >= items.length) return;
+      results[index] = await mapper(items[index]);
+    }
+  });
+  await Promise.all(workers);
+  return results;
 }
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
+
   const authorization = req.headers.get("Authorization");
   if (!authorization?.startsWith("Bearer ")) return json({ error: "Missing user session." }, 401);
 
@@ -28,10 +217,14 @@ Deno.serve(async (req: Request) => {
   }
 
   const input = await readJson(req);
-  if (!input || typeof input !== "object" || Array.isArray(input)) return json({ error: "Request body must be a JSON object." }, 400);
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return json({ error: "Request body must be a JSON object." }, 400);
+  }
 
   try {
-    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: anonKey, Authorization: authorization } });
+    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { apikey: anonKey, Authorization: authorization },
+    });
     if (!userResponse.ok) return json({ error: "Invalid or expired user session." }, 401);
     const user = await userResponse.json();
     if (!user?.id) return json({ error: "Authenticated user could not be verified." }, 401);
@@ -45,20 +238,16 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Could not verify administrator access." }, 503);
     }
     const adminRows = await adminResponse.json();
-    const isAdmin = Array.isArray(adminRows) && adminRows.some((row: { user_id?: string }) => row.user_id === user.id);
+    const isAdmin = Array.isArray(adminRows) &&
+      adminRows.some((row: { user_id?: string }) => row.user_id === user.id);
     const action = typeof input.action === "string" ? input.action : "send";
     if (action === "check_admin") return json({ success: true, is_admin: isAdmin });
     if (!isAdmin) return json({ error: "Administrator access required." }, 403);
 
     if (action === "history") {
       const historyResponse = await fetch(
-        `${supabaseUrl}/rest/v1/notification_history?select=id,title,body,audience,total_devices,sent_count,failed_count,created_at&admin_user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=50`,
-        {
-          headers: {
-            apikey: serviceRoleKey,
-            Authorization: `Bearer ${serviceRoleKey}`,
-          },
-        },
+        `${supabaseUrl}/rest/v1/notification_history?select=id,title,body,audience,total_devices,sent_count,failed_count,delivery_details,created_at&admin_user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=50`,
+        { headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` } },
       );
       if (!historyResponse.ok) {
         console.error("Notification history lookup failed:", historyResponse.status);
@@ -69,34 +258,53 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action !== "send") return json({ error: "Unsupported action." }, 400);
-
     const title = typeof input.title === "string" ? input.title.trim().slice(0, 100) : "";
     const body = typeof input.body === "string" ? input.body.trim().slice(0, 500) : "";
     if (!title || !body) return json({ error: "Both title and body are required." }, 400);
 
-    // Build 1 only permits the administrator to test delivery to their own registered devices.
     const tokensResponse = await fetch(
-      `${supabaseUrl}/rest/v1/device_tokens?select=fcm_token&user_id=eq.${encodeURIComponent(user.id)}&platform=eq.android`,
-      { headers: { apikey: anonKey, Authorization: authorization } },
+      `${supabaseUrl}/rest/v1/device_tokens?select=id,fcm_token,user_id,platform&platform=eq.android`,
+      { headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` } },
     );
-    if (!tokensResponse.ok) return json({ error: "Could not read registered administrator devices." }, 502);
-    const rows = await tokensResponse.json();
-    if (!Array.isArray(rows) || rows.length === 0) return json({ error: "No registered Android devices were found for the administrator account." }, 404);
+    if (!tokensResponse.ok) {
+      console.error("Registered device lookup failed:", tokensResponse.status);
+      return json({ error: "Could not load registered Android devices." }, 502);
+    }
+    const rows = await tokensResponse.json() as DeviceRow[];
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return json({ error: "No registered Android devices were found." }, 404);
+    }
 
     const serviceAccountRaw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
     if (!serviceAccountRaw) return json({ error: "Firebase server configuration is incomplete." }, 500);
     const serviceAccount = JSON.parse(serviceAccountRaw);
-    const projectId = serviceAccount.project_id, clientEmail = serviceAccount.client_email, privateKey = serviceAccount.private_key;
-    if (!projectId || !clientEmail || !privateKey) return json({ error: "Firebase service account JSON is missing required fields." }, 500);
+    const projectId = serviceAccount.project_id;
+    const clientEmail = serviceAccount.client_email;
+    const privateKey = serviceAccount.private_key;
+    if (!projectId || !clientEmail || !privateKey) {
+      return json({ error: "Firebase service account JSON is missing required fields." }, 500);
+    }
 
     const key = await importPKCS8(privateKey, "RS256");
     const now = Math.floor(Date.now() / 1000);
-    const assertion = await new SignJWT({ scope: "https://www.googleapis.com/auth/firebase.messaging" })
-      .setProtectedHeader({ alg: "RS256", typ: "JWT" }).setIssuer(clientEmail).setSubject(clientEmail)
-      .setAudience("https://oauth2.googleapis.com/token").setIssuedAt(now).setExpirationTime(now + 3600).sign(key);
+    const assertion = await new SignJWT({
+      scope: "https://www.googleapis.com/auth/firebase.messaging",
+    })
+      .setProtectedHeader({ alg: "RS256", typ: "JWT" })
+      .setIssuer(clientEmail)
+      .setSubject(clientEmail)
+      .setAudience("https://oauth2.googleapis.com/token")
+      .setIssuedAt(now)
+      .setExpirationTime(now + 3600)
+      .sign(key);
+
     const oauthResponse = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion }),
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        assertion,
+      }),
     });
     const oauthData = await oauthResponse.json();
     if (!oauthResponse.ok || !oauthData.access_token) {
@@ -104,28 +312,65 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Could not obtain Firebase access token." }, 502);
     }
 
-    const results = await Promise.all(rows.map(async (row: { fcm_token: string }) => {
-      const response = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${oauthData.access_token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ message: {
-          token: row.fcm_token, notification: { title, body }, data: { title, body }, android: { priority: "HIGH" },
-        } }),
-      });
-      const responseBody = await response.json().catch(() => ({}));
-      return { success: response.ok, status: response.status, error: response.ok ? undefined : responseBody };
-    }));
+    const results = await mapWithConcurrency(rows, 10, (row) =>
+      sendToDevice(row, projectId, oauthData.access_token, supabaseUrl, serviceRoleKey, title, body)
+    );
     const sent = results.filter((result) => result.success).length;
+    const failed = results.length - sent;
+    const deliveryDetails = results.map((result) => ({
+      user_id: result.user_id,
+      token_suffix: result.token_suffix,
+      success: result.success,
+      http_status: result.http_status,
+      error_code: result.error_code,
+      error_message: result.error_message,
+      attempts: result.attempts,
+      stale_token_removed: result.stale_token_removed,
+    }));
+
+    console.log("FCM broadcast completed", JSON.stringify({
+      admin_user_id: user.id,
+      total: rows.length,
+      sent,
+      failed,
+      errors: deliveryDetails.filter((item) => !item.success).map((item) => ({
+        user_id: item.user_id,
+        token_suffix: item.token_suffix,
+        http_status: item.http_status,
+        error_code: item.error_code,
+        stale_token_removed: item.stale_token_removed,
+      })),
+    }));
+
     const historyResponse = await fetch(`${supabaseUrl}/rest/v1/notification_history`, {
       method: "POST",
-      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
       body: JSON.stringify({
-        admin_user_id: user.id, title, body, audience: "admin_devices",
-        total_devices: rows.length, sent_count: sent, failed_count: rows.length - sent,
+        admin_user_id: user.id,
+        title,
+        body,
+        audience: "all_users",
+        total_devices: rows.length,
+        sent_count: sent,
+        failed_count: failed,
+        delivery_details: deliveryDetails,
       }),
     });
     if (!historyResponse.ok) console.error("Notification history insert failed:", historyResponse.status);
-    return json({ success: sent > 0, sent, total: rows.length, history_saved: historyResponse.ok, results });
+
+    return json({
+      success: sent > 0,
+      sent,
+      total: rows.length,
+      failed,
+      history_saved: historyResponse.ok,
+      results: deliveryDetails,
+    });
   } catch (error) {
     console.error("Push notification function error:", error);
     return json({ error: "Unexpected server error while processing the request." }, 500);
