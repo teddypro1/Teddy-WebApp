@@ -26,6 +26,15 @@ object AdminRepository {
         val staleTokenRemoved: Boolean
     )
 
+    data class UserRecord(
+        val id: String,
+        val email: String,
+        val fullName: String,
+        val username: String?,
+        val createdAt: String,
+        val androidDeviceCount: Int
+    )
+
     data class NotificationRecord(
         val id: String,
         val title: String,
@@ -92,6 +101,39 @@ object AdminRepository {
             }
             val fullMessage = listOf(summary, diagnosticText).filter { it.isNotBlank() }.joinToString("\n")
             onResult(Result(response.success, summary.takeIf { response.success }, fullMessage, details))
+        }
+    }
+
+    fun loadUserDirectory(
+        session: SupabaseSessionManager.Session,
+        onResult: (Result<List<UserRecord>>) -> Unit
+    ) {
+        call(session, JSONObject().put("action", "user_directory")) { response ->
+            if (!response.success || response.data == null) {
+                onResult(Result(false, null, response.message))
+                return@call
+            }
+            try {
+                val rows = response.data.optJSONArray("users") ?: JSONArray()
+                val users = buildList {
+                    for (index in 0 until rows.length()) {
+                        val row = rows.optJSONObject(index) ?: continue
+                        add(
+                            UserRecord(
+                                id = row.optString("id"),
+                                email = row.optString("email"),
+                                fullName = row.optString("full_name").ifBlank { "Unnamed user" },
+                                username = row.optString("username").takeIf { it.isNotBlank() && it != "null" },
+                                createdAt = row.optString("created_at"),
+                                androidDeviceCount = row.optInt("android_device_count")
+                            )
+                        )
+                    }
+                }
+                onResult(Result(true, users, "Loaded \${users.size} user account(s)."))
+            } catch (error: Exception) {
+                onResult(Result(false, null, "Could not read user directory: \${error.message}"))
+            }
         }
     }
 
