@@ -48,12 +48,23 @@ fun AdminPanelScreen(
         matchesSearch && matchesFilter
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 18.dp, top = 20.dp, end = 18.dp, bottom = 120.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val horizontalPadding = if (maxWidth < 360.dp) 14.dp else 18.dp
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 760.dp)
+                .align(androidx.compose.ui.Alignment.TopCenter)
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    start = horizontalPadding,
+                    top = 20.dp,
+                    end = horizontalPadding,
+                    bottom = 120.dp
+                ),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
         Text("Admin Dashboard", fontSize = 26.sp, fontWeight = FontWeight.Bold)
         Text("Restricted administrator tools for Teddy WebApp.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -231,6 +242,7 @@ fun AdminPanelScreen(
                     TextButton(onClick = { showBroadcastConfirmation.value = false }) { Text("Cancel") }
                 }
             )
+        }
         }
     }
 }
