@@ -18,7 +18,17 @@ class TeddyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         FcmTokenManager.saveToken(applicationContext, token)
-        Log.d(TAG, "FCM registration token refreshed")
+        Log.i(TAG, "FCM registration token refreshed")
+
+        // Keep the server-side token record in sync even when FCM rotates
+        // the token while the user remains signed in.
+        val session = SupabaseSessionManager.load(applicationContext)
+        if (session != null) {
+            FcmTokenRepository.registerToken(applicationContext, session, token) { success, message ->
+                if (success) Log.i(TAG, "Refreshed FCM token registered with Supabase")
+                else Log.w(TAG, "Refreshed FCM token registration skipped or failed: $message")
+            }
+        }
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
