@@ -52,11 +52,12 @@ object FcmTokenRepository {
 
                 Log.i(TAG, "FCM token obtained for Supabase registration; length=${token.length}")
                 FcmTokenManager.saveToken(context.applicationContext, token)
-                registerToken(session, token, onResult)
+                registerToken(context.applicationContext, session, token, onResult)
             }
     }
 
     fun registerToken(
+        context: Context,
         session: SupabaseSessionManager.Session,
         token: String,
         onResult: ((Boolean, String) -> Unit)? = null
@@ -74,13 +75,24 @@ object FcmTokenRepository {
 
         Log.i(TAG, "Sending FCM token registration request to Supabase")
         Thread {
+            // A token refresh can race with sign-out or account switching.
+            // Re-read the encrypted session and never register for a different account.
+            val latestSession = SupabaseSessionManager.load(context.applicationContext)
+            if (latestSession == null || latestSession.userId != userId) {
+                mainHandler.post { onResult?.invoke(false, "Session changed; FCM registration skipped.") }
+                return@Thread
+            }
+
+            val payloadWithFreshTimestamp = JSONObject(payload.toString())
+                .put("updated_at", java.time.Instant.now().toString())
+
             val request = Request.Builder()
                 .url("${SupabaseConfig.BASE_URL}$TABLE_PATH?on_conflict=fcm_token")
                 .addHeader("apikey", SupabaseConfig.API_KEY)
-                .addHeader("Authorization", "Bearer ${session.accessToken}")
+                .addHeader("Authorization", "Bearer ${latestSession.accessToken}")
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Prefer", "resolution=merge-duplicates,return=minimal")
-                .post(payload.toString().toRequestBody(jsonMediaType))
+                .post(payloadWithFreshTimestamp.toString().toRequestBody(jsonMediaType))
                 .build()
 
             val result = try {
