@@ -52,7 +52,7 @@ object FcmTokenManager {
         val prefs = context.applicationContext
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val previous = prefs.getString(TOKEN_KEY, null)
-        val pending = prefs.getStringSet(PENDING_OLD_TOKENS_KEY, emptySet())
+        val pending = prefs.getStringSet(PENDING_OLD_TOKENS_KEY, mutableSetOf())
             .orEmpty()
             .toMutableSet()
 
@@ -77,7 +77,7 @@ object FcmTokenManager {
     fun getPendingOldTokens(context: Context): Set<String> {
         return context.applicationContext
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getStringSet(PENDING_OLD_TOKENS_KEY, emptySet())
+            .getStringSet(PENDING_OLD_TOKENS_KEY, mutableSetOf())
             .orEmpty()
             .toSet()
     }
@@ -86,7 +86,7 @@ object FcmTokenManager {
     fun clearPendingOldToken(context: Context, token: String) {
         val prefs = context.applicationContext
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val pending = prefs.getStringSet(PENDING_OLD_TOKENS_KEY, emptySet())
+        val pending = prefs.getStringSet(PENDING_OLD_TOKENS_KEY, mutableSetOf())
             .orEmpty()
             .toMutableSet()
         if (pending.remove(token)) {
