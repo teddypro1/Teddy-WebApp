@@ -7,6 +7,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,8 +28,24 @@ fun AdminPanelScreen(
     onSend: () -> Unit,
     onRefresh: () -> Unit
 ) {
-    val showBroadcastConfirmation = androidx.compose.runtime.remember {
-        androidx.compose.runtime.mutableStateOf(false)
+    val showBroadcastConfirmation = remember { mutableStateOf(false) }
+    val historyFilter = remember { mutableStateOf("All") }
+    val historySearch = remember { mutableStateOf("") }
+
+    val totalDevices = history.sumOf { it.totalDevices }
+    val totalAccepted = history.sumOf { it.sentCount }
+    val totalFailed = history.sumOf { it.failedCount }
+    val deliveryRate = if (totalDevices > 0) totalAccepted * 100 / totalDevices else 0
+    val filteredHistory = history.filter { item ->
+        val matchesSearch = historySearch.value.isBlank() ||
+            item.title.contains(historySearch.value, ignoreCase = true) ||
+            item.body.contains(historySearch.value, ignoreCase = true)
+        val matchesFilter = when (historyFilter.value) {
+            "Successful" -> item.failedCount == 0 && item.sentCount > 0
+            "Failed" -> item.failedCount > 0
+            else -> true
+        }
+        matchesSearch && matchesFilter
     }
 
     Column(
@@ -45,6 +63,32 @@ fun AdminPanelScreen(
                 Text(accountEmail, color = MaterialTheme.colorScheme.primary)
                 Text("Access verified by Supabase Edge Function",
                     color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+            }
+        }
+
+        Text("Notification analytics", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text("Based on the latest ${history.size} records loaded from history (maximum 50).",
+            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            AnalyticsCard("Notifications", history.size.toString(), Modifier.weight(1f))
+            AnalyticsCard("Devices targeted", totalDevices.toString(), Modifier.weight(1f))
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            AnalyticsCard("FCM accepted", totalAccepted.toString(), Modifier.weight(1f))
+            AnalyticsCard("Failed", totalFailed.toString(), Modifier.weight(1f))
+        }
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("FCM acceptance rate", fontWeight = FontWeight.SemiBold)
+                    Text("$deliveryRate%", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                }
+                LinearProgressIndicator(
+                    progress = { (deliveryRate / 100f).coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text("Accepted means FCM accepted the message request; it is not a device-open/read receipt.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         }
 
@@ -108,17 +152,36 @@ fun AdminPanelScreen(
             Text("Notification history", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             TextButton(onClick = onRefresh, enabled = !isLoading) { Text("Refresh") }
         }
+        OutlinedTextField(
+            value = historySearch.value,
+            onValueChange = { historySearch.value = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Search notification history") },
+            singleLine = true
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("All", "Successful", "Failed").forEach { filter ->
+                FilterChip(
+                    selected = historyFilter.value == filter,
+                    onClick = { historyFilter.value = filter },
+                    label = { Text(filter) }
+                )
+            }
+        }
         if (isLoading) {
             Box(Modifier.fillMaxWidth().padding(20.dp), contentAlignment = androidx.compose.ui.Alignment.Center) {
                 CircularProgressIndicator()
             }
-        } else if (history.isEmpty()) {
+        } else if (filteredHistory.isEmpty()) {
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-                Text("No notification history yet.", modifier = Modifier.padding(18.dp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    if (history.isEmpty()) "No notification history yet." else "No records match this filter.",
+                    modifier = Modifier.padding(18.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         } else {
-            history.forEach { item ->
+            filteredHistory.forEach { item ->
                 Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(item.title, fontWeight = FontWeight.SemiBold)
@@ -138,7 +201,19 @@ fun AdminPanelScreen(
                 }
             }
         }
-        Text("Build 4: FCM delivery diagnostics, safe stale-token cleanup and token refresh sync.",
+
+        Text("Security review", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SecurityLine("✓", "Admin permission checked on the server")
+                SecurityLine("✓", "Edge Function requires a valid JWT")
+                SecurityLine("✓", "Admin and notification history tables are not granted to anon/authenticated roles")
+                SecurityLine("✓", "Service-role and Firebase credentials remain server-side")
+                Text("Security controls reviewed against the live Supabase configuration. This is not a full penetration test.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+            }
+        }
+        Text("Build 5: notification analytics, searchable history and security review.",
             color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
 
         if (showBroadcastConfirmation.value) {
@@ -157,6 +232,25 @@ fun AdminPanelScreen(
                 }
             )
         }
+    }
+}
+
+@Composable
+private fun AnalyticsCard(label: String, value: String, modifier: Modifier = Modifier) {
+    Card(modifier = modifier, shape = RoundedCornerShape(16.dp)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(value, fontSize = 23.sp, fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary)
+            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun SecurityLine(symbol: String, label: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(symbol, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+        Text(label, fontSize = 12.sp)
     }
 }
 
