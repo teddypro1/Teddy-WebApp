@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
       const rows = await response.json();
       const preferences = Object.fromEntries(["all_users", "announcements", "updates"].map((topic) => {
         const row = rows.find((item: any) => item.topic === topic);
-        return [topic, row ? Boolean(row.subscribed) : topic === "all_users"];
+        return [topic, row ? Boolean(row.subscribed) : false];
       }));
       return json({ success: true, preferences });
     }
