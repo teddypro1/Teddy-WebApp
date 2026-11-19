@@ -531,6 +531,7 @@ Deno.serve(async (req: Request) => {
       total: rows.length,
       failed,
       history_saved: historyResponse.ok,
+      inbox_saved: inboxSaved,
       results: deliveryDetails,
     });
   } catch (error) {
