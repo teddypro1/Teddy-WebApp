@@ -88,27 +88,33 @@ object FcmTokenRepository {
                 return@Thread
             }
 
-            val payloadWithFreshTimestamp = JSONObject(payload.toString())
-                .put("updated_at", java.time.Instant.now().toString())
+            val installationId = FcmTokenManager.getInstallationId(context.applicationContext)
+            val registrationPayload = JSONObject()
+                .put("action", "register")
+                .put("installation_id", installationId)
+                .put("fcm_token", token)
+                .put("platform", "android")
 
             val request = Request.Builder()
-                .url("${SupabaseConfig.BASE_URL}$TABLE_PATH?on_conflict=fcm_token")
+                .url("${SupabaseConfig.BASE_URL}/functions/v1/register-device-token")
                 .addHeader("apikey", SupabaseConfig.API_KEY)
                 .addHeader("Authorization", "Bearer ${latestSession.accessToken}")
                 .addHeader("Content-Type", "application/json")
-                .addHeader("Prefer", "resolution=merge-duplicates,return=minimal")
-                .post(payloadWithFreshTimestamp.toString().toRequestBody(jsonMediaType))
+                .post(registrationPayload.toString().toRequestBody(jsonMediaType))
                 .build()
 
             val registrationResult = try {
                 client.newCall(request).execute().use { response ->
-                    if (response.isSuccessful) {
-                        Log.i(TAG, "Supabase accepted current FCM token; HTTP ${response.code}")
-                        true to "FCM token registered."
+                    val responseBody = response.body?.string().orEmpty()
+                    val data = runCatching { JSONObject(responseBody) }.getOrNull()
+                    if (response.isSuccessful && data?.optBoolean("success") == true) {
+                        Log.i(TAG, "Installation-scoped FCM token registered; HTTP ${response.code}")
+                        true to "FCM token registered for this installation."
                     } else {
-                        val errorBody = response.body?.string().orEmpty()
-                        Log.e(TAG, "Supabase rejected FCM token registration; HTTP ${response.code}: $errorBody")
-                        false to "FCM token registration failed. HTTP ${response.code}: $errorBody"
+                        val message = data?.optString("error")?.takeIf { it.isNotBlank() }
+                            ?: "FCM token registration failed. HTTP ${response.code}."
+                        Log.e(TAG, message)
+                        false to message
                     }
                 }
             } catch (e: Exception) {
@@ -222,26 +228,27 @@ object FcmTokenRepository {
         session: SupabaseSessionManager.Session
     ) {
         val userId = session.userId ?: return
-        val token = FcmTokenManager.getSavedToken(context) ?: return
-        val encodedToken = URLEncoder.encode(token, "UTF-8")
-        val encodedUserId = URLEncoder.encode(userId, "UTF-8")
+        val installationId = FcmTokenManager.getInstallationId(context)
+        val payload = JSONObject()
+            .put("action", "unregister")
+            .put("installation_id", installationId)
 
         Thread {
+            val latestSession = SupabaseSessionManager.load(context.applicationContext)
+            if (latestSession == null || latestSession.userId != userId) return@Thread
             val request = Request.Builder()
-                .url("${SupabaseConfig.BASE_URL}$TABLE_PATH?user_id=eq.$encodedUserId&fcm_token=eq.$encodedToken")
+                .url("${SupabaseConfig.BASE_URL}/functions/v1/register-device-token")
                 .addHeader("apikey", SupabaseConfig.API_KEY)
-                .addHeader("Authorization", "Bearer ${session.accessToken}")
-                .delete()
+                .addHeader("Authorization", "Bearer ${latestSession.accessToken}")
+                .addHeader("Content-Type", "application/json")
+                .post(payload.toString().toRequestBody(jsonMediaType))
                 .build()
-
             try {
                 client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        Log.w(TAG, "Could not unregister FCM token. HTTP ${response.code}")
-                    }
+                    if (!response.isSuccessful) Log.w(TAG, "Could not unregister this installation. HTTP ${response.code}")
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "FCM token unregistration failed", e)
+                Log.w(TAG, "FCM installation unregistration failed", e)
             }
         }.start()
     }
