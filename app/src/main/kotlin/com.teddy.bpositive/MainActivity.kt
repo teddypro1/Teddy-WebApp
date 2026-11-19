@@ -1114,6 +1114,31 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     statusMessage = adminStatusMessage,
                     onTitleChange = { adminTitle = it.take(100) },
                     onMessageChange = { adminMessage = it.take(500) },
+                    onSendTopic = { topic ->
+                        val session = activeSession ?: return@AdminPanelScreen
+                        val titleToSend = adminTitle.trim()
+                        val bodyToSend = adminMessage.trim()
+                        if (titleToSend.isNotBlank() && bodyToSend.isNotBlank()) {
+                            isSendingAdminNotification = true
+                            adminStatusMessage = "Sending topic notification..."
+                            TopicRepository.send(session, topic, titleToSend, bodyToSend) { success, resultMessage ->
+                                if (activeSession?.userId != session.userId) return@send
+                                isSendingAdminNotification = false
+                                adminStatusMessage = resultMessage
+                                if (success) {
+                                    adminTitle = ""
+                                    adminMessage = ""
+                                    isLoadingAdminHistory = true
+                                    AdminRepository.loadHistory(session) { historyResult ->
+                                        if (activeSession?.userId != session.userId) return@loadHistory
+                                        isLoadingAdminHistory = false
+                                        if (historyResult.success) adminHistory = historyResult.data.orEmpty()
+                                    }
+                                }
+                                Toast.makeText(context, resultMessage, Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    },
                     onSend = { audience, recipientEmails ->
                         val session = activeSession ?: return@AdminPanelScreen
                         val titleToSend = adminTitle.trim()
