@@ -30,7 +30,13 @@ fun AdminPanelScreen(
 ) {
     val showBroadcastConfirmation = remember { mutableStateOf(false) }
     val historyFilter = remember { mutableStateOf("All") }
-    val historySearch = remember { mutableStateOf("") }\n    val audience = remember { mutableStateOf("all_users") }\n    val recipientEmails = remember { mutableStateOf("") }\n    val parsedEmails = recipientEmails.value.split(",", ";", "\\n").map { it.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() }
+    val historySearch = remember { mutableStateOf("") }
+    val audience = remember { mutableStateOf("all_users") }
+    val recipientEmails = remember { mutableStateOf("") }
+    val parsedEmails = recipientEmails.value.split(",", ";", "\n")
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+        .distinctBy { it.lowercase() }
 
     val totalDevices = history.sumOf { it.totalDevices }
     val totalAccepted = history.sumOf { it.sentCount }
