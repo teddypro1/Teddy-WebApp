@@ -5,12 +5,14 @@ import android.util.Log
 import com.google.firebase.messaging.FirebaseMessaging
 
 /**
- * Retrieves and locally caches this installation's FCM registration token.
- * The token will be associated with the authenticated Supabase account in a later step.
+ * Stores the current installation token and keeps a small queue of tokens
+ * replaced by Firebase. Old tokens are removed from Supabase only after the
+ * replacement token has been registered successfully for the same account.
  */
 object FcmTokenManager {
     private const val PREFS_NAME = "teddy_fcm"
     private const val TOKEN_KEY = "registration_token"
+    private const val PENDING_OLD_TOKENS_KEY = "pending_old_registration_tokens"
     private const val TAG = "TeddyFCM"
 
     fun initialize(context: Context) {
@@ -38,17 +40,30 @@ object FcmTokenManager {
                     return@addOnCompleteListener
                 }
 
+                // saveToken preserves the replaced token in a pending queue.
                 saveToken(context, token)
                 Log.i(TAG, "FCM token retrieved successfully; length=${token.length}")
             }
     }
 
+    @Synchronized
     fun saveToken(context: Context, token: String) {
         if (token.isBlank()) return
-        context.applicationContext
+        val prefs = context.applicationContext
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
+        val previous = prefs.getString(TOKEN_KEY, null)
+        val pending = prefs.getStringSet(PENDING_OLD_TOKENS_KEY, emptySet())
+            .orEmpty()
+            .toMutableSet()
+
+        if (!previous.isNullOrBlank() && previous != token) {
+            pending.add(previous)
+            Log.i(TAG, "Previous FCM token queued for account-scoped replacement")
+        }
+
+        prefs.edit()
             .putString(TOKEN_KEY, token)
+            .putStringSet(PENDING_OLD_TOKENS_KEY, pending)
             .apply()
     }
 
@@ -56,6 +71,27 @@ object FcmTokenManager {
         return context.applicationContext
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getString(TOKEN_KEY, null)
+    }
+
+    @Synchronized
+    fun getPendingOldTokens(context: Context): Set<String> {
+        return context.applicationContext
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getStringSet(PENDING_OLD_TOKENS_KEY, emptySet())
+            .orEmpty()
+            .toSet()
+    }
+
+    @Synchronized
+    fun clearPendingOldToken(context: Context, token: String) {
+        val prefs = context.applicationContext
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val pending = prefs.getStringSet(PENDING_OLD_TOKENS_KEY, emptySet())
+            .orEmpty()
+            .toMutableSet()
+        if (pending.remove(token)) {
+            prefs.edit().putStringSet(PENDING_OLD_TOKENS_KEY, pending).apply()
+        }
     }
 
     fun createNotificationChannel(context: Context) {
