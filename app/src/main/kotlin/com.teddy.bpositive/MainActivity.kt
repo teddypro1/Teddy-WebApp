@@ -145,7 +145,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var inboxItems by remember { mutableStateOf<List<InboxRepository.Item>>(emptyList()) }
     var isLoadingInbox by remember { mutableStateOf(false) }
     var inboxStatus by remember { mutableStateOf("") }
-    var topicPreferences by remember { mutableStateOf(TopicRepository.Preferences(true, false, false)) }
+    var topicPreferences by remember { mutableStateOf(TopicRepository.Preferences(false, false, false)) }
     var topicStatus by remember { mutableStateOf("") }
     val isAuthenticated = activeSession != null
 
