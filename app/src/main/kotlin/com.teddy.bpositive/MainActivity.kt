@@ -12,6 +12,7 @@ import com.teddy.bpositive.data.FcmTokenManager
 import com.teddy.bpositive.data.FcmTokenRepository
 import com.teddy.bpositive.data.AdminRepository
 import com.teddy.bpositive.data.InboxRepository
+import com.teddy.bpositive.data.TopicRepository
 import com.teddy.bpositive.data.SupabaseAuthRepository
 import com.teddy.bpositive.data.SupabaseSessionManager
 import com.teddy.bpositive.data.NoteSyncStore
@@ -144,6 +145,8 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var inboxItems by remember { mutableStateOf<List<InboxRepository.Item>>(emptyList()) }
     var isLoadingInbox by remember { mutableStateOf(false) }
     var inboxStatus by remember { mutableStateOf("") }
+    var topicPreferences by remember { mutableStateOf(TopicRepository.Preferences(true, false, false)) }
+    var topicStatus by remember { mutableStateOf("") }
     val isAuthenticated = activeSession != null
 
     LaunchedEffect(Unit) {
@@ -200,6 +203,18 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var profileBio by remember(userId) { mutableStateOf("") }
     var profileAvatarUrl by remember(userId) { mutableStateOf("") }
     var isSavingProfile by remember { mutableStateOf(false) }
+
+    LaunchedEffect(activeSession) {
+        val session = activeSession ?: return@LaunchedEffect
+        topicStatus = "Loading notification preferences..."
+        TopicRepository.load(session) { result ->
+            if (activeSession?.userId != session.userId) return@load
+            if (result.success && result.preferences != null) {
+                topicPreferences = result.preferences
+                topicStatus = ""
+            } else topicStatus = result.message
+        }
+    }
 
     LaunchedEffect(activeSession) {
         val session = activeSession
@@ -1163,6 +1178,25 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         darkMode = enabled
                         context.getSharedPreferences("teddy_settings", Context.MODE_PRIVATE).edit()
                             .putBoolean("dark_mode", enabled).apply()
+                    },
+                    topicPreferences = topicPreferences,
+                    topicStatus = topicStatus,
+                    onTopicChange = { topic, enabled ->
+                        val session = activeSession
+                        if (session != null) {
+                            topicStatus = "Updating $topic subscription..."
+                            TopicRepository.set(session, topic, enabled) { success, message ->
+                                if (activeSession?.userId != session.userId) return@set
+                                if (success) {
+                                    topicPreferences = when (topic) {
+                                        "all_users" -> topicPreferences.copy(allUsers = enabled)
+                                        "announcements" -> topicPreferences.copy(announcements = enabled)
+                                        else -> topicPreferences.copy(updates = enabled)
+                                    }
+                                    topicStatus = "Topic preference updated."
+                                } else topicStatus = message
+                            }
+                        }
                     },
                     onSendTestNotification = {
                         val session = activeSession
