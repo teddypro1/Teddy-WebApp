@@ -15,7 +15,7 @@ object TopicRepository {
  data class Result(val success:Boolean,val preferences:Preferences?=null,val message:String)
  fun load(session:SupabaseSessionManager.Session,done:(Result)->Unit)=call(session,JSONObject().put("action","preferences")){ok,data,msg->
   val p=data?.optJSONObject("preferences")
-  done(if(ok&&p!=null) Result(true,Preferences(p.optBoolean("all_users",true),p.optBoolean("announcements",false),p.optBoolean("updates",false)),"Preferences loaded.") else Result(false,message=msg))
+  done(if(ok&&p!=null) Result(true,Preferences(p.optBoolean("all_users",false),p.optBoolean("announcements",false),p.optBoolean("updates",false)),"Preferences loaded.") else Result(false,message=msg))
  }
  fun set(session:SupabaseSessionManager.Session,topic:String,enabled:Boolean,done:(Boolean,String)->Unit){
   require(topic in setOf("all_users","announcements","updates"))
