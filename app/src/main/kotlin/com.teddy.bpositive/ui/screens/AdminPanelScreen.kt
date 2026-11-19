@@ -51,7 +51,7 @@ fun AdminPanelScreen(
     Column(
         modifier = Modifier.fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp, vertical = 20.dp),
+            .padding(start = 18.dp, top = 20.dp, end = 18.dp, bottom = 120.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Text("Admin Dashboard", fontSize = 26.sp, fontWeight = FontWeight.Bold)
@@ -213,7 +213,7 @@ fun AdminPanelScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         }
-        Text("Build 5: notification analytics, searchable history and security review.",
+        Text("Build 6: Admin Panel safe-area and bottom navigation spacing fix.",
             color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
 
         if (showBroadcastConfirmation.value) {
