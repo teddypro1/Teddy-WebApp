@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,21 +23,29 @@ fun AdminPanelScreen(
     title: String,
     message: String,
     history: List<AdminRepository.NotificationRecord>,
+    directory: List<AdminRepository.UserRecord>,
+    isLoadingDirectory: Boolean,
     statusMessage: String,
     onTitleChange: (String) -> Unit,
     onMessageChange: (String) -> Unit,
     onSend: (String, List<String>) -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onRefreshDirectory: () -> Unit
 ) {
     val showBroadcastConfirmation = remember { mutableStateOf(false) }
     val historyFilter = remember { mutableStateOf("All") }
     val historySearch = remember { mutableStateOf("") }
     val audience = remember { mutableStateOf("all_users") }
-    val recipientEmails = remember { mutableStateOf("") }
-    val parsedEmails = recipientEmails.value.split(",", ";", "\n")
-        .map { it.trim() }
-        .filter { it.isNotBlank() }
-        .distinctBy { it.lowercase() }
+    val directorySearch = remember { mutableStateOf("") }
+    val selectedEmails = remember { mutableStateListOf<String>() }
+    val filteredDirectory = directory.filter { user ->
+        directorySearch.value.isBlank() ||
+            user.email.contains(directorySearch.value, ignoreCase = true) ||
+            user.fullName.contains(directorySearch.value, ignoreCase = true) ||
+            user.username.orEmpty().contains(directorySearch.value, ignoreCase = true)
+    }
+    val selectedRecipientEmails = directory.filter { it.email.lowercase() in selectedEmails }
+        .map { it.email }
 
     val totalDevices = history.sumOf { it.totalDevices }
     val totalAccepted = history.sumOf { it.sentCount }
@@ -147,18 +156,68 @@ fun AdminPanelScreen(
                     }
                 }
                 if (audience.value == "selected_users") {
-                    OutlinedTextField(
-                        value = recipientEmails.value,
-                        onValueChange = { recipientEmails.value = it },
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Recipient email address(es)") },
-                        placeholder = { Text("user1@email.com, user2@email.com") },
-                        minLines = 2,
-                        maxLines = 4,
-                        supportingText = { Text("Separate multiple addresses with commas. Up to 100 accounts.") }
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Text("User Directory", fontWeight = FontWeight.SemiBold)
+                        TextButton(onClick = onRefreshDirectory, enabled = !isLoadingDirectory) {
+                            Text("Refresh users")
+                        }
+                    }
+                    Text("${selectedRecipientEmails.size} user(s) selected · Only selected accounts will be targeted.",
+                        color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
+                    OutlinedTextField(
+                        value = directorySearch.value,
+                        onValueChange = { directorySearch.value = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Search by name, email or username") },
+                        singleLine = true
                     )
-                    Text("Only selected accounts with registered Android devices will receive this notification.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    if (isLoadingDirectory) {
+                        Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    } else if (filteredDirectory.isEmpty()) {
+                        Text("No matching user accounts found.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    } else {
+                        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
+                            Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                filteredDirectory.forEachIndexed { index, user ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                    ) {
+                                        Checkbox(
+                                            checked = user.email.lowercase() in selectedEmails,
+                                            onCheckedChange = { checked ->
+                                                val key = user.email.lowercase()
+                                                if (checked && selectedEmails.size < 100 && key !in selectedEmails) selectedEmails.add(key)
+                                                else if (!checked) selectedEmails.remove(key)
+                                            }
+                                        )
+                                        Column(Modifier.weight(1f)) {
+                                            Text(user.fullName, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                                            Text(user.email, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(
+                                                (user.username?.let { "@$it · " } ?: "") +
+                                                    if (user.androidDeviceCount > 0) "Android device registered: ${user.androidDeviceCount}"
+                                                    else "No Android device registered",
+                                                fontSize = 11.sp,
+                                                color = if (user.androidDeviceCount > 0) MaterialTheme.colorScheme.primary
+                                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                    if (index < filteredDirectory.lastIndex) HorizontalDivider()
+                                }
+                            }
+                        }
+                    }
+                    Text("Accounts without a registered Android device can be selected, but cannot receive Push Notifications.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                 } else {
                     Text("All accounts with registered Android devices will be targeted.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
@@ -168,7 +227,7 @@ fun AdminPanelScreen(
                 Button(
                     onClick = { showBroadcastConfirmation.value = true },
                     enabled = !isLoading && !isSending && title.isNotBlank() && message.isNotBlank() &&
-                        (audience.value == "all_users" || parsedEmails.isNotEmpty()),
+                        (audience.value == "all_users" || selectedRecipientEmails.isNotEmpty()),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     if (isSending) CircularProgressIndicator(
@@ -270,11 +329,11 @@ fun AdminPanelScreen(
             AlertDialog(
                 onDismissRequest = { showBroadcastConfirmation.value = false },
                 title = { Text(if (audience.value == "all_users") "Send notification to all users?" else "Send to selected users?") },
-                text = { Text(if (audience.value == "all_users") "Your notification will be sent to every Android device currently registered in Teddy-WebApp. This action cannot be undone." else "Recipients: ${parsedEmails.joinToString(", ")}. Only registered devices belonging to these accounts will be targeted.") },
+                text = { Text(if (audience.value == "all_users") "Your notification will be sent to every Android device currently registered in Teddy-WebApp. This action cannot be undone." else "Recipients: ${selectedRecipientEmails.joinToString(", ")}. Only registered devices belonging to these accounts will be targeted.") },
                 confirmButton = {
                     TextButton(onClick = {
                         showBroadcastConfirmation.value = false
-                        onSend(audience.value, parsedEmails)
+                        onSend(audience.value, selectedRecipientEmails)
                     }) { Text(if (audience.value == "all_users") "Send to all" else "Send to selected") }
                 },
                 dismissButton = {
