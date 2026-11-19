@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
         if (result.failureCount > 0) errors.push(`${result.failureCount} device(s) failed`);
       }
       if (errors.length) return json({ error: errors.join("; "), partial: true }, 502);
-      const prefResponse = await fetch(`${supabaseUrl}/rest/v1/user_topic_subscriptions`, {
+      const prefResponse = await fetch(`${supabaseUrl}/rest/v1/user_topic_subscriptions?on_conflict=user_id,topic`, {
         method: "POST",
         headers: { ...adminHeaders, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify({ user_id: user.id, topic, subscribed, updated_at: new Date().toISOString() }),
