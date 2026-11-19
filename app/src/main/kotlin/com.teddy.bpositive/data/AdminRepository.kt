@@ -56,12 +56,18 @@ object AdminRepository {
         session: SupabaseSessionManager.Session,
         title: String,
         body: String,
+        audience: String,
+        recipientEmails: List<String>,
         onResult: (Result<String>) -> Unit
     ) {
         val payload = JSONObject()
             .put("action", "send")
             .put("title", title)
             .put("body", body)
+            .put("audience", audience)
+        if (audience == "selected_users") {
+            payload.put("recipient_emails", JSONArray(recipientEmails))
+        }
         call(session, payload) { response ->
             val data = response.data
             val sent = data?.optInt("sent", 0) ?: 0
