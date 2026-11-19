@@ -151,22 +151,31 @@ async function sendToDevice(
   if (lastCode === "UNREGISTERED") {
     try {
       const deleteResponse = await fetch(
-        `${supabaseUrl}/rest/v1/device_tokens?id=eq.${encodeURIComponent(row.id)}`,
+        `${supabaseUrl}/rest/v1/device_tokens?id=eq.${encodeURIComponent(row.id)}&select=id`,
         {
           method: "DELETE",
           headers: {
             apikey: serviceRoleKey,
             Authorization: `Bearer ${serviceRoleKey}`,
-            Prefer: "return=minimal",
+            Prefer: "return=representation",
           },
         },
       );
-      staleTokenRemoved = deleteResponse.ok;
-      if (!deleteResponse.ok) {
+      const deletedRows = await deleteResponse.json().catch(() => []);
+      staleTokenRemoved = deleteResponse.ok &&
+        Array.isArray(deletedRows) &&
+        deletedRows.some((deleted: { id?: string }) => deleted.id === row.id);
+      if (!staleTokenRemoved) {
         console.error("Stale FCM token cleanup failed", {
           user_id: row.user_id,
           token_suffix: row.fcm_token.slice(-6),
           http_status: deleteResponse.status,
+          rows_deleted: Array.isArray(deletedRows) ? deletedRows.length : 0,
+        });
+      } else {
+        console.log("Stale FCM token removed", {
+          user_id: row.user_id,
+          token_suffix: row.fcm_token.slice(-6),
         });
       }
     } catch (error) {
