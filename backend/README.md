@@ -28,3 +28,13 @@
 ## Future work
 - User targeting and scheduling remain separate roadmap work.
 - A separate web dashboard is postponed until Android admin workflows are complete.
+
+
+## Admin Panel Build 5
+- Notification analytics are calculated from the latest 50 history records returned by the server; metrics are explicitly labeled as a recent-history window, not lifetime totals.
+- Notification history can be searched by title/body and filtered by All, Successful, or Failed.
+- FCM acceptance rate measures FCM API acceptance, not end-user delivery/open/read confirmation.
+- Security review confirms the Edge Function requires JWT verification, verifies the user against the private admin allow-list, and uses server-only service-role/Firebase credentials.
+- `admin_users` and `notification_history` are RLS-enabled private tables with no `anon` or `authenticated` table grants; server-side service role is used by the Edge Function.
+- Supabase Security Advisor currently reports the expected no-policy informational findings for those private tables and a warning that leaked-password protection is disabled. The latter is a plan-level feature; no paid upgrade was made.
+- This review is a configuration/code review, not a full penetration test.
