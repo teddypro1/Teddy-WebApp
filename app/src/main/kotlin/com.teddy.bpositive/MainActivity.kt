@@ -11,6 +11,7 @@ import android.widget.Toast
 import com.teddy.bpositive.data.FcmTokenManager
 import com.teddy.bpositive.data.FcmTokenRepository
 import com.teddy.bpositive.data.AdminRepository
+import com.teddy.bpositive.data.InboxRepository
 import com.teddy.bpositive.data.SupabaseAuthRepository
 import com.teddy.bpositive.data.SupabaseSessionManager
 import com.teddy.bpositive.data.NoteSyncStore
@@ -40,6 +41,7 @@ import com.teddy.bpositive.ui.screens.TrashScreen
 import com.teddy.bpositive.ui.screens.SettingsScreen
 import com.teddy.bpositive.ui.screens.AdminPanelScreen
 import com.teddy.bpositive.ui.screens.HomeScreen
+import com.teddy.bpositive.ui.screens.NotificationInboxScreen
 import com.teddy.bpositive.ui.dialogs.ProfileEditorDialog
 import com.teddy.bpositive.ui.dialogs.DeleteConfirmationDialog
 import com.teddy.bpositive.ui.dialogs.PermanentDeleteConfirmationDialog
@@ -139,6 +141,9 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var adminStatusMessage by remember { mutableStateOf("") }
     var adminHistory by remember { mutableStateOf<List<AdminRepository.NotificationRecord>>(emptyList()) }
     var adminDirectory by remember { mutableStateOf<List<AdminRepository.UserRecord>>(emptyList()) }
+    var inboxItems by remember { mutableStateOf<List<InboxRepository.Item>>(emptyList()) }
+    var isLoadingInbox by remember { mutableStateOf(false) }
+    var inboxStatus by remember { mutableStateOf("") }
     val isAuthenticated = activeSession != null
 
     LaunchedEffect(Unit) {
@@ -195,6 +200,23 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var profileBio by remember(userId) { mutableStateOf("") }
     var profileAvatarUrl by remember(userId) { mutableStateOf("") }
     var isSavingProfile by remember { mutableStateOf(false) }
+
+    LaunchedEffect(activeSession) {
+        val session = activeSession
+        inboxItems = emptyList()
+        inboxStatus = ""
+        if (session == null) {
+            isLoadingInbox = false
+            return@LaunchedEffect
+        }
+        isLoadingInbox = true
+        InboxRepository.load(session) { result ->
+            if (activeSession?.userId != session.userId) return@load
+            isLoadingInbox = false
+            if (result.success) { inboxItems = result.items; inboxStatus = "" }
+            else inboxStatus = result.message
+        }
+    }
 
     LaunchedEffect(activeSession) {
         val session = activeSession
@@ -910,6 +932,18 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     showAdmin = hasVerifiedAdminAccess,
                     onTabSelected = { tab ->
                         selectedTab = tab
+                        if (tab == "Inbox") {
+                            val session = activeSession
+                            if (session != null) {
+                                isLoadingInbox = true
+                                InboxRepository.load(session) { result ->
+                                    if (activeSession?.userId != session.userId) return@load
+                                    isLoadingInbox = false
+                                    if (result.success) { inboxItems = result.items; inboxStatus = "" }
+                                    else inboxStatus = result.message
+                                }
+                            }
+                        }
                         if (tab == "Trash") {
                             showTrash = true
                             showConflicts = false
@@ -1008,6 +1042,34 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     contentPadding = padding,
                     onRestore = { restoreDeletedNote(it) },
                     onDeletePermanently = { permanentDeleteTarget = it.id }
+                )
+            } else if (selectedTab == "Inbox") {
+                NotificationInboxScreen(
+                    items = inboxItems,
+                    loading = isLoadingInbox,
+                    status = inboxStatus,
+                    padding = padding,
+                    onRefresh = {
+                        val session = activeSession ?: return@NotificationInboxScreen
+                        isLoadingInbox = true
+                        InboxRepository.load(session) { result ->
+                            if (activeSession?.userId != session.userId) return@load
+                            isLoadingInbox = false
+                            if (result.success) { inboxItems = result.items; inboxStatus = "" }
+                            else inboxStatus = result.message
+                        }
+                    },
+                    onRead = { item ->
+                        val session = activeSession ?: return@NotificationInboxScreen
+                        InboxRepository.markRead(session, item.id) { success, message ->
+                            if (activeSession?.userId != session.userId) return@markRead
+                            if (success) {
+                                inboxItems = inboxItems.map {
+                                    if (it.id == item.id) it.copy(readAt = java.time.Instant.now().toString()) else it
+                                }
+                            } else inboxStatus = message
+                        }
+                    }
                 )
             } else if (selectedTab == "Profile") {
                 ProfilePage(
@@ -1138,6 +1200,9 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         isLoadingAdminDirectory = false
                         adminHistory = emptyList()
                         adminDirectory = emptyList()
+                        inboxItems = emptyList()
+                        inboxStatus = ""
+                        isLoadingInbox = false
                         adminStatusMessage = ""
                         activeSession?.let { session ->
                             FcmTokenRepository.unregisterCurrentDevice(context, session)
