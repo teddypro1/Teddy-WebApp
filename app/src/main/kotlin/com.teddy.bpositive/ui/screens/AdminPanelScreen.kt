@@ -315,7 +315,7 @@ fun AdminPanelScreen(
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(item.title, fontWeight = FontWeight.SemiBold)
                         Text(item.body, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Audience: ${when (item.audience) { "all_users" -> "All users"; "selected_users" -> "Selected users"; else -> "Admin devices" }}",
+                        Text("Audience: ${when (item.audience) { "all_users" -> "All users"; "selected_users" -> "Selected users"; "topic_all_users" -> "Topic: All users"; "topic_announcements" -> "Topic: Announcements"; "topic_updates" -> "Topic: Updates"; else -> "Admin devices" }}",
                             fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("FCM accepted: ${item.sentCount}/${item.totalDevices}  •  Failed: ${item.failedCount}",
                             fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
