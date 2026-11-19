@@ -149,23 +149,31 @@ async function sendToDevice(
   // Only UNREGISTERED proves that this installation token is no longer valid.
   // Do not delete on INVALID_ARGUMENT or SENDER_ID_MISMATCH.
   if (lastCode === "UNREGISTERED") {
-    const deleteResponse = await fetch(
-      `${supabaseUrl}/rest/v1/device_tokens?id=eq.${encodeURIComponent(row.id)}`,
-      {
-        method: "DELETE",
-        headers: {
-          apikey: serviceRoleKey,
-          Authorization: `Bearer ${serviceRoleKey}`,
-          Prefer: "return=minimal",
+    try {
+      const deleteResponse = await fetch(
+        `${supabaseUrl}/rest/v1/device_tokens?id=eq.${encodeURIComponent(row.id)}`,
+        {
+          method: "DELETE",
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+            Prefer: "return=minimal",
+          },
         },
-      },
-    );
-    staleTokenRemoved = deleteResponse.ok;
-    if (!deleteResponse.ok) {
-      console.error("Stale FCM token cleanup failed", {
+      );
+      staleTokenRemoved = deleteResponse.ok;
+      if (!deleteResponse.ok) {
+        console.error("Stale FCM token cleanup failed", {
+          user_id: row.user_id,
+          token_suffix: row.fcm_token.slice(-6),
+          http_status: deleteResponse.status,
+        });
+      }
+    } catch (error) {
+      console.error("Stale FCM token cleanup network error", {
         user_id: row.user_id,
         token_suffix: row.fcm_token.slice(-6),
-        http_status: deleteResponse.status,
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
