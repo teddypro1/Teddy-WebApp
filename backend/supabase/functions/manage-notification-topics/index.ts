@@ -26,12 +26,8 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const authHeader = req.headers.get("Authorization") ?? "";
-    if (!supabaseUrl || !serviceKey || !authHeader.startsWith("Bearer ")) {
-      return json({ error: "Authentication required." }, 401);
-    }
-    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { apikey: serviceKey, Authorization: authHeader },
-    });
+    if (!supabaseUrl || !serviceKey || !authHeader.startsWith("Bearer ")) return json({ error: "Authentication required." }, 401);
+    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: serviceKey, Authorization: authHeader } });
     if (!userResponse.ok) return json({ error: "Invalid or expired session." }, 401);
     const user = await userResponse.json();
     if (!user?.id) return json({ error: "Account could not be verified." }, 401);
@@ -40,10 +36,7 @@ Deno.serve(async (req) => {
     const adminHeaders = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
 
     if (input.action === "preferences") {
-      const response = await fetch(
-        `${supabaseUrl}/rest/v1/user_topic_subscriptions?select=topic,subscribed&user_id=eq.${user.id}`,
-        { headers: adminHeaders },
-      );
+      const response = await fetch(`${supabaseUrl}/rest/v1/user_topic_subscriptions?select=topic,subscribed&user_id=eq.${user.id}`, { headers: adminHeaders });
       if (!response.ok) return json({ error: "Could not load topic preferences." }, 502);
       const rows = await response.json();
       const preferences = Object.fromEntries(["all_users", "announcements", "updates"].map((topic) => {
@@ -55,13 +48,8 @@ Deno.serve(async (req) => {
 
     if (input.action === "subscribe" || input.action === "unsubscribe") {
       const topic = input.topic;
-      if (typeof topic !== "string" || !allowedTopics.has(topic)) {
-        return json({ error: "Unsupported notification topic." }, 400);
-      }
-      const tokenResponse = await fetch(
-        `${supabaseUrl}/rest/v1/device_tokens?select=fcm_token&user_id=eq.${user.id}&platform=eq.android`,
-        { headers: adminHeaders },
-      );
+      if (typeof topic !== "string" || !allowedTopics.has(topic)) return json({ error: "Unsupported notification topic." }, 400);
+      const tokenResponse = await fetch(`${supabaseUrl}/rest/v1/device_tokens?select=fcm_token&user_id=eq.${user.id}&platform=eq.android`, { headers: adminHeaders });
       if (!tokenResponse.ok) return json({ error: "Could not load this account's devices." }, 502);
       const tokenRows = await tokenResponse.json();
       const tokens = [...new Set(tokenRows.map((row: any) => row.fcm_token).filter((value: any) => typeof value === "string"))];
@@ -70,10 +58,9 @@ Deno.serve(async (req) => {
       const subscribed = input.action === "subscribe";
       const errors: string[] = [];
       for (let index = 0; index < tokens.length; index += 1000) {
-        const batch = tokens.slice(index, index + 1000);
         const result = subscribed
-          ? await client.subscribeToTopic(batch, topic)
-          : await client.unsubscribeFromTopic(batch, topic);
+          ? await client.subscribeToTopic(tokens.slice(index, index + 1000), topic)
+          : await client.unsubscribeFromTopic(tokens.slice(index, index + 1000), topic);
         if (result.failureCount > 0) errors.push(`${result.failureCount} device(s) failed`);
       }
       if (errors.length) return json({ error: errors.join("; "), partial: true }, 502);
@@ -87,10 +74,7 @@ Deno.serve(async (req) => {
     }
 
     if (input.action === "send_topic") {
-      const adminResponse = await fetch(
-        `${supabaseUrl}/rest/v1/admin_users?select=user_id&user_id=eq.${user.id}&limit=1`,
-        { headers: adminHeaders },
-      );
+      const adminResponse = await fetch(`${supabaseUrl}/rest/v1/admin_users?select=user_id&user_id=eq.${user.id}&limit=1`, { headers: adminHeaders });
       if (!adminResponse.ok) return json({ error: "Could not verify administrator access." }, 502);
       if ((await adminResponse.json()).length === 0) return json({ error: "Administrator access required." }, 403);
       const topic = input.topic;
@@ -106,7 +90,7 @@ Deno.serve(async (req) => {
         method: "POST",
         headers: { ...adminHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
         body: JSON.stringify({
-          admin_user_id: user.id, title, body, audience: "topic:" + topic,
+          admin_user_id: user.id, title, body, audience: "topic_" + topic,
           total_devices: 0, sent_count: 1, failed_count: 0,
           delivery_details: [{ type: "topic", topic, fcm_message_name: messageId }],
         }),
