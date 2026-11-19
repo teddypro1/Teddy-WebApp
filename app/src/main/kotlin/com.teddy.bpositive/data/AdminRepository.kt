@@ -15,6 +15,17 @@ object AdminRepository {
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
     private const val FUNCTION_URL = "/functions/v1/send-push-notification"
 
+    data class DeliveryDetail(
+        val userId: String,
+        val tokenSuffix: String,
+        val success: Boolean,
+        val httpStatus: Int,
+        val errorCode: String?,
+        val errorMessage: String?,
+        val attempts: Int,
+        val staleTokenRemoved: Boolean
+    )
+
     data class NotificationRecord(
         val id: String,
         val title: String,
@@ -23,13 +34,15 @@ object AdminRepository {
         val totalDevices: Int,
         val sentCount: Int,
         val failedCount: Int,
-        val createdAt: String
+        val createdAt: String,
+        val deliveryDetails: List<DeliveryDetail>
     )
 
     data class Result<T>(
         val success: Boolean,
         val data: T? = null,
-        val message: String
+        val message: String,
+        val deliveryDetails: List<DeliveryDetail> = emptyList()
     )
 
     fun checkAdmin(session: SupabaseSessionManager.Session, onResult: (Result<Boolean>) -> Unit) {
@@ -53,12 +66,26 @@ object AdminRepository {
             val data = response.data
             val sent = data?.optInt("sent", 0) ?: 0
             val total = data?.optInt("total", 0) ?: 0
+            val failed = data?.optInt("failed", (total - sent).coerceAtLeast(0)) ?: 0
             val historySaved = data?.optBoolean("history_saved", false) == true
-            val message = if (response.success) {
-                "Sent to $sent of $total registered Android device(s)." +
-                    if (historySaved) " History saved." else " History could not be saved."
+            val details = parseDeliveryDetails(data?.optJSONArray("results"))
+            val summary = if (response.success) {
+                "FCM accepted $sent of $total device message(s); failed: $failed." +
+                    if (historySaved) " Detailed history saved." else " Detailed history could not be saved."
             } else response.message
-            onResult(Result(response.success, message.takeIf { response.success }, message))
+            val diagnosticText = details.joinToString("\n") { detail ->
+                val account = detail.userId.takeLast(6)
+                val token = detail.tokenSuffix.ifBlank { "unknown" }
+                if (detail.success) {
+                    "✓ Account …$account · Token …$token · FCM accepted (HTTP ${detail.httpStatus})"
+                } else {
+                    val code = detail.errorCode ?: "UNKNOWN_ERROR"
+                    val explanation = friendlyError(code, detail.staleTokenRemoved)
+                    "✕ Account …$account · Token …$token · $code (HTTP ${detail.httpStatus}) · $explanation · Attempts: ${detail.attempts}"
+                }
+            }
+            val fullMessage = listOf(summary, diagnosticText).filter { it.isNotBlank() }.joinToString("\n")
+            onResult(Result(response.success, summary.takeIf { response.success }, fullMessage, details))
         }
     }
 
@@ -85,7 +112,8 @@ object AdminRepository {
                                 totalDevices = row.optInt("total_devices"),
                                 sentCount = row.optInt("sent_count"),
                                 failedCount = row.optInt("failed_count"),
-                                createdAt = row.optString("created_at")
+                                createdAt = row.optString("created_at"),
+                                deliveryDetails = parseDeliveryDetails(row.optJSONArray("delivery_details"))
                             )
                         )
                     }
@@ -94,6 +122,41 @@ object AdminRepository {
             } catch (error: Exception) {
                 onResult(Result(false, null, "Could not read notification history: ${error.message}"))
             }
+        }
+    }
+
+    private fun parseDeliveryDetails(rows: JSONArray?): List<DeliveryDetail> {
+        if (rows == null) return emptyList()
+        return buildList {
+            for (index in 0 until rows.length()) {
+                val row = rows.optJSONObject(index) ?: continue
+                add(
+                    DeliveryDetail(
+                        userId = row.optString("user_id"),
+                        tokenSuffix = row.optString("token_suffix"),
+                        success = row.optBoolean("success"),
+                        httpStatus = row.optInt("http_status"),
+                        errorCode = row.optString("error_code").takeIf { it.isNotBlank() && it != "null" },
+                        errorMessage = row.optString("error_message").takeIf { it.isNotBlank() && it != "null" },
+                        attempts = row.optInt("attempts", 1),
+                        staleTokenRemoved = row.optBoolean("stale_token_removed")
+                    )
+                )
+            }
+        }
+    }
+
+    fun friendlyError(code: String, staleTokenRemoved: Boolean = false): String {
+        return when (code) {
+            "UNREGISTERED" -> if (staleTokenRemoved) "Expired token automatically removed." else "Token is no longer registered; cleanup needs review."
+            "SENDER_ID_MISMATCH" -> "Token belongs to a different Firebase sender/project."
+            "INVALID_ARGUMENT" -> "FCM rejected the token or message payload; token was kept for safety."
+            "QUOTA_EXCEEDED" -> "FCM rate limit reached; retry was attempted."
+            "UNAVAILABLE", "INTERNAL", "FCM_SERVER_ERROR" -> "Temporary FCM server problem; retry was attempted."
+            "UNAUTHENTICATED" -> "Firebase OAuth access was rejected."
+            "PERMISSION_DENIED" -> "Firebase service account lacks permission for this project."
+            "NETWORK_ERROR" -> "Network failure while contacting FCM."
+            else -> "FCM could not accept this device message."
         }
     }
 
