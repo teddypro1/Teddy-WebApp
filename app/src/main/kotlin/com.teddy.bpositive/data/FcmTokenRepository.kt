@@ -10,10 +10,11 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.net.URLEncoder
 
 /**
  * Registers this installation's FCM token against the currently authenticated
- * Supabase user. The user's access token and database RLS enforce ownership.
+ * Supabase user. Replaced tokens are removed only after the new token is saved.
  */
 object FcmTokenRepository {
     private const val TAG = "TeddyFCM"
@@ -73,10 +74,14 @@ object FcmTokenRepository {
             .put("fcm_token", token)
             .put("platform", "android")
 
+        // Snapshot the queue before starting the worker. It contains tokens
+        // rotated on this installation, not tokens from other devices.
+        val replacedTokens = FcmTokenManager.getPendingOldTokens(context)
+            .filter { it.isNotBlank() && it != token }
+
         Log.i(TAG, "Sending FCM token registration request to Supabase")
         Thread {
             // A token refresh can race with sign-out or account switching.
-            // Re-read the encrypted session and never register for a different account.
             val latestSession = SupabaseSessionManager.load(context.applicationContext)
             if (latestSession == null || latestSession.userId != userId) {
                 mainHandler.post { onResult?.invoke(false, "Session changed; FCM registration skipped.") }
@@ -95,10 +100,10 @@ object FcmTokenRepository {
                 .post(payloadWithFreshTimestamp.toString().toRequestBody(jsonMediaType))
                 .build()
 
-            val result = try {
+            val registrationResult = try {
                 client.newCall(request).execute().use { response ->
                     if (response.isSuccessful) {
-                        Log.i(TAG, "Supabase accepted FCM token registration; HTTP ${response.code}")
+                        Log.i(TAG, "Supabase accepted current FCM token; HTTP ${response.code}")
                         true to "FCM token registered."
                     } else {
                         val errorBody = response.body?.string().orEmpty()
@@ -111,9 +116,65 @@ object FcmTokenRepository {
                 false to "FCM token registration network error: ${e.message ?: "Unknown error"}"
             }
 
-            if (!result.first) Log.w(TAG, result.second)
-            mainHandler.post { onResult?.invoke(result.first, result.second) }
+            if (!registrationResult.first) {
+                mainHandler.post { onResult?.invoke(false, registrationResult.second) }
+                return@Thread
+            }
+
+            // Delete only old tokens belonging to this same Supabase account.
+            // A token used by another account/device is never touched.
+            var removedCount = 0
+            var cleanupPending = 0
+            for (oldToken in replacedTokens) {
+                val removed = removeReplacedToken(context, latestSession, oldToken)
+                if (removed) {
+                    removedCount++
+                    FcmTokenManager.clearPendingOldToken(context, oldToken)
+                } else {
+                    cleanupPending++
+                }
+            }
+
+            val message = buildString {
+                append("Current FCM token registered.")
+                if (removedCount > 0) append(" Replaced $removedCount old token(s).")
+                if (cleanupPending > 0) append(" Cleanup pending for $cleanupPending old token(s); it will retry on the next app launch.")
+            }
+            Log.i(TAG, message)
+            mainHandler.post { onResult?.invoke(true, message) }
         }.start()
+    }
+
+    private fun removeReplacedToken(
+        context: Context,
+        session: SupabaseSessionManager.Session,
+        oldToken: String
+    ): Boolean {
+        val userId = session.userId ?: return false
+        val encodedToken = URLEncoder.encode(oldToken, "UTF-8")
+        val encodedUserId = URLEncoder.encode(userId, "UTF-8")
+        val request = Request.Builder()
+            .url("${SupabaseConfig.BASE_URL}$TABLE_PATH?user_id=eq.$encodedUserId&fcm_token=eq.$encodedToken")
+            .addHeader("apikey", SupabaseConfig.API_KEY)
+            .addHeader("Authorization", "Bearer ${session.accessToken}")
+            .addHeader("Prefer", "return=minimal")
+            .delete()
+            .build()
+
+        return try {
+            client.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    Log.i(TAG, "Replaced FCM token removed for current account; HTTP ${response.code}")
+                    true
+                } else {
+                    Log.w(TAG, "Could not remove replaced FCM token; HTTP ${response.code}")
+                    false
+                }
+            }
+        } catch (error: Exception) {
+            Log.w(TAG, "Replaced FCM token cleanup network error", error)
+            false
+        }
     }
 
     /** Sends a one-time test push through the authenticated Supabase Edge Function. */
@@ -162,8 +223,8 @@ object FcmTokenRepository {
     ) {
         val userId = session.userId ?: return
         val token = FcmTokenManager.getSavedToken(context) ?: return
-        val encodedToken = java.net.URLEncoder.encode(token, "UTF-8")
-        val encodedUserId = java.net.URLEncoder.encode(userId, "UTF-8")
+        val encodedToken = URLEncoder.encode(token, "UTF-8")
+        val encodedUserId = URLEncoder.encode(userId, "UTF-8")
 
         Thread {
             val request = Request.Builder()
