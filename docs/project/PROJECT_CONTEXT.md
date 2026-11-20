@@ -401,3 +401,38 @@ Additional user-supplied CodeAssist 3.46.0 screenshots dated 2026-11-20 are docu
 - System > Privacy & Data: ads toggles On, performance analytics Off, cache clearing, logs and project ZIP backup actions.
 
 These are screenshot-derived IDE preferences only. They do not establish that downloads, cache clearing, backups or a successful Build occurred. The user reported removing three accidentally added Quick Add dependencies; the subsequent list screenshot no longer showed Firebase BOM, Firebase Analytics or Play Services Auth, while Firebase Messaging remained. Build verification is still separate.
+
+
+## 23. Build 22 — Note reader/editor redesign (implementation committed; user Build pending)
+
+On 2026-11-20, the user approved Build 22 to replace direct inline note editing with a dedicated full-screen note experience:
+- Note List remains a preview only (title + short content excerpt); tapping a note opens a separate screen.
+- Note detail opens in Reading Mode by default. The complete content is vertically scrollable.
+- Tapping the title/body or Edit action enters Editing Mode; Save writes the updated note to local storage and queues the existing Supabase sync path.
+- Note colors are stored in account-scoped local note JSON via a backward-compatible `colorHex` field with a default of `#FFFFFF`; no production DB migration was made. Color is device-local and is not synchronized to other devices.
+- The old 3,000-character input guard was removed for note content; existing notes remain readable.
+- The note card remains a short preview, with pin/delete controls.
+- Editing UI includes basic Markdown text shortcuts (bold, italic, heading and bullet templates). This version inserts Markdown markers into plain text; rich rendered Markdown preview is not yet implemented.
+
+Files changed:
+- `app/src/main/kotlin/com.teddy.bpositive/model/Note.kt`
+- `app/src/main/kotlin/com.teddy.bpositive/data/LocalNotesStorage.kt`
+- `app/src/main/kotlin/com.teddy.bpositive/ui/components/NoteComponents.kt`
+- `app/src/main/kotlin/com.teddy.bpositive/ui/screens/HomeScreen.kt`
+- `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NoteDetailScreen.kt` (new)
+- `app/src/main/kotlin/com.teddy.bpositive/MainActivity.kt`
+
+Implementation commits (directly on `main`):
+- `e28271bf2766ace2285b8fee4491e5625b823a24` — note color field
+- `df0e3bbd14a62bd57191809ce66008b7399e9f56` — local persistence
+- `9754947d9e0d38c907b17e4464b2de8636440ba8` — clickable colored note cards
+- `afcf5d09dc858714ebf2b2f4ad8268919215e4ef` — list remains preview
+- `282ae2353f69988f657527790f48eb8a05772180` — full-screen detail screen
+- `b8d2e0eab551ea3a896e3782c5c947a174a07544` — MainActivity integration
+- `cfe9d753a86d593483625c3ee5edb80f444a111c` — preserve local color during cloud refresh
+- `c9db6b8fd113446b0d6e5d0cea9d11613ec5ccd0` — remove obsolete 3,000-character indicator
+- `2c901c1d60504578885c8bf003c6596574d6e268` — improve Markdown shortcut templates
+
+No Supabase schema/migration or paid plan change was made. Supabase remained `ACTIVE_HEALTHY` at pre-change verification, with 18 applied migrations and existing `public.notes` columns unchanged. GitHub branch verification showed only `main`.
+
+**Status:** Source implementation is committed. CodeAssist compilation, device behavior, long-note scrolling, editing/save, offline queue/reconnect, realtime/conflict regression and color persistence still require user Build/device testing. Do not mark Build 22 successful until the user confirms.
