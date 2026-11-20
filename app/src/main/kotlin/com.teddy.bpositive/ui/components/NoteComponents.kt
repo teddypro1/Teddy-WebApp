@@ -396,9 +396,12 @@ fun NoteCard(
     onPin: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val noteBackground = try { Color(android.graphics.Color.parseColor(note.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.surface }
-    // Note cards retain their selected light background in dark mode; use a contrasting foreground.
-    val noteTextColor = if (noteBackground.luminance() > 0.5f) Color(0xFF202124) else Color(0xFFF5F5F5)
+    val isDarkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val selectedNoteColor = try { Color(android.graphics.Color.parseColor(note.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.surface }
+    // In dark theme, note cards follow the app surface instead of retaining a light custom note color.
+    val noteBackground = if (isDarkTheme) MaterialTheme.colorScheme.surface else selectedNoteColor
+    val noteTextColor = if (isDarkTheme) MaterialTheme.colorScheme.onSurface
+        else if (noteBackground.luminance() > 0.5f) Color(0xFF202124) else Color(0xFFF5F5F5)
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit),
