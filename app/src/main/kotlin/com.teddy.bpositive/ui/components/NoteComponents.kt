@@ -290,7 +290,7 @@ fun NoteEditor(
                 )
 
                 Text(
-                    "${content.length} / 3000",
+                    "${content.length} characters",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
