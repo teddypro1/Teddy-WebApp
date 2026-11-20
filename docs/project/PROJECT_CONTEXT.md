@@ -227,7 +227,7 @@ Historical v1.0.0 metadata:
 ```
 This is historical, not current. Always fetch live `update.json` from main before editing or stating its current contents. After publishing a release, set latestVersionName/code, downloadUrl, verified SHA-256 and release notes. Keep minimumSupportedVersionCode at 1 unless user explicitly chooses to force a mandatory update.
 
-## 9. Build 21 — Settings manual update check improvement (NOT YET USER-CONFIRMED BUILT)
+## 9. Build 21 — Settings manual update check improvement (USER-CONFIRMED SUCCESSFUL)
 
 User reported:
 - After tapping Later in the update prompt, Settings showed that a new update was available.
@@ -247,7 +247,7 @@ Changes committed directly to `main`:
 Latest verified main HEAD as of 20 Nov 2026:
 `e2e1c5d43e65c793842fd07fa691f557788de9bc`
 
-IMPORTANT: User has not yet reported Build 21 successful. Do not claim it is tested or working until user pulls main, builds and tests it, then confirms. Next step: ask user to fetch/pull main, build once, and test Settings > Check for Updates both when an update is available and when already up to date. Also test offline/check-failure behavior if practical.
+**User confirmation (2026-11-20):** The user explicitly reported that Build 21 was successful and all tests were completed. Do not ask for Build 21 confirmation again. The source commits above and the user's confirmation are both recorded.
 
 ## 10. Branch and pull-request policy
 
@@ -269,15 +269,13 @@ User's final decision:
 
 ## 12. Known remaining work / next priorities
 
-Priority A — Build 21:
-1. User pulls latest `main`.
-2. User builds in CodeAssist.
-3. User confirms Build result.
-4. Test manual Check for Updates with update available: animation, loading delay, dialog, download action.
-5. Test no-update result and offline behavior.
-6. If issue appears, inspect logs/source and prepare one corrective Build directly on main.
+Priority A — Supabase verification:
+1. Inspect live SQL function definitions and schema-qualified references with `search_path=pg_catalog`.
+2. Test auth signup and automatic profile row creation.
+3. Regression-test profile editing, notes CRUD, offline sync, realtime, conflict copy/restore.
+4. Re-run advisors.
 
-Priority B — Supabase verification:
+Priority B — operational:
 1. Inspect live SQL function definitions and schema-qualified references with `search_path=pg_catalog`.
 2. Test auth signup and automatic profile row creation.
 3. Regression-test profile editing, notes CRUD, offline sync, realtime, conflict copy/restore.
@@ -340,13 +338,14 @@ History is reconstructed from repository commits, migration records and prior us
 
 - GitHub repository: public, not archived; default branch `main`.
 - Live branch search returned exactly one branch: `main`.
-- Latest main commit: `c5a51767d6153d6b9fe7ce164943c41e958769e9` (`Add comprehensive AI project context and progress log`).
-- Current `PROJECT_CONTEXT.md` blob at the start of this documentation update: `eaa486aae78804ba4bad8c5092e41c9045a3b53b`.
+- Latest main commit before this documentation update: `67d3089856858efff228b25bfd8810c893441946` (`Record Build 21 successful Build and test confirmation`).
+- Master file blob SHA before this update: refreshed immediately before the documentation commit; see the resulting commit and blob SHA in the handoff report.
 - Current `app/module.toml`: versionName `1.0.1`, versionCode `2`, namespace `com.teddy.bpositive`, Java 17, SDK 36/36/26.
 - Live `update.json`: enabled; latest version `1.0.1` (code 2); minimum supported code 1; download points to the v1.0.1 GitHub Release APK. The live SHA-256 is recorded in `update.json`; always fetch it before future changes.
 - Supabase project status: `ACTIVE_HEALTHY`; PostgreSQL `17.11.0.019`.
 - Live Supabase migration ledger returned 18 applied migrations, from `20261118100817` through `20261120061216`. Exact migration names and chronology are in [SUPABASE_HISTORY.md](../history/SUPABASE_HISTORY.md).
 - Build 21 manual Settings update-check improvements are committed to main. On 2026-11-20, the user explicitly confirmed that Build 21 built successfully and all tests were completed.
+- Live GitHub branch search returned exactly one server-side branch: `main`.
 
 The earlier `docs/architecture.md` was a proposal describing Cloudflare Workers as the planned API. The README and current project context clarify that this proposal is no longer the deployed request path: Android currently talks directly to Supabase for supported operations; Supabase Edge Functions handle privileged notification workflows. The separate website and shared Cloudflare Workers API remain future/planned work only. See the corrected architecture document.
 
@@ -370,3 +369,52 @@ The detailed chronology is maintained in [BUILD_HISTORY_01.md](../history/BUILD_
 4. Keep old history rather than deleting it; correct mistakes with dated notes when necessary.
 5. Do not copy secrets, passwords, private account emails, raw FCM tokens or service-role credentials into public documentation.
 6. Before documenting a live status, fetch the relevant GitHub/Supabase state again. The snapshot above is dated and will become historical.
+
+
+## 20. CodeAssist Git / repository panel walkthrough — screenshots supplied 2026-11-20
+
+The user supplied sequential screenshots from the CodeAssist IDE's source-control panel. These document the IDE interface and the observed local repository state; they are not evidence of a new app Build or source-code modification.
+
+### Main source-control view and sync
+
+- Selected branch shown in the IDE: `main`.
+- The source-control view displays `Pull` and `Push` actions and an `Up to date` status.
+- The settled status view shows a check mark, `Nothing to commit`, and the message that the working tree matches the last commit.
+- The short commit shown in the panel is `67d3089`, matching the live GitHub main HEAD verified on 2026-11-20: `67d3089856858efff228b25bfd8810c893441946`.
+- A later screenshot briefly shows `Pushing` with a progress indicator; the subsequent screenshot displays a `Pushed` confirmation, then returns to `Up to date` / `Nothing to commit`. This is consistent with a completed push and clean working tree at that point.
+- These screenshots do not reveal any modal confirmation or error dialog during the push.
+
+### Branch picker and apparent stale refs
+
+- The IDE Branches screen displayed `main` as Current, plus old local entries such as `feature/in-app-update-build15`, `fix/production-update-metadata-url` and `release/v1.0.1-build20`; it also displayed corresponding `origin/*` refs.
+- In a later screenshot, the visible local list had reduced to `main` and `release/v1.0.1-build20`, while several remote-tracking refs remained visible.
+- The user explicitly clarified that the actual GitHub repository should contain only `main`; the other entries shown in the IDE are stale/local UI entries or a possible IDE refresh/cache inconsistency and must not be treated as active GitHub branches.
+- Independent live GitHub branch search on 2026-11-20 returned exactly one branch: `main`. This server-side result is authoritative.
+- Do not switch to, merge, or delete any of the old IDE-listed refs based only on these screenshots. Do not create new branches. Continue all future work directly on `main`.
+- The branch action menu shown for an old remote-tracking entry offered `Switch to this branch` and `Merge into main`; another menu also showed `Delete branch`. No such action was performed or requested.
+
+### Repository three-dot menu
+
+The menu beside the Branch selector showed:
+- **Repository:** `History` (browse past commits), `Stashes` (stash changes), `GitHub` (GitHub account, publishing and pull requests).
+- **Sync:** `Fetch` (check remote for new commits without changing working files), `Refresh` (re-read status of files).
+- **Other:** `Add default .gitignore entries`.
+
+### History and Stashes
+
+- History view showed the latest commit `Record Build 21 successful Build and test confirmation`, short SHA `67d3089`, labeled `main` and `origin/main`.
+- The preceding visible history included documentation organization, Build 21 confirmation and the manual update-check implementation commits. The full history is available from GitHub; the screenshot is only a partial viewport.
+- Stashes screen displayed `Nothing stashed`.
+- The Stash changes form has an optional Description field and an `Include untracked files` checkbox (checked in the screenshot), followed by the `Stash changes` action. No stash operation was performed.
+
+### GitHub integration and account management
+
+- The GitHub panel displayed the account as `teddypro1`, showed `No open pull requests`, and provided a `New pull request` form whose source was `main`.
+- The configured remote shown was `origin` with URL `https://github.com/teddypro1/Teddy-WebApp.git`.
+- The panel also displayed a warning that the saved GitHub sign-in was no longer accepted and offered `Sign in again`. The user explicitly stated that this warning can be ignored: GitHub is already signed in for Git operations and the warning has not caused a functional problem. Do not treat it as a blocker or ask the user to reauthenticate unless an actual Git operation fails.
+- The Manage > Accounts screen showed account `teddypro1` marked `Used for Git operations`. It offered GitHub sign-in and Personal Access Token options, plus Git identity fields. The screenshot contains a personal email address; intentionally do not reproduce or store that address in project documentation.
+- No new pull request, remote, account, token or identity change was made.
+
+### Interpretation and operating guidance
+
+These screenshots are a reference for how the user's CodeAssist Git interface is arranged. They document the visible state on 2026-11-20 only. Before any future source change, continue to verify the live GitHub branch list, main HEAD and target file SHA rather than relying on the IDE's cached branch list or status labels. The user's explicit main-only workflow remains in force.
