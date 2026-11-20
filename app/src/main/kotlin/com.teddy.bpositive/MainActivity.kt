@@ -173,7 +173,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
             val available = metadata != null && metadata.enabled &&
                 (result.installedVersionCode < metadata.latestVersionCode || mandatory)
             isMandatoryUpdate = mandatory
-            if (available && metadata != null) {
+            if (available) {
                 val preferences = context.getSharedPreferences("teddy_settings", Context.MODE_PRIVATE)
                 val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
                 val laterVersion = preferences.getLong("update_later_version_code", -1L)
