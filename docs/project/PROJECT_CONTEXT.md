@@ -435,4 +435,13 @@ Implementation commits (directly on `main`):
 
 No Supabase schema/migration or paid plan change was made. Supabase remained `ACTIVE_HEALTHY` at pre-change verification, with 18 applied migrations and existing `public.notes` columns unchanged. GitHub branch verification showed only `main`.
 
-**Status:** Source implementation is committed. CodeAssist compilation, device behavior, long-note scrolling, editing/save, offline queue/reconnect, realtime/conflict regression and color persistence still require user Build/device testing. Do not mark Build 22 successful until the user confirms.
+### Dark Mode Note Card correction — user-confirmed Build success
+
+The first Build 22 UI showed white Note Cards in Dark Mode because the saved light `colorHex` continued to control the card background. The focused correction in `NoteComponents.kt` now uses `MaterialTheme.colorScheme.surface` and `onSurface` in Dark Mode, while Light Mode retains the selected per-note color.
+
+- `df684cbd23` — initial text-contrast correction in Note Reader/Editor and Note Card.
+- `08b02aec7f` — Note Card background follows the active Dark Theme surface.
+- **User-confirmed on 2026-11-20:** the user reported the targeted color behavior works and explicitly confirmed Build Successful.
+
+This confirmation covers the reported Build and targeted visual issue only. It does not establish exhaustive testing of all offline sync, realtime, conflict recovery, long-note and other regression scenarios. No Supabase schema/migration or paid plan change was made.
+
