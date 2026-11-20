@@ -111,7 +111,7 @@ fun AdminPanelScreen(
                     Text("$deliveryRate%", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 }
                 LinearProgressIndicator(
-                    progress = (deliveryRate / 100f).coerceIn(0f, 1f),
+                    progress = { (deliveryRate / 100f).coerceIn(0f, 1f) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Text("Accepted means FCM accepted the message request; it is not a device-open/read receipt.",

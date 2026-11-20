@@ -21,6 +21,8 @@ object FcmTokenRepository {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
+    // Keep token retrieval until the backend is migrated from FCM tokens to Firebase Installation IDs.
+    @Suppress("DEPRECATION")
     fun registerCurrentDevice(
         context: Context,
         session: SupabaseSessionManager.Session,
