@@ -5,6 +5,7 @@
 ## Reference index
 
 - [Git এবং Source Control](source-control.md) — Branches, repository menu, History, Stashes, GitHub integration, Fetch, Pull, Push এবং দৃশ্যমান sync status।
+- [Modules ও Android Module Settings](modules-and-android-settings.md) — Modules screen, app module, Java version, source sets, Android SDK/version configuration, Build Types এবং Add feature section।
 
 ## Documentation rules
 
