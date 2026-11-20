@@ -4,6 +4,7 @@ import com.teddy.bpositive.model.Note
 import com.teddy.bpositive.data.SupabaseNotesApi
 import com.teddy.bpositive.ui.components.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
