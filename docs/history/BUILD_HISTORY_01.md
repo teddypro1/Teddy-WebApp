@@ -188,4 +188,17 @@ Commits:
 - `c9db6b8fd1` remove old length counter
 - `2c901c1d60` formatting shortcut templates
 
-**Pending:** CodeAssist Build and device tests for navigation, long-note reading, edit/save, local color persistence, offline sync, reconnect, realtime and conflict recovery. User confirmation required before declaring success.
+### Build 22 — Dark Mode note-card color correction (user-confirmed Build successful)
+
+After the initial Build 22 implementation, the user reported that Note Cards remained white in Dark Mode because the card background continued using the saved light `colorHex`. The focused correction changed `NoteComponents.kt` so:
+- Dark Mode Note Cards use `MaterialTheme.colorScheme.surface` and `onSurface`.
+- Light Mode retains the selected per-note color.
+- No database/schema change was made.
+
+Commits:
+- `df684cbd23` — initial text-contrast correction in Note Reader/Editor and Note Card.
+- `08b02aec7f` — make Note Card background follow the active Dark Theme surface.
+
+**User-confirmed:** On 2026-11-20, the user reported the color issue was working as expected and explicitly confirmed Build Successful after pulling the correction. This confirms the reported Build and the targeted visual fix only; it does not imply every Build 22 regression scenario (offline sync, realtime, conflicts, long-note persistence) was exhaustively tested.
+
+
