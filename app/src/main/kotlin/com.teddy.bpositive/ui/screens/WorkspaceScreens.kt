@@ -3,6 +3,11 @@ package com.teddy.bpositive.ui.screens
 import com.teddy.bpositive.data.SupabaseNotesApi
 import com.teddy.bpositive.ui.components.EmptyNotes
 import com.teddy.bpositive.ui.components.TrashNoteCard
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -159,23 +164,30 @@ fun SettingsScreen(
                     enabled = !isCheckingUpdate,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    if (isCheckingUpdate) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text("Checking...")
-                    } else {
-                        Text("Check for Updates")
+                    AnimatedContent(
+                        targetState = isCheckingUpdate,
+                        transitionSpec = {
+                            fadeIn(animationSpec = tween(180)) togetherWith
+                                fadeOut(animationSpec = tween(180))
+                        },
+                        label = "update-check-button"
+                    ) { checking ->
+                        if (checking) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Checking...")
+                            }
+                        } else {
+                            Text("Check for Updates")
+                        }
                     }
-                }
-                if (latestVersionCode != null && latestVersionCode > installedVersionCode) {
-                    Text(
-                        "An update is available. In-app download and installation will be enabled in the next update build.",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 12.sp
-                    )
                 }
             }
         }
