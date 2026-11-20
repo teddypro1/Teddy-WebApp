@@ -44,6 +44,7 @@ import com.teddy.bpositive.ui.screens.TrashScreen
 import com.teddy.bpositive.ui.screens.SettingsScreen
 import com.teddy.bpositive.ui.screens.AdminPanelScreen
 import com.teddy.bpositive.ui.screens.HomeScreen
+import com.teddy.bpositive.ui.screens.NoteDetailScreen
 import com.teddy.bpositive.ui.screens.NotificationInboxScreen
 import com.teddy.bpositive.ui.dialogs.ProfileEditorDialog
 import com.teddy.bpositive.ui.dialogs.DeleteConfirmationDialog
@@ -764,6 +765,8 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         mutableStateOf(true)
     }
 
+    var openedNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
+
     var showEditor by rememberSaveable {
         mutableStateOf(false)
     }
@@ -1074,10 +1077,22 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     }
 
     fun editNote(note: Note) {
-        editingId = note.id
-        title = note.title
-        content = note.content
-        showEditor = true
+        openedNoteId = note.id
+        showEditor = false
+    }
+
+    fun saveOpenedNote(noteId: Long, newTitle: String, newContent: String, newColor: String) {
+        val index = notes.indexOfFirst { it.id == noteId }
+        if (index < 0) return
+        val updated = notes[index].copy(
+            title = newTitle.trim(), content = newContent,
+            colorHex = newColor, updatedAt = System.currentTimeMillis()
+        )
+        notes[index] = updated
+        saveChanges()
+        syncNoteUpsert(updated)
+        openedNoteId = null
+        Toast.makeText(context, "Note updated.", Toast.LENGTH_SHORT).show()
     }
 
     fun togglePin(note: Note) {
@@ -1098,7 +1113,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
-                AppBottomNavigationBar(
+                if (openedNoteId == null) AppBottomNavigationBar(
                     selectedTab = selectedTab,
                     showAdmin = hasVerifiedAdminAccess,
                     onTabSelected = { tab ->
@@ -1128,7 +1143,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                 )
             },
             topBar = {
-                WorkspaceTopBar(
+                if (openedNoteId == null) WorkspaceTopBar(
                     fullName = currentProfile?.fullName.orEmpty(),
                     avatarUrl = currentProfile?.avatarUrl.orEmpty(),
                     darkMode = darkMode,
@@ -1155,7 +1170,19 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
 
         ) { padding ->
 
-            if (selectedTab == "Home") {
+            if (selectedTab == "Home" && openedNoteId != null) {
+                val openedNote = notes.firstOrNull { it.id == openedNoteId }
+                if (openedNote != null) {
+                    NoteDetailScreen(
+                        note = openedNote,
+                        contentPadding = padding,
+                        onBack = { openedNoteId = null },
+                        onSave = { newTitle, newContent, newColor ->
+                            saveOpenedNote(openedNote.id, newTitle, newContent, newColor)
+                        }
+                    )
+                } else openedNoteId = null
+            } else if (selectedTab == "Home") {
                 HomeScreen(
                     notes = notes,
                     deletedNotes = deletedNotes,
@@ -1196,7 +1223,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         if (showConflicts) refreshConflictCopies()
                     },
                     onTitleChange = { title = it },
-                    onContentChange = { if (it.length <= 3000) content = it },
+                    onContentChange = { content = it },
                     onSave = { saveNote() },
                     onCancel = { clearEditor() },
                     onEditNote = { editNote(it) },
@@ -1406,6 +1433,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         profileAvatarUrl = ""
                         showProfileDialog = false
                         showEditor = false
+                        openedNoteId = null
                         editingId = null
                         title = ""
                         content = ""
