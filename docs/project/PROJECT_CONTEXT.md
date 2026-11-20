@@ -1,0 +1,372 @@
+# Teddy-WebApp — Project Context & Progress Log
+
+সর্বশেষ হালনাগাদ: ২০২৬-১১-২০  
+Repository: https://github.com/teddypro1/Teddy-WebApp  
+এই নথি AI development assistant-এর জন্য canonical project handoff। কোনো কাজ শুরুর আগে এই নথি পড়বে এবং live GitHub/Supabase state যাচাই করবে। নথির কোনো তথ্য পুরোনো হতে পারে; live state সর্বদা অগ্রাধিকার পাবে।
+
+## 1. Project identity
+
+- Project: Teddy-WebApp (My First App)
+- Android application namespace / application ID: `com.teddy.bpositive`
+- GitHub repository: `teddypro1/Teddy-WebApp`
+- Sole working branch: `main`
+- Supabase project ref: `axklmzuepqcbxsbxvtdn`
+- Supabase URL: `https://axklmzuepqcbxsbxvtdn.supabase.co`
+- Last verified Supabase status: `ACTIVE_HEALTHY`; PostgreSQL 17.11.0.019.
+- User is based in Bangladesh; use Bangladesh-local date/time when reporting schedules.
+
+## 2. User's development environment and preferences
+
+- Android IDE: CodeAssist 3.46.0.
+- Kotlin + Jetpack Compose; Java 17.
+- Compile SDK 36, Target SDK 36, Min SDK 26.
+- User's test phone: Vivo Y02A, Android 12, 3 GB RAM / 32 GB storage.
+- Explain steps in Bengali, with precise file paths, branch names and build numbers.
+- User manually fetches/pulls source in CodeAssist and builds/tests on device.
+- Work on one Build/change-set at a time.
+- Never say a Build succeeded until the user explicitly confirms.
+- User wants all future development directly on `main`; do not create feature/release/develop branches unless the user changes this decision.
+- The user deleted all other branches. Last live branch check showed only `main`.
+- Never publish a GitHub Release, merge a PR, or make destructive production changes without explicit approval. The user's earlier approval to publish v1.0.1 does not grant blanket approval for future releases.
+
+## 3. Application purpose and architecture
+
+Teddy-WebApp is an Android notes and personal-workspace application. Major capabilities include:
+- Supabase email/password authentication (email confirmation enabled).
+- User profiles and profile editing.
+- Local note storage and account-scoped cache.
+- Offline note creation/editing and later synchronization.
+- Realtime updates.
+- Concurrent/offline edit conflict detection, conflict copies and restore-as-note flow.
+- Pinning and Trash.
+- Settings and user notification inbox.
+- Admin panel and push notification management.
+- In-app update checking, APK download, checksum verification and Android package installation.
+
+Architecture notes:
+- Android client communicates directly with Supabase APIs for supported data operations.
+- Supabase Edge Functions are used for privileged backend workflows, including device-token registration, notification topic management and sending push notifications. Do not describe the current project as having no backend functions.
+- No Cloudflare Worker is part of the currently verified app request path.
+- Supabase Free Plan is the current budget constraint.
+
+## 4. Current source layout (verify against live tree before relying on it)
+
+Main Kotlin package: `app/src/main/kotlin/com.teddy.bpositive/`
+
+Known important files include:
+- `MainActivity.kt`
+- `data/AdminRepository.kt`
+- `data/LocalNotesStorage.kt`
+- `data/NoteSyncRepository.kt`
+- `data/NoteSyncStore.kt`
+- `data/SupabaseAuth.kt`
+- `data/SupabaseAuthRepository.kt`
+- `data/SupabaseClient.kt`
+- `data/SupabaseConfig.kt`
+- `data/SupabaseNotesApi.kt`
+- `data/SupabaseProfilesApi.kt`
+- `data/SupabaseRealtimeSubscription.kt`
+- `data/SupabaseSessionManager.kt`
+- `ui/screens/AdminPanelScreen.kt`
+- `ui/screens/AuthScreen.kt`
+- `ui/screens/HomeScreen.kt`
+- `ui/screens/NotificationInboxScreen.kt`
+- `ui/screens/ProfileScreen.kt`
+- `ui/screens/WorkspaceScreens.kt`
+- `ui/components/AppBottomNavigationBar.kt`
+- `ui/components/NoteComponents.kt`
+- `ui/components/WorkspaceTopBar.kt`
+- `ui/dialogs/NoteDeletionDialogs.kt`
+- `ui/dialogs/ProfileEditorDialog.kt`
+- `ui/theme/TeddyAppTheme.kt`
+- `utils/DateTimeUtils.kt`, `NetworkUtils.kt`, `NoteUtils.kt`
+
+Other important paths:
+- `app/module.toml`: Android module configuration and versionCode/versionName.
+- `update.json`: public in-app update metadata.
+- `backend/supabase/functions/`: Edge Functions.
+- `backend/supabase/migrations/` and `supabase/migrations/`: migration history; inspect both before database changes.
+- `docs/architecture.md`: architecture notes.
+
+## 5. Implemented app/data behaviors (historically recorded; verify live source when modifying)
+
+- Supabase email/password authentication; email confirmation enabled.
+- Android Keystore AES-GCM session persistence.
+- Local note cache uses account-specific key `notes_data_<userId>`.
+- User-scoped local/cloud data separation.
+- Offline note create/edit and pending sync after reconnect.
+- Realtime subscriptions for notes/profiles with user filtering.
+- Conflict detection for concurrent/offline edits; Conflict Copies UI and Restore as Note.
+- Avoid unnecessary cloud UPDATE for unchanged notes.
+- Unauthorized response retry and token refresh coalescing.
+- Sign-out clears visible account UI while retaining account-scoped local cache.
+- Asynchronous callbacks guarded against stale/changed sessions.
+- Profile editing requires verified internet connectivity.
+
+## 6. Supabase schema and security context
+
+Previously recorded public tables:
+- `notes`
+- `profiles`
+- `note_conflicts`
+
+All three were previously verified with RLS enabled. Notification features later added related tables; do not assume the above list is exhaustive. Inspect current live schema before SQL changes.
+
+Previously recorded `notes` fields:
+`id`, `created_at`, `user_id`, `title`, `content`, `is_pinned`, `updated_at`, `client_id`, `deleted_at`; unique index on `(user_id, client_id)`.
+
+Previously recorded `profiles` fields:
+`id`, `full_name`, `username`, `bio`, `avatar_url`, `created_at`, `updated_at`; case-insensitive unique username index, owner RLS, update timestamp trigger and auth-user profile creation trigger.
+
+Previously recorded `note_conflicts` fields:
+`user_id`, `original_client_id`, `title`, `content`, `is_pinned`, `base_cloud_updated_at`, `observed_cloud_updated_at`, `created_at`, `resolved_at`; owner RLS policies.
+
+### Previously applied security migrations
+
+With user approval:
+1. `harden_public_function_execute_permissions`: revoked EXECUTE for PUBLIC/anon/authenticated on selected internal public functions:
+   - `public.handle_new_user_profile()`
+   - `public.rls_auto_enable()`
+   - `public.set_notes_updated_at()`
+   - `public.set_profile_updated_at()`
+2. `optimize_rls_and_index_conflicts`:
+   - Set search_path of `handle_new_user_profile()` and `set_profile_updated_at()` to `pg_catalog`.
+   - Rewrote eight RLS policies to use `(SELECT auth.uid())`.
+   - Added `idx_note_conflicts_user_id` on `public.note_conflicts(user_id)`.
+
+Historical follow-up found policies/index as expected, function-execute findings cleared; performance advisor showed the new index as unused INFO at that time.
+
+### Pending Supabase verification (do not mark complete without evidence)
+
+1. Inspect live SQL definitions of `handle_new_user_profile()` and `set_profile_updated_at()`.
+2. Verify schema-qualified references work with `search_path=pg_catalog`.
+3. Perform test signup and verify automatic profile-row creation.
+4. Regression-test authentication, profile update, notes CRUD, offline sync, realtime and conflict recovery.
+5. Re-run Supabase Security, Performance and Health advisors.
+
+## 7. Push notification system — implemented and tested
+
+The repository contains Supabase Edge Functions:
+- `register-device-token`
+- `manage-notification-topics`
+- `send-push-notification`
+
+Relevant migration history includes:
+- `20261119052417_add_fcm_delivery_diagnostics.sql`
+- `20261119123000_grant_service_role_device_token_cleanup.sql`
+- `20261119140000_expand_notification_audience.sql`
+- `20261119143000_grant_service_role_profiles_read.sql`
+- `20261119160000_build11_installation_scoped_device_registry.sql`
+- `20261119170000_build11_fix_device_registry_service_role_upsert.sql`
+- `20261119180000_build12_user_notification_inbox.sql`
+- `20261119230000_build13_user_topic_subscriptions.sql`
+- `20261119231000_build13_allow_topic_notification_history.sql`
+- `20261120044420_build14_notification_delivery_tracking.sql`
+- `20261120130000_security_hardening_maintenance.sql`
+- `20261120133000_default_topic_subscriptions_opt_in.sql`
+
+### Latest historical delivery check (20 Nov 2026)
+
+A read-only query of notification history, per-device delivery attempts, auth users/profiles and active device tokens showed:
+- Latest test: 4 FCM delivery attempts; 3 successful HTTP 200, 1 failed HTTP 404.
+- The single failure was an old/stale FCM registration token with FCM error `UNREGISTERED` / `NotRegistered`.
+- Backend marked that stale token for removal and removed it (`stale_token_removed = true`).
+- The same account also had a separate current token that succeeded. Therefore the failure was a stale device token, not an account-level failure.
+- Three active device tokens remained after cleanup, one per account; each current token had a successful send in the latest attempt set.
+- Earlier tests on 20 Nov had 3/3 successful attempts.
+- HTTP 200 means FCM accepted the send request; it does not prove the notification was displayed on the user's screen.
+- Do not store user emails, raw FCM tokens, token suffixes or other personal delivery identifiers in this public project context file. Re-query Supabase delivery records if account-level diagnostics are needed.
+
+## 8. In-app update system
+
+### Requirements established by user
+- Check for updates on every app launch, regardless of login state.
+- Continue app normally if offline or update check fails.
+- Optional update prompt: user can choose Later; suppress repeated prompt at most once per calendar day per version. No Skip option.
+- Mandatory update when installed versionCode is below `minimumSupportedVersionCode`; block app use until update.
+- Download APK inside app with progress and total size.
+- Verify SHA-256 before installation.
+- Use Android Package Installer.
+- Host APKs on GitHub Releases.
+- Manually update `update.json` after each release.
+- No Supabase DB changes for update metadata.
+
+### Build milestones
+- Build 15, commit `2ec4f75f8b362a271681a272c8ec3de812bf4b73`: update checker, Settings status, metadata model/repository, baseline update.json. User confirmed successful.
+- Build 16, commit `289733cbe2cecf97d94d1f1663b44d2ec7820d43`: optional/mandatory prompts and initial download action. User confirmed successful.
+- Build 17, commit `0e5ef6a0ffcce78cba1aef7da46f94bd6e8e8c31`: Kotlin warning fix. User confirmed successful.
+- Build 18, commit `de4cd01fda7c32b799e7652c1a27e65973a81663`: in-app APK download, progress, SHA-256 verification, Android installer and FileProvider. User confirmed successful and reported it was working.
+- Build 19: production metadata URL fix. Commit on feature branch `27a12dbfa0685e4d844ad0f1659c847c8134c4a0`; merged PR #3. Main after merge was `6f5621ac454f214783028b0f00882bd13a2f0315`. Production URL changed to raw main-branch update.json:
+  `https://raw.githubusercontent.com/teddypro1/Teddy-WebApp/main/update.json`.
+- Build 20: version bump to `versionName = "1.0.1"`, `versionCode = 2` in `app/module.toml`. Commit `88cba51eced361403aee3a357c45a01256484f19`; PR #4 squash-merged. Merge commit `706f9d13cf94a4547899b66c790b191391520015`. User confirmed Build Successful on release branch and again after pulling/building main.
+- v1.0.1 release: user published GitHub Release tag `v1.0.1`; update was physically tested from installed v1.0.0. User reported successful download, SHA-256 verification, installer prompt and successful installation/update with no issue. Screenshots showed 9.3 MB APK download and successful SHA-256 verification.
+- User explicitly identified a product limitation: v1.0.0 was released before admin panel, push notifications and in-app updater existed. Existing v1.0.0 installs therefore cannot be expected to receive in-app update prompts for v1.0.1, because the updater client was absent in v1.0.0. Users installing v1.0.1 can receive future in-app updates, assuming update metadata and release remain correctly maintained.
+- Existing v1.0.0 Release must remain unchanged.
+
+### Release metadata / signing
+- v1.0.0 Release URL: `https://github.com/teddypro1/Teddy-WebApp/releases/tag/v1.0.0`
+- v1.0.0 APK URL: `https://github.com/teddypro1/Teddy-WebApp/releases/download/v1.0.0/app-release.apk`
+- v1.0.0 SHA-256: `a4f47c0af1b3e6a13cb788d7e2f7d0c4f7e523a49b33632de5bdd65e18e08892`
+- v1.0.0 asset size: 8,318,017 bytes (~8.3 MB).
+- Signing keystore file: `teddywebapprelease.jks`; keystore name `TeddyWebAppRelease`; alias `teddywebapp`; 25-year validity; Organization Teddy Universe; Country BD.
+- Keystore password is private. Never ask for, reveal, upload or commit keystore/password/signing secrets. Preserve same signing key for in-place upgrades.
+- v1.0.1 release APK was shown downloading as 9.3 MB; do not invent its hash or exact asset size. Obtain live GitHub release asset and verify actual checksum if needed.
+
+### update.json
+Historical v1.0.0 metadata:
+```json
+{
+  "enabled": true,
+  "latestVersionName": "1.0.0",
+  "latestVersionCode": 1,
+  "minimumSupportedVersionCode": 1,
+  "downloadUrl": "https://github.com/teddypro1/Teddy-WebApp/releases/download/v1.0.0/app-release.apk",
+  "sha256": "a4f47c0af1b3e6a13cb788d7e2f7d0c4f7e523a49b33632de5bdd65e18e08892",
+  "releaseNotes": "Initial release."
+}
+```
+This is historical, not current. Always fetch live `update.json` from main before editing or stating its current contents. After publishing a release, set latestVersionName/code, downloadUrl, verified SHA-256 and release notes. Keep minimumSupportedVersionCode at 1 unless user explicitly chooses to force a mandatory update.
+
+## 9. Build 21 — Settings manual update check improvement (NOT YET USER-CONFIRMED BUILT)
+
+User reported:
+- After tapping Later in the update prompt, Settings showed that a new update was available.
+- Tapping Settings > Check for Updates appeared to do nothing.
+- Button changed/faded too quickly; user wanted visible loading feedback for about 1–1.5 seconds and a clear result.
+
+Changes committed directly to `main`:
+1. Commit `15826afa4fee6cdb1078e9ab829213edb5ced50d` — `MainActivity.kt`
+   - Manual update check path added via `checkForAppUpdates(manualCheck: Boolean = false)`.
+   - Manual check keeps loading state visible for at least 1,200 ms.
+   - When an update is available, a manual check bypasses the Later prompt suppression and opens the update dialog.
+   - Automatic startup checks retain Later-per-day behavior.
+2. Commit `e2e1c5d43e65c793842fd07fa691f557788de9bc` — `WorkspaceScreens.kt`
+   - Added Compose AnimatedContent fade transition for Checking/Check for Updates button content.
+   - Removed obsolete Settings message claiming in-app download/installation would be enabled in a future build.
+
+Latest verified main HEAD as of 20 Nov 2026:
+`e2e1c5d43e65c793842fd07fa691f557788de9bc`
+
+IMPORTANT: User has not yet reported Build 21 successful. Do not claim it is tested or working until user pulls main, builds and tests it, then confirms. Next step: ask user to fetch/pull main, build once, and test Settings > Check for Updates both when an update is available and when already up to date. Also test offline/check-failure behavior if practical.
+
+## 10. Branch and pull-request policy
+
+User's final decision:
+- Keep only `main`.
+- All future builds and changes happen directly on `main`.
+- No feature branch, release branch or develop branch.
+- As of latest live verification, GitHub branch list contained exactly one branch: `main`, at `e2e1c5d43e65c793842fd07fa691f557788de9bc`.
+- User personally deleted all other branches.
+- Before every write, freshly verify current main HEAD and target file state.
+- No open PR was part of the last recorded workflow; verify live if relevant.
+
+## 11. Release history and production decisions
+
+- v1.0.0 is the first release. It predates admin panel, push notifications and in-app update client. It should not be modified/deleted.
+- v1.0.1 is the second release, versionCode 2. It includes the in-app update system and newer app capabilities. User tested in-app update from v1.0.0-capable test environment and confirmed successful installation; note that actual old v1.0.0 public users cannot receive updater prompt if v1.0.0 binary lacks updater code.
+- Publishing a release and updating `update.json` are separate steps. Confirm actual APK, signing compatibility, asset URL and SHA-256 before metadata update.
+- Never state future updates will work “100%” without end-to-end testing of the installed release and current metadata.
+
+## 12. Known remaining work / next priorities
+
+Priority A — Build 21:
+1. User pulls latest `main`.
+2. User builds in CodeAssist.
+3. User confirms Build result.
+4. Test manual Check for Updates with update available: animation, loading delay, dialog, download action.
+5. Test no-update result and offline behavior.
+6. If issue appears, inspect logs/source and prepare one corrective Build directly on main.
+
+Priority B — Supabase verification:
+1. Inspect live SQL function definitions and schema-qualified references with `search_path=pg_catalog`.
+2. Test auth signup and automatic profile row creation.
+3. Regression-test profile editing, notes CRUD, offline sync, realtime, conflict copy/restore.
+4. Re-run advisors.
+
+Priority C — operational:
+1. Verify latest release asset and `update.json` after future releases.
+2. Periodically inspect notification delivery diagnostics and stale-token cleanup.
+3. Keep this document current after significant milestone; never store secrets, raw tokens, passwords or private user email addresses here.
+
+## 13. Security, cost and data-safety rules
+
+- Supabase Free Plan only unless user explicitly approves a paid upgrade.
+- No destructive Production Database changes without explicit user approval.
+- Inspect before database changes; verify after.
+- Never ask for or expose passwords, keystore credentials, service-role keys, FCM tokens, private keys or other secrets.
+- Never commit APK/AAB, keystore, `.env`, local.properties or signing credentials.
+- Repository is public and README declares Proprietary / All Rights Reserved; public visibility does not prevent copying/forking. Do not call it open source unless a valid open-source license is added.
+- Do not store personal account emails or raw push tokens in this public context file.
+- Clearly distinguish verified facts, user-reported results, inferred behavior and pending tests.
+
+## 14. Standard workflow for the assistant
+
+Before any source change:
+1. Read this context document.
+2. Fetch current GitHub branch list and latest `main` commit.
+3. Fetch exact source file and current blob SHA before editing.
+4. Check Supabase live project status; inspect database only if relevant.
+5. Make one focused change-set directly on `main`.
+6. Report commit SHA, changed files and exact user-side build/test steps.
+7. Wait for user's build confirmation; never assume success.
+8. Update this context file after meaningful milestones, using fresh GitHub state and preserving the latest history.
+
+For database work:
+1. Inspect schema, policies, functions and migrations first.
+2. Obtain explicit approval for destructive or production-impacting changes.
+3. Apply only the approved minimal change.
+4. Verify database state and report exact outcome.
+
+## 15. New-chat handoff prompt
+
+> আমরা Teddy-WebApp (My First App) Android app নিয়ে কাজ করছি। Repository-এর `PROJECT_CONTEXT.md` আগে পড়ো এবং বর্তমান live GitHub `main` ও প্রয়োজনমতো Supabase state যাচাই করো। সব কাজ শুধু `main` branch-এ হবে; অন্য branch তৈরি করবে না। একবারে একটি Build/change-set নিয়ে কাজ করবে এবং আমি Build সফল নিশ্চিত না করা পর্যন্ত সফল বলবে না। Supabase Free Plan বজায় রাখবে; আমার অনুমতি ছাড়া paid upgrade বা destructive Production Database পরিবর্তন করবে না। Secret, password, keystore বা service-role key চাইবে/প্রকাশ করবে না। বাংলায় উত্তর দেবে।
+
+
+---
+
+## 16. Documentation system and historical records
+
+This repository uses a hybrid documentation structure. `PROJECT_CONTEXT.md` is the concise master handoff: current verified state, architecture, decisions, active work and next priorities. Detailed chronological records live under `docs/history/`; `CHANGELOG.md` records only significant user-visible or operational milestones. Avoid duplicating full implementation detail in every file.
+
+- [CHANGELOG](../../CHANGELOG.md)
+- [Build and implementation history](../history/BUILD_HISTORY_01.md)
+- [Supabase migration and security history](../history/SUPABASE_HISTORY.md)
+- [Release and in-app update history](../history/RELEASE_HISTORY.md)
+- [Architecture](../architecture.md)
+
+History is reconstructed from repository commits, migration records and prior user-confirmed reports available to the assistant. A commit proves that source or migration files were committed; it does not by itself prove that an Android Build was successful or that a migration was applied. User-reported device tests are labeled as such. Pending verification remains pending until fresh evidence is obtained.
+
+## 17. Current live snapshot — verified 2026-11-20
+
+- GitHub repository: public, not archived; default branch `main`.
+- Live branch search returned exactly one branch: `main`.
+- Latest main commit: `c5a51767d6153d6b9fe7ce164943c41e958769e9` (`Add comprehensive AI project context and progress log`).
+- Current `PROJECT_CONTEXT.md` blob at the start of this documentation update: `eaa486aae78804ba4bad8c5092e41c9045a3b53b`.
+- Current `app/module.toml`: versionName `1.0.1`, versionCode `2`, namespace `com.teddy.bpositive`, Java 17, SDK 36/36/26.
+- Live `update.json`: enabled; latest version `1.0.1` (code 2); minimum supported code 1; download points to the v1.0.1 GitHub Release APK. The live SHA-256 is recorded in `update.json`; always fetch it before future changes.
+- Supabase project status: `ACTIVE_HEALTHY`; PostgreSQL `17.11.0.019`.
+- Live Supabase migration ledger returned 18 applied migrations, from `20261118100817` through `20261120061216`. Exact migration names and chronology are in [SUPABASE_HISTORY.md](../history/SUPABASE_HISTORY.md).
+- Build 21 manual Settings update-check improvements are committed to main. On 2026-11-20, the user explicitly confirmed that Build 21 built successfully and all tests were completed.
+
+The earlier `docs/architecture.md` was a proposal describing Cloudflare Workers as the planned API. The README and current project context clarify that this proposal is no longer the deployed request path: Android currently talks directly to Supabase for supported operations; Supabase Edge Functions handle privileged notification workflows. The separate website and shared Cloudflare Workers API remain future/planned work only. See the corrected architecture document.
+
+## 18. Historical implementation map
+
+The detailed chronology is maintained in [BUILD_HISTORY_01.md](../history/BUILD_HISTORY_01.md). At a high level:
+- Initial Android foundation and UI decomposition: Builds A/B and subsequent extraction/fix commits.
+- Notes workspace, authentication, account-scoped persistence, offline synchronization, realtime and conflict recovery.
+- Admin Panel and secured push-notification operations (Builds 1–10).
+- Installation-scoped FCM token registry, user notification inbox and opt-in topic preferences (Builds 11–13).
+- Per-device FCM delivery diagnostics and security maintenance (Build 14).
+- In-app update checker, prompts, APK download, SHA-256 verification and installer (Builds 15–18).
+- Production update metadata URL and v1.0.1 release preparation (Builds 19–20).
+- Settings manual update-check UX/logic refinement (Build 21; not yet user-confirmed built).
+
+## 19. Documentation maintenance rules
+
+1. Update this master file when project identity, architecture, key decisions, live version, current active Build or priorities change.
+2. Add a concise `CHANGELOG.md` entry for significant completed or implemented milestones; label implementation vs user-confirmed testing.
+3. Append detailed Build, migration or release events to the corresponding history file.
+4. Keep old history rather than deleting it; correct mistakes with dated notes when necessary.
+5. Do not copy secrets, passwords, private account emails, raw FCM tokens or service-role credentials into public documentation.
+6. Before documenting a live status, fetch the relevant GitHub/Supabase state again. The snapshot above is dated and will become historical.
