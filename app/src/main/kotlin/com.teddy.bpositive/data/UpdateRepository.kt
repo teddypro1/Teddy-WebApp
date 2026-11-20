@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
 
 object UpdateRepository {
     private const val UPDATE_URL =
-        "https://raw.githubusercontent.com/teddypro1/Teddy-WebApp/main/update.json"
+        "https://raw.githubusercontent.com/teddypro1/Teddy-WebApp/feature/in-app-update-build15/update.json"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(8, TimeUnit.SECONDS)
