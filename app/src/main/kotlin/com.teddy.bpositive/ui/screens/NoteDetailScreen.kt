@@ -46,6 +46,11 @@ fun NoteDetailScreen(
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = bg, titleContentColor = noteTextColor, navigationIconContentColor = noteTextColor, actionIconContentColor = noteTextColor)
         )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(enabled = !editing) { editing = true }
+        ) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 12.dp)) {
             if (editing) {
                 OutlinedTextField(
@@ -99,6 +104,7 @@ fun NoteDetailScreen(
                 Spacer(Modifier.height(20.dp))
                 Text("Tap the note text to edit", style = MaterialTheme.typography.labelSmall, color = noteTextColor.copy(alpha = 0.68f))
             }
+        }
         }
         }
     }
