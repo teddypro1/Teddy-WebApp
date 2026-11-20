@@ -395,12 +395,15 @@ fun NoteCard(
     onPin: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val noteBackground = try { Color(android.graphics.Color.parseColor(note.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.surface }
+    // Note cards retain their selected light background in dark mode; use a contrasting foreground.
+    val noteTextColor = if (noteBackground.luminance() > 0.5f) Color(0xFF202124) else Color(0xFFF5F5F5)
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = try { Color(android.graphics.Color.parseColor(note.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.surface }
+            containerColor = noteBackground
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 2.dp
@@ -419,6 +422,7 @@ fun NoteCard(
 
                 Text(
                     note.title,
+                    color = noteTextColor,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f),
@@ -441,7 +445,7 @@ fun NoteCard(
             Text(
                 note.content,
                 fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = noteTextColor.copy(alpha = 0.86f),
                 lineHeight = 21.sp,
                 maxLines = 5,
                 overflow = TextOverflow.Ellipsis
@@ -457,7 +461,7 @@ fun NoteCard(
                     ).format(Date(note.updatedAt))
                 }",
                 fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = noteTextColor.copy(alpha = 0.68f)
             )
 
             Spacer(Modifier.height(12.dp))
