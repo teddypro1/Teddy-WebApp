@@ -51,7 +51,7 @@ Last reconstructed: 2026-11-20.
 | 18 | In-app APK download, progress, SHA-256, Package Installer, FileProvider | `0ebcc18313`, `8124b59bb8`, `725bcdaf1e`, `de4cd01fda` | User-confirmed Build and reported working |
 | 19 | Production metadata URL points to raw main/update.json | `6f5621ac45` (PR #3 merge) | Merged; verify current source when changing |
 | 20 | Version bump to 1.0.1 / code 2 | `706f9d13cf` (PR #4 merge) | User-confirmed Build |
-| 21 | Manual Settings check bypasses Later suppression, visible loading and fade transition | `15826afa4f`, `e2e1c5d43e` | **Awaiting user Build/test confirmation** |
+| 21 | Manual Settings check bypasses Later suppression, visible loading and fade transition | `15826afa4f`, `e2e1c5d43e` | **User-confirmed successful Build and completed tests (2026-11-20)** |
 
 ## Current live update metadata (verified 2026-11-20)
 
