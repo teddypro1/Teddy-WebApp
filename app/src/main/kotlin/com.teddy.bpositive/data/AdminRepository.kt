@@ -83,11 +83,12 @@ object AdminRepository {
             val total = data?.optInt("total", 0) ?: 0
             val failed = data?.optInt("failed", (total - sent).coerceAtLeast(0)) ?: 0
             val historySaved = data?.optBoolean("history_saved", false) == true
+            val trackingSaved = data?.optBoolean("tracking_saved", false) == true
             val inboxSaved = data?.optInt("inbox_saved", 0) ?: 0
             val details = parseDeliveryDetails(data?.optJSONArray("results"))
             val summary = if (response.success) {
                 "Inbox saved for $inboxSaved account(s). FCM accepted $sent of $total device message(s); failed: $failed." +
-                    if (historySaved) " Detailed history saved." else " Detailed history could not be saved."
+                    if (historySaved && trackingSaved) " Delivery tracking saved." else if (historySaved) " History saved, but structured delivery tracking could not be saved." else " Detailed history could not be saved."
             } else response.message
             val diagnosticText = details.joinToString("\n") { detail ->
                 val account = detail.userId.takeLast(6)
@@ -162,7 +163,7 @@ object AdminRepository {
                                 sentCount = row.optInt("sent_count"),
                                 failedCount = row.optInt("failed_count"),
                                 createdAt = row.optString("created_at"),
-                                deliveryDetails = parseDeliveryDetails(row.optJSONArray("delivery_details"))
+                                deliveryDetails = parseDeliveryDetails(row.optJSONArray("notification_delivery_attempts") ?: row.optJSONArray("delivery_details"))
                             )
                         )
                     }
@@ -184,7 +185,7 @@ object AdminRepository {
                     DeliveryDetail(
                         userId = row.optString("user_id"),
                         tokenSuffix = row.optString("token_suffix"),
-                        success = row.optBoolean("success"),
+                        success = row.optBoolean("success", row.optString("status") == "accepted"),
                         httpStatus = row.optInt("http_status"),
                         errorCode = row.optString("error_code").takeIf { it.isNotBlank() && it != "null" },
                         errorMessage = row.optString("error_message").takeIf { it.isNotBlank() && it != "null" },

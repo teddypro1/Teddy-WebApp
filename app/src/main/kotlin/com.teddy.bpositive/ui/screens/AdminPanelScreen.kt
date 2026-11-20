@@ -328,7 +328,7 @@ fun AdminPanelScreen(
                         }
                         if (item.deliveryDetails.isNotEmpty()) {
                             HorizontalDivider()
-                            Text("Device delivery details", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                            Text("Per-device FCM results", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                             DeliveryDetails(item.deliveryDetails)
                         }
                         Text(item.createdAt.replace("T", " ").removeSuffix("Z"),

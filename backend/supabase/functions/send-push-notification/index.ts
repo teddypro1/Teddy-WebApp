@@ -23,6 +23,7 @@ type DeviceRow = {
   user_id: string;
   fcm_token: string;
   platform: string;
+  installation_id: string;
 };
 
 type DeliveryResult = {
@@ -342,7 +343,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "history") {
       const historyResponse = await fetch(
-        `${supabaseUrl}/rest/v1/notification_history?select=id,title,body,audience,total_devices,sent_count,failed_count,delivery_details,created_at&admin_user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=50`,
+        `${supabaseUrl}/rest/v1/notification_history?select=id,title,body,audience,total_devices,sent_count,failed_count,delivery_details,created_at,notification_delivery_attempts(id,user_id,device_token_id,installation_id,token_suffix,success,http_status,error_code,error_message,fcm_message_name,attempts,stale_token_removed,created_at)&admin_user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=50`,
         { headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` } },
       );
       if (!historyResponse.ok) {
@@ -425,7 +426,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const tokenUrl = new URL(`${supabaseUrl}/rest/v1/device_tokens`);
-    tokenUrl.searchParams.set("select", "id,fcm_token,user_id,platform");
+    tokenUrl.searchParams.set("select", "id,fcm_token,user_id,platform,installation_id");
     tokenUrl.searchParams.set("platform", "eq.android");
     if (audience === "selected_users") {
       tokenUrl.searchParams.set("user_id", `in.(${recipientUserIds.join(",")})`);
@@ -510,7 +511,7 @@ Deno.serve(async (req: Request) => {
         apikey: serviceRoleKey,
         Authorization: `Bearer ${serviceRoleKey}`,
         "Content-Type": "application/json",
-        Prefer: "return=minimal",
+        Prefer: "return=representation",
       },
       body: JSON.stringify({
         admin_user_id: user.id,
@@ -523,7 +524,48 @@ Deno.serve(async (req: Request) => {
         delivery_details: deliveryDetails,
       }),
     });
-    if (!historyResponse.ok) console.error("Notification history insert failed:", historyResponse.status);
+
+    let trackingSaved = false;
+    if (historyResponse.ok) {
+      const historyRows = await historyResponse.json().catch(() => []);
+      const notificationId = Array.isArray(historyRows) ? historyRows[0]?.id : null;
+      if (typeof notificationId === "string") {
+        const deliveryAttempts = results.map((result, index) => ({
+          notification_id: notificationId,
+          user_id: result.user_id,
+          device_token_id: rows[index]?.id ?? null,
+          installation_id: rows[index]?.installation_id ?? null,
+          token_suffix: result.token_suffix,
+          success: result.success,
+          http_status: result.http_status,
+          error_code: result.error_code,
+          error_message: result.error_message,
+          fcm_message_name: result.fcm_message_name,
+          attempts: result.attempts,
+          stale_token_removed: result.stale_token_removed,
+        }));
+        if (deliveryAttempts.length === 0) {
+          trackingSaved = true;
+        } else {
+          const trackingResponse = await fetch(`${supabaseUrl}/rest/v1/notification_delivery_attempts`, {
+            method: "POST",
+            headers: {
+              apikey: serviceRoleKey,
+              Authorization: `Bearer ${serviceRoleKey}`,
+              "Content-Type": "application/json",
+              Prefer: "return=minimal",
+            },
+            body: JSON.stringify(deliveryAttempts),
+          });
+          trackingSaved = trackingResponse.ok;
+          if (!trackingSaved) {
+            console.error("Structured notification delivery tracking insert failed:", trackingResponse.status);
+          }
+        }
+      }
+    } else {
+      console.error("Notification history insert failed:", historyResponse.status);
+    }
 
     return json({
       success: inboxSaved > 0,
@@ -531,6 +573,7 @@ Deno.serve(async (req: Request) => {
       total: rows.length,
       failed,
       history_saved: historyResponse.ok,
+      tracking_saved: trackingSaved,
       inbox_saved: inboxSaved,
       results: deliveryDetails,
     });
