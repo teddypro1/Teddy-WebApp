@@ -320,3 +320,53 @@ For database work:
 ## 15. New-chat handoff prompt
 
 > আমরা Teddy-WebApp (My First App) Android app নিয়ে কাজ করছি। Repository-এর `PROJECT_CONTEXT.md` আগে পড়ো এবং বর্তমান live GitHub `main` ও প্রয়োজনমতো Supabase state যাচাই করো। সব কাজ শুধু `main` branch-এ হবে; অন্য branch তৈরি করবে না। একবারে একটি Build/change-set নিয়ে কাজ করবে এবং আমি Build সফল নিশ্চিত না করা পর্যন্ত সফল বলবে না। Supabase Free Plan বজায় রাখবে; আমার অনুমতি ছাড়া paid upgrade বা destructive Production Database পরিবর্তন করবে না। Secret, password, keystore বা service-role key চাইবে/প্রকাশ করবে না। বাংলায় উত্তর দেবে।
+
+
+---
+
+## 16. Documentation system and historical records
+
+This repository uses a hybrid documentation structure. `PROJECT_CONTEXT.md` is the concise master handoff: current verified state, architecture, decisions, active work and next priorities. Detailed chronological records live under `docs/history/`; `CHANGELOG.md` records only significant user-visible or operational milestones. Avoid duplicating full implementation detail in every file.
+
+- [CHANGELOG](CHANGELOG.md)
+- [Build and implementation history](docs/history/BUILD_HISTORY_01.md)
+- [Supabase migration and security history](docs/history/SUPABASE_HISTORY.md)
+- [Release and in-app update history](docs/history/RELEASE_HISTORY.md)
+- [Architecture](docs/architecture.md)
+
+History is reconstructed from repository commits, migration records and prior user-confirmed reports available to the assistant. A commit proves that source or migration files were committed; it does not by itself prove that an Android Build was successful or that a migration was applied. User-reported device tests are labeled as such. Pending verification remains pending until fresh evidence is obtained.
+
+## 17. Current live snapshot — verified 2026-11-20
+
+- GitHub repository: public, not archived; default branch `main`.
+- Live branch search returned exactly one branch: `main`.
+- Latest main commit: `c5a51767d6153d6b9fe7ce164943c41e958769e9` (`Add comprehensive AI project context and progress log`).
+- Current `PROJECT_CONTEXT.md` blob at the start of this documentation update: `eaa486aae78804ba4bad8c5092e41c9045a3b53b`.
+- Current `app/module.toml`: versionName `1.0.1`, versionCode `2`, namespace `com.teddy.bpositive`, Java 17, SDK 36/36/26.
+- Live `update.json`: enabled; latest version `1.0.1` (code 2); minimum supported code 1; download points to the v1.0.1 GitHub Release APK. The live SHA-256 is recorded in `update.json`; always fetch it before future changes.
+- Supabase project status: `ACTIVE_HEALTHY`; PostgreSQL `17.11.0.019`.
+- Live Supabase migration ledger returned 18 applied migrations, from `20261118100817` through `20261120061216`. Exact migration names and chronology are in [SUPABASE_HISTORY.md](docs/history/SUPABASE_HISTORY.md).
+- Build 21 manual Settings update-check improvements are committed to main but remain **awaiting user Build and device-test confirmation**. Do not call Build 21 successful.
+
+The earlier `docs/architecture.md` was a proposal describing Cloudflare Workers as the planned API. The README and current project context clarify that this proposal is no longer the deployed request path: Android currently talks directly to Supabase for supported operations; Supabase Edge Functions handle privileged notification workflows. The separate website and shared Cloudflare Workers API remain future/planned work only. See the corrected architecture document.
+
+## 18. Historical implementation map
+
+The detailed chronology is maintained in [BUILD_HISTORY_01.md](docs/history/BUILD_HISTORY_01.md). At a high level:
+- Initial Android foundation and UI decomposition: Builds A/B and subsequent extraction/fix commits.
+- Notes workspace, authentication, account-scoped persistence, offline synchronization, realtime and conflict recovery.
+- Admin Panel and secured push-notification operations (Builds 1–10).
+- Installation-scoped FCM token registry, user notification inbox and opt-in topic preferences (Builds 11–13).
+- Per-device FCM delivery diagnostics and security maintenance (Build 14).
+- In-app update checker, prompts, APK download, SHA-256 verification and installer (Builds 15–18).
+- Production update metadata URL and v1.0.1 release preparation (Builds 19–20).
+- Settings manual update-check UX/logic refinement (Build 21; not yet user-confirmed built).
+
+## 19. Documentation maintenance rules
+
+1. Update this master file when project identity, architecture, key decisions, live version, current active Build or priorities change.
+2. Add a concise `CHANGELOG.md` entry for significant completed or implemented milestones; label implementation vs user-confirmed testing.
+3. Append detailed Build, migration or release events to the corresponding history file.
+4. Keep old history rather than deleting it; correct mistakes with dated notes when necessary.
+5. Do not copy secrets, passwords, private account emails, raw FCM tokens or service-role credentials into public documentation.
+6. Before documenting a live status, fetch the relevant GitHub/Supabase state again. The snapshot above is dated and will become historical.
