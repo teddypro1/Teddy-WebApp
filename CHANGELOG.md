@@ -4,7 +4,7 @@ This file records significant project milestones only. Detailed chronology is ma
 
 ## 2026-11-20
 
-- **CodeAssist reference:** Added `reference/codeassist/` with a screenshot-based Git/Source Control guide covering Branches, repository menu, History, Stashes, GitHub integration, Accounts and Push status. The master context now links to this dedicated reference.
+- **CodeAssist reference:** Added `reference/codeassist/` with screenshot-based Git/Source Control and Modules/Android Module Settings guides. The latter records the visible app module, Java/SDK/version settings, source sets, Build Types and feature options; Build Features, Compiler plugins and Packaging screenshots are still pending.
 
 - **Documentation:** Added a hybrid documentation structure: concise master context, changelog and dedicated Build, Supabase and Release history files. The canonical Master File is stored at `docs/project/PROJECT_CONTEXT.md`; the root `PROJECT_CONTEXT.md` is a navigation pointer.
 - **Current state verified:** GitHub `main` is the only branch; repository HEAD at the start of this documentation update was `c5a51767d6153d6b9fe7ce164943c41e958769e9`.
