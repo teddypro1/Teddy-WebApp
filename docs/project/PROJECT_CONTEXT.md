@@ -359,7 +359,7 @@ The detailed chronology is maintained in [BUILD_HISTORY_01.md](../history/BUILD_
 - Per-device FCM delivery diagnostics and security maintenance (Build 14).
 - In-app update checker, prompts, APK download, SHA-256 verification and installer (Builds 15–18).
 - Production update metadata URL and v1.0.1 release preparation (Builds 19–20).
-- Settings manual update-check UX/logic refinement (Build 21; not yet user-confirmed built).
+- Settings manual update-check UX/logic refinement (Build 21; user-confirmed successful Build and tests on 2026-11-20).
 
 ## 19. Documentation maintenance rules
 
