@@ -221,3 +221,118 @@ Screenshot-এ প্রদর্শিত Android configuration:
 - Release signing assignment: `TeddyWebAppRelease`
 
 এগুলো IDE settings-এর screenshot evidence; নিজে থেকে Gradle Build সফল হওয়া বা APK install/test হওয়ার প্রমাণ নয়। GitHub repository-র tracked `app/module.toml` এবং CodeAssist UI screenshot-কে পৃথক evidence হিসেবে বিবেচনা করতে হবে।
+
+
+## 8. app module — Dependencies (পরবর্তী screenshot batch ও user cleanup)
+
+### 8.1 Dependency Manager controls
+
+Dependencies tab-এর Add drawer-এ:
+- Search: `Search or paste group:name:version`
+- Default scope: `implementation · All variants`
+- Scope options: `implementation`, `api`, `compileOnly`, `runtimeOnly`, `testImplementation`, `natives`
+- Variant options: `All variants`, `debug`, `release`
+- Quick Add: Firebase (BoM + Analytics), Play Services Auth, Maps, Location
+- Other sources: Module এবং Local file (.jar/.aar)
+
+### 8.2 Dependency version conflict resolution
+
+Build & Dependencies settings-এ “Dependency conflicts” selector দেখা যায়:
+- `Newest` — screenshot-এ নির্বাচিত
+- `Direct wins`
+- `Fail on conflict`
+
+Dependency list screenshot-এ conflict review banner ছিল; conflict count নিজে Build failure-এর প্রমাণ নয়।
+
+### 8.3 User-reported cleanup
+
+ব্যবহারকারী জানিয়েছেন, Quick Add থেকে ভুল করে যোগ হওয়া তিনটি dependency সরিয়ে দিয়েছেন। পরবর্তী dependency-list screenshot-এ আগের Quick Add-পরবর্তী তালিকার তুলনায় `firebase-bom`, `firebase-analytics` এবং `play-services-auth` আর দেখা যায়নি; `firebase-messaging:26.0.2` তালিকায় রয়ে গেছে। এটি screenshot ও user report-ভিত্তিক cleanup evidence, Build verification নয়।
+
+বর্তমান app source-এর push notification implementation-এর জন্য Firebase Messaging প্রয়োজনীয়; এটি সরানো যাবে না। ভবিষ্যতে Analytics বা Google Sign-In feature ব্যবহার করলে সংশ্লিষ্ট dependency প্রয়োজন অনুযায়ী পুনরায় যোগ করতে হবে।
+
+## 9. Settings menu — Build & Run
+
+Settings menu-তে দৃশ্যমান category:
+- Appearance & Editor
+- Code Intelligence
+- Build & Run
+- Extensions
+- System
+
+এই batch-এ Build & Run-এর চারটি sub-screen দেখা গেছে।
+
+### 9.1 Build & Dependencies
+
+Dependency conflict strategy-এর বিকল্প ও নির্বাচিত অবস্থা §8.2-এ নথিভুক্ত।
+
+### 9.2 Preview
+
+**Preview Sandbox**-এ চারটি control screenshot-এ On:
+- Block file access — preview code-এর file read/write বন্ধ করে; blocked call null ফেরায় এবং preview problem chip-এ তালিকাভুক্ত হয়।
+- Block network access — socket ও HTTP connection বন্ধ করে।
+- Block Android system calls — Activity/Service launch, broadcast, system service, ContentResolver ও SharedPreferences ব্যবহার বন্ধ করে; resource ও density read উপলভ্য থাকে।
+- Block process & reflection — process execution, System.exit, native library loading ও reflective member invocation বন্ধ করে।
+
+**Preview Process:**
+- Render in a separate process — On।
+- বর্ণনা অনুযায়ী @Preview আলাদা `:preview` OS process-এ render হয়; remote failure হলে in-process renderer fallback হতে পারে। Off করলে সব preview in-process render হয় এবং preview crash IDE-কে প্রভাবিত করতে পারে।
+
+এগুলো screenshot-এ দৃশ্যমান IDE preference; app runtime security configuration নয়।
+
+### 9.3 Build Runtime
+
+Screenshot-এ দৃশ্যমান বর্তমান নির্বাচন:
+- Build in a separate process — On।
+- Build notifications — `Enable` action দৃশ্যমান; notification permission/setting enabled বলে screenshot প্রমাণ করে না।
+- R8 execution — `Forked VM` নির্বাচিত; বিকল্প `In-process`।
+- Low memory mode — `Auto` নির্বাচিত; বিকল্প `On`, `Off`।
+- Download prebuilt libraries — `Automatically` নির্বাচিত; বিকল্প `Wi-Fi only`, `Off`।
+- Forward app logs — On; বর্ণনা অনুযায়ী debug build-এর log stream IDE Logcat-এ পাঠায়, release build পরিবর্তন করে না।
+- Kotlin compiler execution — `Compiler VM` নির্বাচিত; বিকল্প `In-process`।
+- Kotlin compiler VM heap — 1536 MB।
+- Advanced:
+  - Off-heap dexing threshold — 8 MB।
+  - Dex merge batch size — 6000 classes।
+  - Max concurrent dex forks — 0।
+  - Kotlin compiler VMs — 1।
+
+UI-তে কিছু setting “next time you open a project” বা “next build” থেকে কার্যকর হবে বলা আছে। Screenshot state-কে Build performance বা successful Build-এর প্রমাণ হিসেবে ধরা যাবে না।
+
+### 9.4 SDK Manager
+
+**Android SDK platforms**:
+- Android SDK Platform 37.2 — 64 MB, Latest।
+- Android SDK Platform 36.1 — 63 MB, Your project।
+- Android SDK Platform 36 — 62 MB, Your project।
+- `Show all versions (18)` action।
+
+**Android SDK sources**:
+- Sources for Android 37.2 — 51 MB, Latest।
+- Sources for Android 36.1 — 49 MB, Your project।
+- Sources for Android 36 — 49 MB, Your project।
+- `Show all versions (24)` action।
+
+**JDK**:
+- Device-এ Android Runtime (ART) চলে, JDK নয়; IDE bundled toolchain দিয়ে Java compile করে।
+- JDK 17 sources ও JDK 21 sources download action দৃশ্যমান।
+
+“Your project” label project-এর সঙ্গে সংশ্লিষ্ট version বোঝায়; screenshot থেকে সব listed platform/source ইতোমধ্যে installed—এমন সিদ্ধান্ত নেওয়া যায় না। Download arrow দৃশ্যমান থাকায় installation state আলাদাভাবে যাচাই করতে হবে।
+
+## 10. Settings menu — System > Privacy & Data
+
+Screenshot-এ দৃশ্যমান বর্তমান state:
+
+### Ads
+- Show ads — On।
+- Full-screen ads — On; বর্ণনায় long builds চলাকালে এবং finished lessons-এর পরে occasional full-screen ads বলা হয়েছে।
+
+### Privacy
+- Share performance analytics — Off।
+- বর্ণনা: anonymous usage counts, performance ও ad metrics share করে; code বা file names নয়।
+
+### Storage
+- Clear caches — dependency, language ও preview cache পরিষ্কার করে; source files নয়।
+- View logs — recent editor, analysis ও build activity দেখায়।
+- Back up projects — প্রতিটি project একটি ZIP ফাইলে export করে।
+
+এই controls-এর screenshot state-ই নথিভুক্ত; কোনো cache clear, log open বা backup action সম্পন্ন হয়েছে বলে ধরে নেওয়া হয়নি।
