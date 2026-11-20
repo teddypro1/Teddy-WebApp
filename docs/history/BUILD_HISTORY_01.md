@@ -157,3 +157,35 @@ The diagnostic model distinguishes per-device attempts and results. A successful
 ## Working policy
 
 Only `main` is used. Older commits may have been developed via temporary branches before the user made the final main-only decision; this historical fact does not change the current policy. No new branches should be created.
+
+
+## Build 22 — full-screen Note Reader & Editor (implementation committed; pending user Build)
+
+User-approved scope:
+- Keep Note List as a short preview only.
+- Tapping a note opens a separate full-screen detail screen in Reading Mode.
+- Long content scrolls vertically; tapping title/body or Edit enters Editing Mode.
+- Save updates local note and uses the existing queued Supabase sync path.
+- Add note color and basic formatting shortcuts.
+
+Implementation on `main`:
+- Added backward-compatible local `colorHex` note property and persistence.
+- Note cards open the reader; preview remains truncated.
+- Added full-screen reader/editor and hidden app top/bottom navigation while viewing a note.
+- Removed the old 3,000-character note content guard.
+- Added color palette and Markdown insertion templates. The content is still plain text; rendered rich Markdown is not implemented yet.
+- Preserve locally stored note color when refreshing note data from Supabase. Color does not sync across devices.
+- No Supabase migration or schema modification.
+
+Commits:
+- `e28271bf27` note model color field
+- `df0e3bbd14` local color persistence
+- `9754947d9e` clickable colored note cards
+- `afcf5d09dc` preview list
+- `282ae2353f` detail screen
+- `b8d2e0eab5` app integration
+- `cfe9d753a8` preserve color on cloud refresh
+- `c9db6b8fd1` remove old length counter
+- `2c901c1d60` formatting shortcut templates
+
+**Pending:** CodeAssist Build and device tests for navigation, long-note reading, edit/save, local color persistence, offline sync, reconnect, realtime and conflict recovery. User confirmation required before declaring success.
