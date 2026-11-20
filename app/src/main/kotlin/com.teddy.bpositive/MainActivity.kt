@@ -164,32 +164,41 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var updateDownloadMessage by remember { mutableStateOf("") }
     var verifiedUpdateApk by remember { mutableStateOf<File?>(null) }
 
-    fun checkForAppUpdates() {
+    fun checkForAppUpdates(manualCheck: Boolean = false) {
+        val checkStartedAt = android.os.SystemClock.elapsedRealtime()
         isCheckingUpdate = true
         updateStatus = "Checking for updates..."
-        UpdateRepository.check(context) { result ->
-            isCheckingUpdate = false
-            installedVersionName = result.installedVersionName
-            installedVersionCode = result.installedVersionCode
-            updateMetadata = result.metadata
-            updateStatus = result.message
 
-            val metadata = result.metadata
-            val mandatory = metadata != null && metadata.enabled &&
-                result.installedVersionCode < metadata.minimumSupportedVersionCode
-            val available = metadata != null && metadata.enabled &&
-                (result.installedVersionCode < metadata.latestVersionCode || mandatory)
-            isMandatoryUpdate = mandatory
-            if (available) {
-                val preferences = context.getSharedPreferences("teddy_settings", Context.MODE_PRIVATE)
-                val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-                val laterVersion = preferences.getLong("update_later_version_code", -1L)
-                val laterDate = preferences.getString("update_later_date", "")
-                showUpdateDialog = mandatory ||
-                    laterVersion != metadata.latestVersionCode || laterDate != today
-            } else {
-                showUpdateDialog = false
-            }
+        UpdateRepository.check(context) { result ->
+            val minimumLoadingTime = if (manualCheck) 1_200L else 0L
+            val elapsed = android.os.SystemClock.elapsedRealtime() - checkStartedAt
+            val remainingDelay = (minimumLoadingTime - elapsed).coerceAtLeast(0L)
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                isCheckingUpdate = false
+                installedVersionName = result.installedVersionName
+                installedVersionCode = result.installedVersionCode
+                updateMetadata = result.metadata
+                updateStatus = result.message
+
+                val metadata = result.metadata
+                val mandatory = metadata != null && metadata.enabled &&
+                    result.installedVersionCode < metadata.minimumSupportedVersionCode
+                val available = metadata != null && metadata.enabled &&
+                    (result.installedVersionCode < metadata.latestVersionCode || mandatory)
+                isMandatoryUpdate = mandatory
+
+                if (available) {
+                    val preferences = context.getSharedPreferences("teddy_settings", Context.MODE_PRIVATE)
+                    val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                    val laterVersion = preferences.getLong("update_later_version_code", -1L)
+                    val laterDate = preferences.getString("update_later_date", "")
+                    showUpdateDialog = mandatory || manualCheck ||
+                        laterVersion != metadata.latestVersionCode || laterDate != today
+                } else {
+                    showUpdateDialog = false
+                }
+            }, remainingDelay)
         }
     }
 
@@ -1359,7 +1368,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     latestVersionCode = updateMetadata?.latestVersionCode,
                     updateStatus = updateStatus,
                     isCheckingUpdate = isCheckingUpdate,
-                    onCheckForUpdates = { checkForAppUpdates() },
+                    onCheckForUpdates = { checkForAppUpdates(manualCheck = true) },
                     onTopicChange = { topic, enabled ->
                         val session = activeSession
                         if (session != null) {
