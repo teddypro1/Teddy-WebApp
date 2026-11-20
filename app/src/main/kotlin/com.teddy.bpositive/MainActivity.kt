@@ -708,7 +708,8 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                                             ?: System.currentTimeMillis(),
                                         updatedAt = parseCloudTimestampMillis(cloudNote.updatedAt)
                                             ?: previousLocalNote?.updatedAt
-                                            ?: System.currentTimeMillis()
+                                            ?: System.currentTimeMillis(),
+                                        colorHex = previousLocalNote?.colorHex ?: "#FFFFFF"
                                     )
                                     val index = notes.indexOfFirst { it.id == localId }
                                     if (index >= 0) notes[index] = refreshed else notes.add(refreshed)
