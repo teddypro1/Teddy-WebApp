@@ -371,50 +371,11 @@ The detailed chronology is maintained in [BUILD_HISTORY_01.md](../history/BUILD_
 6. Before documenting a live status, fetch the relevant GitHub/Supabase state again. The snapshot above is dated and will become historical.
 
 
-## 20. CodeAssist Git / repository panel walkthrough — screenshots supplied 2026-11-20
+## 20. CodeAssist IDE reference documentation
 
-The user supplied sequential screenshots from the CodeAssist IDE's source-control panel. These document the IDE interface and the observed local repository state; they are not evidence of a new app Build or source-code modification.
+The user supplied screenshots documenting CodeAssist 3.46.0's Git/Source Control interface. Detailed screenshot-derived documentation is maintained separately to keep this master handoff concise:
 
-### Main source-control view and sync
+- [CodeAssist Reference Index](../../reference/codeassist/README.md)
+- [Git and Source Control walkthrough](../../reference/codeassist/source-control.md)
 
-- Selected branch shown in the IDE: `main`.
-- The source-control view displays `Pull` and `Push` actions and an `Up to date` status.
-- The settled status view shows a check mark, `Nothing to commit`, and the message that the working tree matches the last commit.
-- The short commit shown in the panel is `67d3089`, matching the live GitHub main HEAD verified on 2026-11-20: `67d3089856858efff228b25bfd8810c893441946`.
-- A later screenshot briefly shows `Pushing` with a progress indicator; the subsequent screenshot displays a `Pushed` confirmation, then returns to `Up to date` / `Nothing to commit`. This is consistent with a completed push and clean working tree at that point.
-- These screenshots do not reveal any modal confirmation or error dialog during the push.
-
-### Branch picker and apparent stale refs
-
-- The IDE Branches screen displayed `main` as Current, plus old local entries such as `feature/in-app-update-build15`, `fix/production-update-metadata-url` and `release/v1.0.1-build20`; it also displayed corresponding `origin/*` refs.
-- In a later screenshot, the visible local list had reduced to `main` and `release/v1.0.1-build20`, while several remote-tracking refs remained visible.
-- The user explicitly clarified that the actual GitHub repository should contain only `main`; the other entries shown in the IDE are stale/local UI entries or a possible IDE refresh/cache inconsistency and must not be treated as active GitHub branches.
-- Independent live GitHub branch search on 2026-11-20 returned exactly one branch: `main`. This server-side result is authoritative.
-- Do not switch to, merge, or delete any of the old IDE-listed refs based only on these screenshots. Do not create new branches. Continue all future work directly on `main`.
-- The branch action menu shown for an old remote-tracking entry offered `Switch to this branch` and `Merge into main`; another menu also showed `Delete branch`. No such action was performed or requested.
-
-### Repository three-dot menu
-
-The menu beside the Branch selector showed:
-- **Repository:** `History` (browse past commits), `Stashes` (stash changes), `GitHub` (GitHub account, publishing and pull requests).
-- **Sync:** `Fetch` (check remote for new commits without changing working files), `Refresh` (re-read status of files).
-- **Other:** `Add default .gitignore entries`.
-
-### History and Stashes
-
-- History view showed the latest commit `Record Build 21 successful Build and test confirmation`, short SHA `67d3089`, labeled `main` and `origin/main`.
-- The preceding visible history included documentation organization, Build 21 confirmation and the manual update-check implementation commits. The full history is available from GitHub; the screenshot is only a partial viewport.
-- Stashes screen displayed `Nothing stashed`.
-- The Stash changes form has an optional Description field and an `Include untracked files` checkbox (checked in the screenshot), followed by the `Stash changes` action. No stash operation was performed.
-
-### GitHub integration and account management
-
-- The GitHub panel displayed the account as `teddypro1`, showed `No open pull requests`, and provided a `New pull request` form whose source was `main`.
-- The configured remote shown was `origin` with URL `https://github.com/teddypro1/Teddy-WebApp.git`.
-- The panel also displayed a warning that the saved GitHub sign-in was no longer accepted and offered `Sign in again`. The user explicitly stated that this warning can be ignored: GitHub is already signed in for Git operations and the warning has not caused a functional problem. Do not treat it as a blocker or ask the user to reauthenticate unless an actual Git operation fails.
-- The Manage > Accounts screen showed account `teddypro1` marked `Used for Git operations`. It offered GitHub sign-in and Personal Access Token options, plus Git identity fields. The screenshot contains a personal email address; intentionally do not reproduce or store that address in project documentation.
-- No new pull request, remote, account, token or identity change was made.
-
-### Interpretation and operating guidance
-
-These screenshots are a reference for how the user's CodeAssist Git interface is arranged. They document the visible state on 2026-11-20 only. Before any future source change, continue to verify the live GitHub branch list, main HEAD and target file SHA rather than relying on the IDE's cached branch list or status labels. The user's explicit main-only workflow remains in force.
+The reference covers the Branches screen and stale/local refs, repository three-dot menu, History, Stashes, GitHub integration, Manage > Accounts, and observed Push status. The user clarified that the actual GitHub repository has only one branch, `main`; old branch entries shown in CodeAssist are not to be treated as active server branches. Continue verifying live GitHub state before changes and work only on `main`. Do not store credentials or personal email addresses in the reference files.
