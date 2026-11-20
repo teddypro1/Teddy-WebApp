@@ -2,6 +2,7 @@ package com.teddy.bpositive.ui.components
 
 import com.teddy.bpositive.model.Note
 import com.teddy.bpositive.data.SupabaseNotesApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -396,10 +397,10 @@ fun NoteCard(
 ) {
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = try { Color(android.graphics.Color.parseColor(note.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.surface }
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 2.dp
@@ -472,12 +473,6 @@ fun NoteCard(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
-                TextButton(
-                    onClick = onEdit
-                ) {
-                    Text("✎ Edit")
-                }
 
                 TextButton(
                     onClick = onDelete
