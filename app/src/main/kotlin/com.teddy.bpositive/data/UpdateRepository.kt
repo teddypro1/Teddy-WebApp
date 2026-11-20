@@ -9,6 +9,9 @@ import com.teddy.bpositive.model.UpdateMetadata
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
+import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
 object UpdateRepository {
@@ -21,12 +24,28 @@ object UpdateRepository {
         .callTimeout(12, TimeUnit.SECONDS)
         .build()
 
+    private val downloadClient = OkHttpClient.Builder()
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(0, TimeUnit.MILLISECONDS)
+        .callTimeout(0, TimeUnit.MILLISECONDS)
+        .build()
+
     data class CheckResult(
         val metadata: UpdateMetadata?,
         val installedVersionName: String,
         val installedVersionCode: Long,
         val message: String
     )
+
+    data class DownloadProgress(
+        val downloadedBytes: Long,
+        val totalBytes: Long
+    ) {
+        val fraction: Float
+            get() = if (totalBytes > 0L) {
+                (downloadedBytes.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
+            } else 0f
+    }
 
     fun check(context: Context, callback: (CheckResult) -> Unit) {
         val appContext = context.applicationContext
@@ -82,6 +101,72 @@ object UpdateRepository {
                 )
             }
             Handler(Looper.getMainLooper()).post { callback(result) }
+        }.start()
+    }
+
+    fun downloadAndVerify(
+        context: Context,
+        metadata: UpdateMetadata,
+        onProgress: (DownloadProgress) -> Unit,
+        onComplete: (Result<File>) -> Unit
+    ) {
+        val appContext = context.applicationContext
+        Thread {
+            val result = runCatching {
+                require(metadata.downloadUrl.startsWith("https://")) {
+                    "The update download URL must use HTTPS."
+                }
+                require(metadata.sha256.matches(Regex("(?i)[a-f0-9]{64}"))) {
+                    "The update SHA-256 value is invalid."
+                }
+
+                val request = Request.Builder()
+                    .url(metadata.downloadUrl)
+                    .header("Accept", "application/vnd.android.package-archive")
+                    .get()
+                    .build()
+
+                downloadClient.newCall(request).execute().use { response ->
+                    check(response.isSuccessful) {
+                        "APK download failed (HTTP ${response.code})."
+                    }
+                    val body = response.body ?: error("The download response was empty.")
+                    val totalBytes = body.contentLength()
+                    val temporaryFile = File(appContext.cacheDir, "teddy-update.apk.part")
+                    val verifiedFile = File(appContext.cacheDir, "teddy-update.apk")
+                    temporaryFile.delete()
+
+                    val digest = MessageDigest.getInstance("SHA-256")
+                    var downloadedBytes = 0L
+                    body.byteStream().use { input ->
+                        FileOutputStream(temporaryFile).use { output ->
+                            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                            while (true) {
+                                val count = input.read(buffer)
+                                if (count == -1) break
+                                output.write(buffer, 0, count)
+                                digest.update(buffer, 0, count)
+                                downloadedBytes += count
+                                val progress = DownloadProgress(downloadedBytes, totalBytes)
+                                Handler(Looper.getMainLooper()).post { onProgress(progress) }
+                            }
+                            output.fd.sync()
+                        }
+                    }
+
+                    check(temporaryFile.length() > 0L) { "The downloaded APK is empty." }
+                    val actualHash = digest.digest().joinToString("") { "%02x".format(it) }
+                    check(actualHash.equals(metadata.sha256, ignoreCase = true)) {
+                        "SHA-256 verification failed. The downloaded file was rejected."
+                    }
+                    verifiedFile.delete()
+                    check(temporaryFile.renameTo(verifiedFile)) {
+                        "Could not prepare the verified APK for installation."
+                    }
+                    verifiedFile
+                }
+            }
+            Handler(Looper.getMainLooper()).post { onComplete(result) }
         }.start()
     }
 
