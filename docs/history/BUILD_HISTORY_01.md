@@ -147,12 +147,12 @@ The diagnostic model distinguishes per-device attempts and results. A successful
 - User explicitly confirmed successful Build on branch and after pulling main.
 - User published v1.0.1 and tested in-app update flow, reporting download, SHA-256 verification, package installer and installation succeeded.
 
-## Build 21 — Settings manual update check (awaiting confirmation)
+## Build 21 — Settings manual update check (user-confirmed successful)
 
 - `15826afa4f`: manual check bypasses the same-day Later suppression and holds loading state for at least 1,200 ms.
 - `e2e1c5d43e`: AnimatedContent fade feedback and removes obsolete future-download/install message.
 - Both changes are on current main history.
-- **Not user-confirmed built/tested yet.** Await user CodeAssist Build and device test.
+- **User-confirmed:** On 2026-11-20, the user confirmed that Build 21 built successfully and all tests were completed.
 
 ## Working policy
 
