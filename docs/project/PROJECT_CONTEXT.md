@@ -389,3 +389,15 @@ On 2026-11-20, the user supplied screenshots of the CodeAssist 3.46.0 Modules sc
 - [Modules and Android Module Settings](../../reference/codeassist/modules-and-android-settings.md)
 
 The screenshots show one `app` module, Java 17 selected (choices 8/11/17/21), Platform SDK `Auto (android)`, source sets, namespace `com.teddy.bpositive`, Compile/Target/Min SDK 36/36/26, manifest path, versionCode 2/versionName 1.0.1, enabled Non Transitive RClass/Is Application/Compose toggles, and debug/release Build Types. The reference records visible configuration only; it is not evidence of a successful Build. Build Features, Compiler plugins and Packaging tabs are still awaiting screenshots.
+
+
+## 22. CodeAssist Build & Run and Privacy settings reference
+
+Additional user-supplied CodeAssist 3.46.0 screenshots dated 2026-11-20 are documented in [Modules and Android Module Settings](../../reference/codeassist/modules-and-android-settings.md). New material covers:
+- Dependency conflict resolution options (Newest selected), dependency scopes/variants and user-reported removal of three accidental Quick Add dependencies.
+- Preview Sandbox protections and separate-process preview setting (all shown On).
+- Build Runtime selections and numeric settings, including separate build process, Forked R8 VM, Auto low-memory mode, automatic prebuilt libraries, forwarded debug logs, Compiler VM, 1536 MB heap and Advanced dexing/compiler VM values.
+- SDK Manager's visible Android platform/source versions and JDK source options.
+- System > Privacy & Data: ads toggles On, performance analytics Off, cache clearing, logs and project ZIP backup actions.
+
+These are screenshot-derived IDE preferences only. They do not establish that downloads, cache clearing, backups or a successful Build occurred. The user reported removing three accidentally added Quick Add dependencies; the subsequent list screenshot no longer showed Firebase BOM, Firebase Analytics or Play Services Auth, while Firebase Messaging remained. Build verification is still separate.
