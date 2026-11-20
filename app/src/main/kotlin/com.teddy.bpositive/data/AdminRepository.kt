@@ -163,7 +163,7 @@ object AdminRepository {
                                 sentCount = row.optInt("sent_count"),
                                 failedCount = row.optInt("failed_count"),
                                 createdAt = row.optString("created_at"),
-                                deliveryDetails = parseDeliveryDetails(row.optJSONArray("notification_delivery_attempts") ?: row.optJSONArray("delivery_details"))
+                                deliveryDetails = parseHistoryDeliveryDetails(row)
                             )
                         )
                     }
@@ -173,6 +173,16 @@ object AdminRepository {
                 onResult(Result(false, null, "Could not read notification history: ${error.message}"))
             }
         }
+    }
+
+    private fun parseHistoryDeliveryDetails(row: JSONObject): List<DeliveryDetail> {
+        val structured = row.optJSONArray("notification_delivery_attempts")
+        val rows = if (structured != null && structured.length() > 0) {
+            structured
+        } else {
+            row.optJSONArray("delivery_details")
+        }
+        return parseDeliveryDetails(rows)
     }
 
     private fun parseDeliveryDetails(rows: JSONArray?): List<DeliveryDetail> {
