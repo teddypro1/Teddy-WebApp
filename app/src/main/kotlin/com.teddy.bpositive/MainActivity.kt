@@ -154,6 +154,8 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var isCheckingUpdate by remember { mutableStateOf(false) }
     var installedVersionName by remember { mutableStateOf("Unknown") }
     var installedVersionCode by remember { mutableStateOf(0L) }
+    var showUpdateDialog by rememberSaveable { mutableStateOf(false) }
+    var isMandatoryUpdate by rememberSaveable { mutableStateOf(false) }
 
     fun checkForAppUpdates() {
         isCheckingUpdate = true
@@ -164,8 +166,55 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
             installedVersionCode = result.installedVersionCode
             updateMetadata = result.metadata
             updateStatus = result.message
+
+            val metadata = result.metadata
+            val mandatory = metadata != null && metadata.enabled &&
+                result.installedVersionCode < metadata.minimumSupportedVersionCode
+            val available = metadata != null && metadata.enabled &&
+                (result.installedVersionCode < metadata.latestVersionCode || mandatory)
+            isMandatoryUpdate = mandatory
+            if (available && metadata != null) {
+                val preferences = context.getSharedPreferences("teddy_settings", Context.MODE_PRIVATE)
+                val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                val laterVersion = preferences.getLong("update_later_version_code", -1L)
+                val laterDate = preferences.getString("update_later_date", "")
+                showUpdateDialog = mandatory ||
+                    laterVersion != metadata.latestVersionCode || laterDate != today
+            } else {
+                showUpdateDialog = false
+            }
         }
     }
+
+    fun dismissOptionalUpdateForToday() {
+        val versionCode = updateMetadata?.latestVersionCode ?: return
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        context.getSharedPreferences("teddy_settings", Context.MODE_PRIVATE).edit()
+            .putLong("update_later_version_code", versionCode)
+            .putString("update_later_date", today)
+            .apply()
+        showUpdateDialog = false
+    }
+
+    fun openUpdateDownload() {
+        val downloadUrl = updateMetadata?.downloadUrl.orEmpty()
+        if (!downloadUrl.startsWith("https://")) {
+            Toast.makeText(context, "The update download link is invalid.", Toast.LENGTH_LONG).show()
+            return
+        }
+        try {
+            context.startActivity(
+                android.content.Intent(
+                    android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse(downloadUrl)
+                )
+            )
+            if (!isMandatoryUpdate) dismissOptionalUpdateForToday()
+        } catch (_: Exception) {
+            Toast.makeText(context, "Could not open the update download link.", Toast.LENGTH_LONG).show()
+        }
+    }
+
     val isAuthenticated = activeSession != null
 
     LaunchedEffect(Unit) {
@@ -206,6 +255,14 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                 activeSession = session
             }
         )
+        if (showUpdateDialog && updateMetadata != null) {
+            UpdatePromptDialog(
+                metadata = updateMetadata!!,
+                mandatory = isMandatoryUpdate,
+                onLater = { dismissOptionalUpdateForToday() },
+                onDownload = { openUpdateDownload() }
+            )
+        }
         return
     }
 
@@ -1337,6 +1394,15 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         )
     }
 
+    if (showUpdateDialog && updateMetadata != null) {
+        UpdatePromptDialog(
+            metadata = updateMetadata!!,
+            mandatory = isMandatoryUpdate,
+            onLater = { dismissOptionalUpdateForToday() },
+            onDownload = { openUpdateDownload() }
+        )
+    }
+
     if (permanentDeleteTarget != null) {
         val target = deletedNotes.firstOrNull { it.id == permanentDeleteTarget }
         PermanentDeleteConfirmationDialog(
@@ -1377,3 +1443,52 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
 }
 
 
+
+
+@Composable
+private fun UpdatePromptDialog(
+    metadata: UpdateMetadata,
+    mandatory: Boolean,
+    onLater: () -> Unit,
+    onDownload: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { if (!mandatory) onLater() },
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = !mandatory,
+            dismissOnClickOutside = !mandatory
+        ),
+        title = {
+            Text(if (mandatory) "Required update" else "Update available")
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Version ${metadata.latestVersionName} is ready to install.")
+                if (metadata.releaseNotes.isNotBlank()) {
+                    Text(metadata.releaseNotes, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (mandatory) {
+                    Text(
+                        "This version is no longer supported. Update the app to continue.",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDownload,
+                enabled = metadata.downloadUrl.startsWith("https://")
+            ) {
+                Text("Download update")
+            }
+        },
+        dismissButton = if (mandatory) null else {
+            {
+                TextButton(onClick = onLater) {
+                    Text("Later")
+                }
+            }
+        }
+    )
+}
