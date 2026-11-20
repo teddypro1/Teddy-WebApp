@@ -8,6 +8,8 @@ import android.net.NetworkCapabilities
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
+import com.teddy.bpositive.data.UpdateRepository
+import com.teddy.bpositive.model.UpdateMetadata
 import com.teddy.bpositive.data.FcmTokenManager
 import com.teddy.bpositive.data.FcmTokenRepository
 import com.teddy.bpositive.data.AdminRepository
@@ -147,7 +149,28 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var inboxStatus by remember { mutableStateOf("") }
     var topicPreferences by remember { mutableStateOf(TopicRepository.Preferences(false, false, false)) }
     var topicStatus by remember { mutableStateOf("") }
+    var updateMetadata by remember { mutableStateOf<UpdateMetadata?>(null) }
+    var updateStatus by remember { mutableStateOf("Not checked yet") }
+    var isCheckingUpdate by remember { mutableStateOf(false) }
+    var installedVersionName by remember { mutableStateOf("Unknown") }
+    var installedVersionCode by remember { mutableStateOf(0L) }
+
+    fun checkForAppUpdates() {
+        isCheckingUpdate = true
+        updateStatus = "Checking for updates..."
+        UpdateRepository.check(context) { result ->
+            isCheckingUpdate = false
+            installedVersionName = result.installedVersionName
+            installedVersionCode = result.installedVersionCode
+            updateMetadata = result.metadata
+            updateStatus = result.message
+        }
+    }
     val isAuthenticated = activeSession != null
+
+    LaunchedEffect(Unit) {
+        checkForAppUpdates()
+    }
 
     LaunchedEffect(Unit) {
         SupabaseAuthRepository.restoreSession(context) { result ->
@@ -1206,6 +1229,13 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     },
                     topicPreferences = topicPreferences,
                     topicStatus = topicStatus,
+                    installedVersionName = installedVersionName,
+                    installedVersionCode = installedVersionCode,
+                    latestVersionName = updateMetadata?.latestVersionName,
+                    latestVersionCode = updateMetadata?.latestVersionCode,
+                    updateStatus = updateStatus,
+                    isCheckingUpdate = isCheckingUpdate,
+                    onCheckForUpdates = { checkForAppUpdates() },
                     onTopicChange = { topic, enabled ->
                         val session = activeSession
                         if (session != null) {

@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "latestVersionName": "1.0.0",
+  "latestVersionCode": 1,
+  "minimumSupportedVersionCode": 1,
+  "downloadUrl": "https://github.com/teddypro1/Teddy-WebApp/releases/download/v1.0.0/app-release.apk",
+  "sha256": "a4f47c0af1b3e6a13cb788d7e2f7d0c4f7e523a49b33632de5bdd65e18e08892",
+  "releaseNotes": "Initial release."
+}
