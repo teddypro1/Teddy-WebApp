@@ -44,13 +44,13 @@ fun NoteDetailScreen(
                 if (editing) TextButton(onClick = { onSave(title, content, colorHex) }) { Text("Save") }
                 else TextButton(onClick = { editing = true }) { Text("Edit") }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = bg)
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = bg, titleContentColor = noteTextColor, navigationIconContentColor = noteTextColor, actionIconContentColor = noteTextColor)
         )
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 12.dp)) {
             if (editing) {
                 OutlinedTextField(
                     value = title, onValueChange = { title = it }, modifier = Modifier.fillMaxWidth(),
-                    textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold, color = noteTextColor),
                     placeholder = { Text("Title") }
                 )
                 Spacer(Modifier.height(12.dp))
@@ -79,6 +79,7 @@ fun NoteDetailScreen(
                 OutlinedTextField(
                     value = content, onValueChange = { content = it },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 320.dp),
+                    textStyle = LocalTextStyle.current.copy(color = noteTextColor),
                     placeholder = { Text("Write your note...") }, minLines = 12
                 )
                 Spacer(Modifier.height(14.dp))
@@ -96,7 +97,7 @@ fun NoteDetailScreen(
                     modifier = Modifier.fillMaxWidth().clickable { editing = true }
                 )
                 Spacer(Modifier.height(20.dp))
-                Text("Tap the note text to edit", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Tap the note text to edit", style = MaterialTheme.typography.labelSmall, color = noteTextColor.copy(alpha = 0.68f))
             }
         }
         }
