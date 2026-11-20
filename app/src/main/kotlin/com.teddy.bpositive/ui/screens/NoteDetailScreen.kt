@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,9 +31,12 @@ fun NoteDetailScreen(
     var colorHex by remember(note.id) { mutableStateOf(note.colorHex) }
     val palette = listOf("#FFFFFF", "#FFF3B0", "#FADADD", "#D7F5E8", "#DCEBFF", "#E9DDFB")
     val bg = try { Color(android.graphics.Color.parseColor(colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.surface }
+    // Note surfaces use light palette colors even in dark mode, so their text must keep sufficient contrast.
+    val noteTextColor = if (bg.luminance() > 0.5f) Color(0xFF202124) else Color(0xFFF5F5F5)
 
     BackHandler(onBack = onBack)
     Column(modifier = Modifier.fillMaxSize().padding(contentPadding).background(bg)) {
+        CompositionLocalProvider(LocalContentColor provides noteTextColor) {
         TopAppBar(
             title = { Text(if (editing) "Edit note" else "Note") },
             navigationIcon = { TextButton(onClick = onBack) { Text("← Back") } },
@@ -94,6 +98,7 @@ fun NoteDetailScreen(
                 Spacer(Modifier.height(20.dp))
                 Text("Tap the note text to edit", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+        }
         }
     }
 }
