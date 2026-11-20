@@ -32,6 +32,7 @@ object LocalNotesStorage {
                     put("isPinned", note.isPinned)
                     put("createdAt", note.createdAt)
                     put("updatedAt", note.updatedAt)
+                    put("colorHex", note.colorHex)
                 }
                 jsonArray.put(jsonObject)
             }
@@ -69,7 +70,8 @@ object LocalNotesStorage {
                             content = jsonObject.optString("content"),
                             isPinned = jsonObject.optBoolean("isPinned", false),
                             createdAt = jsonObject.optLong("createdAt"),
-                            updatedAt = jsonObject.optLong("updatedAt")
+                            updatedAt = jsonObject.optLong("updatedAt"),
+                            colorHex = jsonObject.optString("colorHex", "#FFFFFF")
                         )
                     )
                 }
