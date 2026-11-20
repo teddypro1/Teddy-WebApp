@@ -54,7 +54,7 @@ fun NoteDetailScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("**" to "Bold", "_" to "Italic", "# " to "Heading", "• " to "Bullet").forEach { (marker, label) ->
                         AssistChip(onClick = {
-                            content += if (marker == "# " || marker == "• ") "\n$marker" else "$marker$marker"
+                            content += when (marker) { "# " -> "\n# Heading"; "• " -> "\n• List item"; "**" -> " **bold text**"; else -> " _italic text_" }
                         }, label = { Text(label) })
                     }
                 }
