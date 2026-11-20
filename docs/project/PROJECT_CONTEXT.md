@@ -377,5 +377,15 @@ The user supplied screenshots documenting CodeAssist 3.46.0's Git/Source Control
 
 - [CodeAssist Reference Index](../../reference/codeassist/README.md)
 - [Git and Source Control walkthrough](../../reference/codeassist/source-control.md)
+- [Modules and Android Module Settings](../../reference/codeassist/modules-and-android-settings.md)
 
 The reference covers the Branches screen and stale/local refs, repository three-dot menu, History, Stashes, GitHub integration, Manage > Accounts, and observed Push status. The user clarified that the actual GitHub repository has only one branch, `main`; old branch entries shown in CodeAssist are not to be treated as active server branches. Continue verifying live GitHub state before changes and work only on `main`. Do not store credentials or personal email addresses in the reference files.
+
+
+## 21. CodeAssist Modules and Android Module Settings reference
+
+On 2026-11-20, the user supplied screenshots of the CodeAssist 3.46.0 Modules screen and the `app` Android Application module's Settings tab. The screenshot-derived details are maintained in:
+
+- [Modules and Android Module Settings](../../reference/codeassist/modules-and-android-settings.md)
+
+The screenshots show one `app` module, Java 17 selected (choices 8/11/17/21), Platform SDK `Auto (android)`, source sets, namespace `com.teddy.bpositive`, Compile/Target/Min SDK 36/36/26, manifest path, versionCode 2/versionName 1.0.1, enabled Non Transitive RClass/Is Application/Compose toggles, and debug/release Build Types. The reference records visible configuration only; it is not evidence of a successful Build. Build Features, Compiler plugins and Packaging tabs are still awaiting screenshots.
