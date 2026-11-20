@@ -52,6 +52,13 @@ fun SettingsScreen(
     onSendTestNotification: () -> Unit,
     topicPreferences: com.teddy.bpositive.data.TopicRepository.Preferences,
     topicStatus: String,
+    installedVersionName: String,
+    installedVersionCode: Long,
+    latestVersionName: String?,
+    latestVersionCode: Long?,
+    updateStatus: String,
+    isCheckingUpdate: Boolean,
+    onCheckForUpdates: () -> Unit,
     onTopicChange: (String, Boolean) -> Unit,
     contentPadding: PaddingValues
 ) {
@@ -121,6 +128,54 @@ fun SettingsScreen(
                     Button(onClick = onOpenAdminPanel, modifier = Modifier.fillMaxWidth()) {
                         Text("Open Admin Panel")
                     }
+                }
+            }
+        }
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+            Column(
+                modifier = Modifier.padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Update", fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Installed version: $installedVersionName ($installedVersionCode)",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 13.sp
+                )
+                Text(
+                    if (latestVersionName != null && latestVersionCode != null)
+                        "Latest version: $latestVersionName ($latestVersionCode)"
+                    else "Latest version: Not available",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 13.sp
+                )
+                Text(
+                    updateStatus,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
+                OutlinedButton(
+                    onClick = onCheckForUpdates,
+                    enabled = !isCheckingUpdate,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (isCheckingUpdate) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Checking...")
+                    } else {
+                        Text("Check for Updates")
+                    }
+                }
+                if (latestVersionCode != null && latestVersionCode > installedVersionCode) {
+                    Text(
+                        "An update is available. In-app download and installation will be enabled in the next update build.",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 12.sp
+                    )
                 }
             }
         }

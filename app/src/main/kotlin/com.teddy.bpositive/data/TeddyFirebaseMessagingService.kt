@@ -2,7 +2,7 @@ package com.teddy.bpositive.data
 
 import android.app.PendingIntent
 import android.content.Intent
-import android.app.Notification
+import androidx.core.app.NotificationCompat
 import android.app.NotificationManager
 import android.content.Context
 import android.util.Log
@@ -15,8 +15,9 @@ import com.teddy.bpositive.MainActivity
  */
 class TeddyFirebaseMessagingService : FirebaseMessagingService() {
 
+    // Required by the current token-based backend; migrate together with server-side FID support.
+    @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
     override fun onNewToken(token: String) {
-        super.onNewToken(token)
         FcmTokenManager.saveToken(applicationContext, token)
         Log.i(TAG, "FCM registration token refreshed")
 
@@ -57,14 +58,14 @@ class TeddyFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = Notification.Builder(this, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_chat)
             .setContentTitle(title)
             .setContentText(body)
-            .setStyle(Notification.BigTextStyle().bigText(body))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .setPriority(Notification.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

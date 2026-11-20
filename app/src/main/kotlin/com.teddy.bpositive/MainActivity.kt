@@ -8,6 +8,8 @@ import android.net.NetworkCapabilities
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
+import com.teddy.bpositive.data.UpdateRepository
+import com.teddy.bpositive.model.UpdateMetadata
 import com.teddy.bpositive.data.FcmTokenManager
 import com.teddy.bpositive.data.FcmTokenRepository
 import com.teddy.bpositive.data.AdminRepository
@@ -74,6 +76,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -147,7 +150,137 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var inboxStatus by remember { mutableStateOf("") }
     var topicPreferences by remember { mutableStateOf(TopicRepository.Preferences(false, false, false)) }
     var topicStatus by remember { mutableStateOf("") }
+    var updateMetadata by remember { mutableStateOf<UpdateMetadata?>(null) }
+    var updateStatus by remember { mutableStateOf("Not checked yet") }
+    var isCheckingUpdate by remember { mutableStateOf(false) }
+    var installedVersionName by remember { mutableStateOf("Unknown") }
+    var installedVersionCode by remember { mutableStateOf(0L) }
+    var showUpdateDialog by rememberSaveable { mutableStateOf(false) }
+    var isMandatoryUpdate by rememberSaveable { mutableStateOf(false) }
+    var isDownloadingUpdate by remember { mutableStateOf(false) }
+    var updateDownloadProgress by remember { mutableStateOf(0f) }
+    var updateDownloadBytes by remember { mutableStateOf(0L) }
+    var updateTotalBytes by remember { mutableStateOf(0L) }
+    var updateDownloadMessage by remember { mutableStateOf("") }
+    var verifiedUpdateApk by remember { mutableStateOf<File?>(null) }
+
+    fun checkForAppUpdates() {
+        isCheckingUpdate = true
+        updateStatus = "Checking for updates..."
+        UpdateRepository.check(context) { result ->
+            isCheckingUpdate = false
+            installedVersionName = result.installedVersionName
+            installedVersionCode = result.installedVersionCode
+            updateMetadata = result.metadata
+            updateStatus = result.message
+
+            val metadata = result.metadata
+            val mandatory = metadata != null && metadata.enabled &&
+                result.installedVersionCode < metadata.minimumSupportedVersionCode
+            val available = metadata != null && metadata.enabled &&
+                (result.installedVersionCode < metadata.latestVersionCode || mandatory)
+            isMandatoryUpdate = mandatory
+            if (available) {
+                val preferences = context.getSharedPreferences("teddy_settings", Context.MODE_PRIVATE)
+                val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                val laterVersion = preferences.getLong("update_later_version_code", -1L)
+                val laterDate = preferences.getString("update_later_date", "")
+                showUpdateDialog = mandatory ||
+                    laterVersion != metadata.latestVersionCode || laterDate != today
+            } else {
+                showUpdateDialog = false
+            }
+        }
+    }
+
+    fun dismissOptionalUpdateForToday() {
+        val versionCode = updateMetadata?.latestVersionCode ?: return
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        context.getSharedPreferences("teddy_settings", Context.MODE_PRIVATE).edit()
+            .putLong("update_later_version_code", versionCode)
+            .putString("update_later_date", today)
+            .apply()
+        showUpdateDialog = false
+    }
+
+    fun installVerifiedUpdate(file: File) {
+        if (!file.exists()) {
+            verifiedUpdateApk = null
+            updateDownloadMessage = "Verified APK is no longer available. Download it again."
+            return
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 26 &&
+            !context.packageManager.canRequestPackageInstalls()
+        ) {
+            val settingsIntent = android.content.Intent(
+                android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                android.net.Uri.parse("package:${context.packageName}")
+            ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(settingsIntent)
+            updateDownloadMessage = "Allow app installs from this source, then tap Install update again."
+            return
+        }
+        try {
+            val apkUri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+            val installIntent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                setDataAndType(apkUri, "application/vnd.android.package-archive")
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(installIntent)
+            if (!isMandatoryUpdate) dismissOptionalUpdateForToday()
+        } catch (error: Exception) {
+            updateDownloadMessage = error.message ?: "Could not start Android Package Installer."
+        }
+    }
+
+    fun openUpdateDownload() {
+        val metadata = updateMetadata ?: return
+        val cachedApk = verifiedUpdateApk
+        if (cachedApk != null && cachedApk.exists()) {
+            installVerifiedUpdate(cachedApk)
+            return
+        }
+        if (isDownloadingUpdate) return
+        isDownloadingUpdate = true
+        updateDownloadProgress = 0f
+        updateDownloadBytes = 0L
+        updateTotalBytes = 0L
+        updateDownloadMessage = "Preparing secure download..."
+        UpdateRepository.downloadAndVerify(
+            context = context,
+            metadata = metadata,
+            onProgress = { progress ->
+                updateDownloadBytes = progress.downloadedBytes
+                updateTotalBytes = progress.totalBytes
+                updateDownloadProgress = progress.fraction
+                updateDownloadMessage = "Downloading update..."
+            },
+            onComplete = { result ->
+                isDownloadingUpdate = false
+                result.onSuccess { file ->
+                    verifiedUpdateApk = file
+                    updateDownloadProgress = 1f
+                    updateDownloadMessage = "Download complete. SHA-256 verified."
+                    installVerifiedUpdate(file)
+                }.onFailure { error ->
+                    verifiedUpdateApk = null
+                    updateDownloadMessage = error.message ?: "Update download failed."
+                    Toast.makeText(context, updateDownloadMessage, Toast.LENGTH_LONG).show()
+                }
+            }
+        )
+    }
+
     val isAuthenticated = activeSession != null
+
+    LaunchedEffect(Unit) {
+        checkForAppUpdates()
+    }
 
     LaunchedEffect(Unit) {
         SupabaseAuthRepository.restoreSession(context) { result ->
@@ -183,6 +316,20 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                 activeSession = session
             }
         )
+        if (showUpdateDialog && updateMetadata != null) {
+            UpdatePromptDialog(
+                metadata = updateMetadata!!,
+                mandatory = isMandatoryUpdate,
+                isDownloading = isDownloadingUpdate,
+                progress = updateDownloadProgress,
+                downloadedBytes = updateDownloadBytes,
+                totalBytes = updateTotalBytes,
+                downloadMessage = updateDownloadMessage,
+                isVerified = verifiedUpdateApk?.exists() == true,
+                onLater = { dismissOptionalUpdateForToday() },
+                onDownload = { openUpdateDownload() }
+            )
+        }
         return
     }
 
@@ -1206,6 +1353,13 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     },
                     topicPreferences = topicPreferences,
                     topicStatus = topicStatus,
+                    installedVersionName = installedVersionName,
+                    installedVersionCode = installedVersionCode,
+                    latestVersionName = updateMetadata?.latestVersionName,
+                    latestVersionCode = updateMetadata?.latestVersionCode,
+                    updateStatus = updateStatus,
+                    isCheckingUpdate = isCheckingUpdate,
+                    onCheckForUpdates = { checkForAppUpdates() },
                     onTopicChange = { topic, enabled ->
                         val session = activeSession
                         if (session != null) {
@@ -1307,6 +1461,21 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         )
     }
 
+    if (showUpdateDialog && updateMetadata != null) {
+        UpdatePromptDialog(
+            metadata = updateMetadata!!,
+            mandatory = isMandatoryUpdate,
+            isDownloading = isDownloadingUpdate,
+            progress = updateDownloadProgress,
+            downloadedBytes = updateDownloadBytes,
+            totalBytes = updateTotalBytes,
+            downloadMessage = updateDownloadMessage,
+            isVerified = verifiedUpdateApk?.exists() == true,
+            onLater = { dismissOptionalUpdateForToday() },
+            onDownload = { openUpdateDownload() }
+        )
+    }
+
     if (permanentDeleteTarget != null) {
         val target = deletedNotes.firstOrNull { it.id == permanentDeleteTarget }
         PermanentDeleteConfirmationDialog(
@@ -1347,3 +1516,91 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
 }
 
 
+
+
+@Composable
+private fun UpdatePromptDialog(
+    metadata: UpdateMetadata,
+    mandatory: Boolean,
+    isDownloading: Boolean,
+    progress: Float,
+    downloadedBytes: Long,
+    totalBytes: Long,
+    downloadMessage: String,
+    isVerified: Boolean,
+    onLater: () -> Unit,
+    onDownload: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { if (!mandatory && !isDownloading) onLater() },
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = !mandatory && !isDownloading,
+            dismissOnClickOutside = !mandatory && !isDownloading
+        ),
+        title = {
+            Text(if (mandatory) "Required update" else "Update available")
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Version ${metadata.latestVersionName} is ready to install.")
+                if (metadata.releaseNotes.isNotBlank()) {
+                    Text(metadata.releaseNotes, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (mandatory) {
+                    Text(
+                        "This version is no longer supported. Update the app to continue.",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                if (isDownloading) {
+                    LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+                    val sizeText = if (totalBytes > 0L) {
+                        "${formatUpdateBytes(downloadedBytes)} / ${formatUpdateBytes(totalBytes)}"
+                    } else {
+                        "${formatUpdateBytes(downloadedBytes)} downloaded"
+                    }
+                    Text(sizeText, style = MaterialTheme.typography.bodySmall)
+                }
+                if (downloadMessage.isNotBlank()) {
+                    Text(downloadMessage, style = MaterialTheme.typography.bodySmall)
+                }
+                if (isVerified) {
+                    Text(
+                        "SHA-256 verification successful.",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDownload,
+                enabled = !isDownloading && metadata.downloadUrl.startsWith("https://") &&
+                    metadata.sha256.matches(Regex("(?i)[a-f0-9]{64}"))
+            ) {
+                Text(
+                    when {
+                        isDownloading -> "Downloading..."
+                        isVerified -> "Install update"
+                        else -> "Download update"
+                    }
+                )
+            }
+        },
+        dismissButton = if (mandatory || isDownloading) null else {
+            {
+                TextButton(onClick = onLater) {
+                    Text("Later")
+                }
+            }
+        }
+    )
+}
+
+private fun formatUpdateBytes(bytes: Long): String {
+    if (bytes < 1024L) return "${bytes} B"
+    val kb = bytes / 1024.0
+    if (kb < 1024.0) return String.format(Locale.US, "%.1f KB", kb)
+    return String.format(Locale.US, "%.1f MB", kb / 1024.0)
+}

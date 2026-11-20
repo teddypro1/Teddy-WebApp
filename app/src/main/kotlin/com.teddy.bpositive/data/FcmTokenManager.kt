@@ -17,6 +17,10 @@ object FcmTokenManager {
     private const val PENDING_OLD_TOKENS_KEY = "pending_old_registration_tokens"
     private const val TAG = "TeddyFCM"
 
+    // FCM registration-token APIs are deprecated in Firebase 26.x, but the current
+    // Supabase Edge Functions still require FCM tokens (not Firebase Installation IDs).
+    // Keep this compatibility path until the server-side FID migration is implemented.
+    @Suppress("DEPRECATION")
     fun initialize(context: Context) {
         Log.i(TAG, "FCM initialization started")
         createNotificationChannel(context)
