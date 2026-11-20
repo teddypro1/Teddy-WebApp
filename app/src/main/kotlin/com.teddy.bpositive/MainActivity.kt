@@ -76,6 +76,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -156,6 +157,12 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var installedVersionCode by remember { mutableStateOf(0L) }
     var showUpdateDialog by rememberSaveable { mutableStateOf(false) }
     var isMandatoryUpdate by rememberSaveable { mutableStateOf(false) }
+    var isDownloadingUpdate by remember { mutableStateOf(false) }
+    var updateDownloadProgress by remember { mutableStateOf(0f) }
+    var updateDownloadBytes by remember { mutableStateOf(0L) }
+    var updateTotalBytes by remember { mutableStateOf(0L) }
+    var updateDownloadMessage by remember { mutableStateOf("") }
+    var verifiedUpdateApk by remember { mutableStateOf<File?>(null) }
 
     fun checkForAppUpdates() {
         isCheckingUpdate = true
@@ -196,23 +203,77 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         showUpdateDialog = false
     }
 
-    fun openUpdateDownload() {
-        val downloadUrl = updateMetadata?.downloadUrl.orEmpty()
-        if (!downloadUrl.startsWith("https://")) {
-            Toast.makeText(context, "The update download link is invalid.", Toast.LENGTH_LONG).show()
+    fun installVerifiedUpdate(file: File) {
+        if (!file.exists()) {
+            verifiedUpdateApk = null
+            updateDownloadMessage = "Verified APK is no longer available. Download it again."
+            return
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 26 &&
+            !context.packageManager.canRequestPackageInstalls()
+        ) {
+            val settingsIntent = android.content.Intent(
+                android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                android.net.Uri.parse("package:${context.packageName}")
+            ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(settingsIntent)
+            updateDownloadMessage = "Allow app installs from this source, then tap Install update again."
             return
         }
         try {
-            context.startActivity(
-                android.content.Intent(
-                    android.content.Intent.ACTION_VIEW,
-                    android.net.Uri.parse(downloadUrl)
-                )
+            val apkUri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
             )
+            val installIntent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                setDataAndType(apkUri, "application/vnd.android.package-archive")
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(installIntent)
             if (!isMandatoryUpdate) dismissOptionalUpdateForToday()
-        } catch (_: Exception) {
-            Toast.makeText(context, "Could not open the update download link.", Toast.LENGTH_LONG).show()
+        } catch (error: Exception) {
+            updateDownloadMessage = error.message ?: "Could not start Android Package Installer."
         }
+    }
+
+    fun openUpdateDownload() {
+        val metadata = updateMetadata ?: return
+        val cachedApk = verifiedUpdateApk
+        if (cachedApk != null && cachedApk.exists()) {
+            installVerifiedUpdate(cachedApk)
+            return
+        }
+        if (isDownloadingUpdate) return
+        isDownloadingUpdate = true
+        updateDownloadProgress = 0f
+        updateDownloadBytes = 0L
+        updateTotalBytes = 0L
+        updateDownloadMessage = "Preparing secure download..."
+        UpdateRepository.downloadAndVerify(
+            context = context,
+            metadata = metadata,
+            onProgress = { progress ->
+                updateDownloadBytes = progress.downloadedBytes
+                updateTotalBytes = progress.totalBytes
+                updateDownloadProgress = progress.fraction
+                updateDownloadMessage = "Downloading update..."
+            },
+            onComplete = { result ->
+                isDownloadingUpdate = false
+                result.onSuccess { file ->
+                    verifiedUpdateApk = file
+                    updateDownloadProgress = 1f
+                    updateDownloadMessage = "Download complete. SHA-256 verified."
+                    installVerifiedUpdate(file)
+                }.onFailure { error ->
+                    verifiedUpdateApk = null
+                    updateDownloadMessage = error.message ?: "Update download failed."
+                    Toast.makeText(context, updateDownloadMessage, Toast.LENGTH_LONG).show()
+                }
+            }
+        )
     }
 
     val isAuthenticated = activeSession != null
@@ -259,6 +320,12 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
             UpdatePromptDialog(
                 metadata = updateMetadata!!,
                 mandatory = isMandatoryUpdate,
+                isDownloading = isDownloadingUpdate,
+                progress = updateDownloadProgress,
+                downloadedBytes = updateDownloadBytes,
+                totalBytes = updateTotalBytes,
+                downloadMessage = updateDownloadMessage,
+                isVerified = verifiedUpdateApk?.exists() == true,
                 onLater = { dismissOptionalUpdateForToday() },
                 onDownload = { openUpdateDownload() }
             )
@@ -1398,6 +1465,12 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         UpdatePromptDialog(
             metadata = updateMetadata!!,
             mandatory = isMandatoryUpdate,
+            isDownloading = isDownloadingUpdate,
+            progress = updateDownloadProgress,
+            downloadedBytes = updateDownloadBytes,
+            totalBytes = updateTotalBytes,
+            downloadMessage = updateDownloadMessage,
+            isVerified = verifiedUpdateApk?.exists() == true,
             onLater = { dismissOptionalUpdateForToday() },
             onDownload = { openUpdateDownload() }
         )
@@ -1449,20 +1522,26 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
 private fun UpdatePromptDialog(
     metadata: UpdateMetadata,
     mandatory: Boolean,
+    isDownloading: Boolean,
+    progress: Float,
+    downloadedBytes: Long,
+    totalBytes: Long,
+    downloadMessage: String,
+    isVerified: Boolean,
     onLater: () -> Unit,
     onDownload: () -> Unit
 ) {
     AlertDialog(
-        onDismissRequest = { if (!mandatory) onLater() },
+        onDismissRequest = { if (!mandatory && !isDownloading) onLater() },
         properties = androidx.compose.ui.window.DialogProperties(
-            dismissOnBackPress = !mandatory,
-            dismissOnClickOutside = !mandatory
+            dismissOnBackPress = !mandatory && !isDownloading,
+            dismissOnClickOutside = !mandatory && !isDownloading
         ),
         title = {
             Text(if (mandatory) "Required update" else "Update available")
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Version ${metadata.latestVersionName} is ready to install.")
                 if (metadata.releaseNotes.isNotBlank()) {
                     Text(metadata.releaseNotes, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1473,17 +1552,43 @@ private fun UpdatePromptDialog(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
+                if (isDownloading) {
+                    LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+                    val sizeText = if (totalBytes > 0L) {
+                        "${formatUpdateBytes(downloadedBytes)} / ${formatUpdateBytes(totalBytes)}"
+                    } else {
+                        "${formatUpdateBytes(downloadedBytes)} downloaded"
+                    }
+                    Text(sizeText, style = MaterialTheme.typography.bodySmall)
+                }
+                if (downloadMessage.isNotBlank()) {
+                    Text(downloadMessage, style = MaterialTheme.typography.bodySmall)
+                }
+                if (isVerified) {
+                    Text(
+                        "SHA-256 verification successful.",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = onDownload,
-                enabled = metadata.downloadUrl.startsWith("https://")
+                enabled = !isDownloading && metadata.downloadUrl.startsWith("https://") &&
+                    metadata.sha256.matches(Regex("(?i)[a-f0-9]{64}"))
             ) {
-                Text("Download update")
+                Text(
+                    when {
+                        isDownloading -> "Downloading..."
+                        isVerified -> "Install update"
+                        else -> "Download update"
+                    }
+                )
             }
         },
-        dismissButton = if (mandatory) null else {
+        dismissButton = if (mandatory || isDownloading) null else {
             {
                 TextButton(onClick = onLater) {
                     Text("Later")
@@ -1491,4 +1596,11 @@ private fun UpdatePromptDialog(
             }
         }
     )
+}
+
+private fun formatUpdateBytes(bytes: Long): String {
+    if (bytes < 1024L) return "${bytes} B"
+    val kb = bytes / 1024.0
+    if (kb < 1024.0) return String.format(Locale.US, "%.1f KB", kb)
+    return String.format(Locale.US, "%.1f MB", kb / 1024.0)
 }
