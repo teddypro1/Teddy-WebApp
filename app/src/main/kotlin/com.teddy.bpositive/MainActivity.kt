@@ -59,6 +59,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -769,6 +770,9 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
 
     var openedNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showNotesFeature by rememberSaveable { mutableStateOf(false) }
+    // Hoisted above the Notes/Reader route so list position and header collapse survive opening a note.
+    val notesListState = rememberLazyListState()
+    val notesHeaderCollapseProgress = rememberSaveable { mutableFloatStateOf(0f) }
 
     var showEditor by rememberSaveable {
         mutableStateOf(false)
@@ -1094,8 +1098,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         notes[index] = updated
         saveChanges()
         syncNoteUpsert(updated)
-        openedNoteId = null
-        Toast.makeText(context, "Note updated.", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Note saved.", Toast.LENGTH_SHORT).show()
     }
 
     fun togglePin(note: Note) {
@@ -1189,7 +1192,10 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
             } else if (selectedTab == "Home" && showNotesFeature) {
                 NotesScreen(
                     notes = filteredNotes,
-                    contentPadding = padding
+                    contentPadding = padding,
+                    listState = notesListState,
+                    collapseProgress = notesHeaderCollapseProgress,
+                    onNoteClick = { note -> editNote(note) }
                 )
             } else if (selectedTab == "Home") {
                 HomeScreen(
