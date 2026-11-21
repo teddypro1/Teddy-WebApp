@@ -470,3 +470,17 @@ Commits:
 - `137f27d293` — match the screenshot's yellow circular FAB with a white plus glyph
 
 **User-confirmed on 2026-11-21:** the user reported the new Home Landing Page and Notes List UI Build completed successfully and supplied two device screenshots for review. The screenshots show the Notes title/action row, dark surface cards, title/preview/date-time, yellow FAB and Global Bottom Navigation. The two screenshots are the visual baseline for the next UI refinement phase. No Supabase migration, schema change, destructive database action or paid upgrade was made.
+
+
+## 25. Build 24 — Source-style Collapsing Notes Header and Scroll Refinement (implementation committed; Build pending)
+
+The user supplied a 30.35-second source-app screen recording on 2026-11-21. It was inspected at sampled timestamps throughout the recording. Reference behavior: expanded header has a large top-left Notes title and Checklist/Search/Settings icons on a separate right-aligned row; scrolling down collapses the title and moves all three icons onto the same row; scrolling upward expands the header after the list reaches its upper boundary; the final note should not leave a large artificial bottom gap. The global bottom navigation remains.
+
+Implementation committed directly to `main` in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.kt`:
+- Nested-scroll behavior collapses on downward scrolling and expands on upward unconsumed scroll at the list top.
+- Animated transition between expanded and collapsed header layouts.
+- Kept note cards at 104dp height, two-line ellipsized preview, timestamp format, action icons, yellow FAB and global bottom navigation.
+- Reduced LazyColumn bottom content padding from 100dp to 8dp; Scaffold bottom-bar padding remains.
+- No Home Landing Page, Reader/Editor, navigation action, database schema, Supabase migration or paid-plan changes.
+
+Commits: `05ad4253d023a388750af75820e6bebc1f32e14e` (implementation), `7260543d4080bb9026819ee83d770c95a88683a4` (import cleanup). Source is committed but not compiled or device-tested by the assistant. User CodeAssist Build and device verification are pending; do not mark successful until the user confirms.
