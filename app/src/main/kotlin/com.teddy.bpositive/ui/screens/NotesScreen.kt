@@ -111,7 +111,7 @@ fun NotesScreen(
                     cap = StrokeCap.Round
                 )
                 drawLine(
-                    MaterialTheme.colorScheme.onPrimary,
+                    plusColor,
                     Offset(size.width * 0.18f, center.y),
                     Offset(size.width * 0.82f, center.y),
                     strokeWidth = 3.5.dp.toPx(),
@@ -176,7 +176,7 @@ private fun NotesActionIcon(kind: String) {
         when (kind) {
             "checklist" -> {
                 drawRoundRect(
-                    color = color,
+                    color = iconColor,
                     topLeft = Offset(size.width * .12f, size.height * .12f),
                     size = Size(size.width * .76f, size.height * .76f),
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()),
