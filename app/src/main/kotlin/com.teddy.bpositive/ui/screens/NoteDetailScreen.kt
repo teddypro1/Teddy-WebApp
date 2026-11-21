@@ -3,6 +3,8 @@ package com.teddy.bpositive.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,9 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -50,16 +56,20 @@ fun NoteDetailScreen(
     val keyboard = LocalSoftwareKeyboardController.current
     val bodyFocus = remember(note.id) { FocusRequester() }
     val titleFocus = remember(note.id) { FocusRequester() }
+    var bodyLayoutResult by remember(note.id) { mutableStateOf<TextLayoutResult?>(null) }
+    var lastBodyTapPosition by remember(note.id) { mutableStateOf(Offset.Zero) }
     val palette = listOf("#FFFFFF", "#FFF3B0", "#FADADD", "#D7F5E8", "#DCEBFF", "#E9DDFB")
     val textColor = MaterialTheme.colorScheme.onBackground
     val subtleColor = MaterialTheme.colorScheme.onSurfaceVariant
 
-    fun beginEditing(atEnd: Boolean = true, focusTitle: Boolean = false) {
+    fun beginEditing(atPosition: Int? = null, focusTitle: Boolean = false) {
         if (locked) return
         editing = true
         activeTool = "none"
         focusTitleAfterEnter = focusTitle
-        if (atEnd && !focusTitle) body = body.copy(selection = TextRange(body.text.length))
+        if (!focusTitle && atPosition != null) {
+            body = body.copy(selection = TextRange(atPosition.coerceIn(0, body.text.length)))
+        }
     }
 
     LaunchedEffect(editing, focusTitleAfterEnter) {
@@ -152,7 +162,6 @@ fun NoteDetailScreen(
                 .fillMaxWidth()
                 .weight(1f)
                 .padding(horizontal = 28.dp)
-                .clickable(enabled = !editing) { beginEditing(atEnd = true) }
         ) {
             if (editing) {
                 BasicTextField(
@@ -235,13 +244,26 @@ fun NoteDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .clickable { beginEditing(atEnd = true) }
+                        .pointerInput(body.text) {
+                            awaitEachGesture {
+                                val down = awaitFirstDown(pass = PointerEventPass.Initial)
+                                lastBodyTapPosition = down.position
+                            }
+                        }
+                        .clickable {
+                            val cursorPosition = bodyLayoutResult
+                                ?.getOffsetForPosition(lastBodyTapPosition)
+                                ?.coerceIn(0, body.text.length)
+                                ?: body.text.length
+                            beginEditing(atPosition = cursorPosition)
+                        }
                 ) {
                     Text(
                         body.text,
                         color = textColor,
                         fontSize = 17.sp,
                         lineHeight = 27.sp,
+                        onTextLayout = { bodyLayoutResult = it },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
