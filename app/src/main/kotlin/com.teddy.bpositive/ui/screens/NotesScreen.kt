@@ -92,6 +92,7 @@ fun NotesScreen(
             }
         }
 
+        val plusColor = MaterialTheme.colorScheme.onPrimary
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -103,7 +104,7 @@ fun NotesScreen(
             Canvas(modifier = Modifier.size(28.dp)) {
                 val center = Offset(size.width / 2f, size.height / 2f)
                 drawLine(
-                    MaterialTheme.colorScheme.onPrimary,
+                    plusColor,
                     Offset(center.x, size.height * 0.18f),
                     Offset(center.x, size.height * 0.82f),
                     strokeWidth = 3.5.dp.toPx(),
@@ -171,6 +172,7 @@ private fun NotesActionIcon(kind: String) {
     ) {
         val color = MaterialTheme.colorScheme.onBackground
         val stroke = 2.2.dp.toPx()
+        val iconColor = MaterialTheme.colorScheme.onBackground
         when (kind) {
             "checklist" -> {
                 drawRoundRect(
@@ -180,15 +182,15 @@ private fun NotesActionIcon(kind: String) {
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()),
                     style = Stroke(stroke)
                 )
-                drawLine(color, Offset(size.width * .28f, size.height * .49f), Offset(size.width * .43f, size.height * .64f), stroke, StrokeCap.Round)
-                drawLine(color, Offset(size.width * .43f, size.height * .64f), Offset(size.width * .73f, size.height * .34f), stroke, StrokeCap.Round)
+                drawLine(iconColor, Offset(size.width * .28f, size.height * .49f), Offset(size.width * .43f, size.height * .64f), stroke, StrokeCap.Round)
+                drawLine(iconColor, Offset(size.width * .43f, size.height * .64f), Offset(size.width * .73f, size.height * .34f), stroke, StrokeCap.Round)
             }
             "search" -> {
-                drawCircle(color, radius = size.width * .31f, center = Offset(size.width * .42f, size.height * .40f), style = Stroke(stroke))
-                drawLine(color, Offset(size.width * .64f, size.height * .64f), Offset(size.width * .88f, size.height * .88f), stroke, StrokeCap.Round)
+                drawCircle(iconColor, radius = size.width * .31f, center = Offset(size.width * .42f, size.height * .40f), style = Stroke(stroke))
+                drawLine(iconColor, Offset(size.width * .64f, size.height * .64f), Offset(size.width * .88f, size.height * .88f), stroke, StrokeCap.Round)
             }
             else -> {
-                drawCircle(color, radius = size.width * .19f, style = Stroke(stroke))
+                drawCircle(iconColor, radius = size.width * .19f, style = Stroke(stroke))
                 for (i in 0 until 8) {
                     val angle = i * (Math.PI / 4.0)
                     val inner = size.width * .30f
@@ -196,7 +198,7 @@ private fun NotesActionIcon(kind: String) {
                     val cx = size.width / 2f
                     val cy = size.height / 2f
                     drawLine(
-                        color,
+                        iconColor,
                         Offset(cx + kotlin.math.cos(angle).toFloat() * inner, cy + kotlin.math.sin(angle).toFloat() * inner),
                         Offset(cx + kotlin.math.cos(angle).toFloat() * outer, cy + kotlin.math.sin(angle).toFloat() * outer),
                         stroke,
