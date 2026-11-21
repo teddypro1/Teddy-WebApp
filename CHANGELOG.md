@@ -82,4 +82,6 @@ See [Build History](docs/history/BUILD_HISTORY_01.md), [Supabase History](docs/h
 - While the header is not fully collapsed, all downward scroll input belongs to the header; the note list's own scroll offset must remain unchanged.
 - The scroll delta that completes collapse is also consumed by the header. The list begins scrolling only on a subsequent delta.
 - On upward movement, the list returns to its top before the header expands.
-- Preserve existing UI and data behavior. No Supabase/database changes. Build/device verification pending.
+- Implemented in `NotesScreen.kt`; the threshold-crossing scroll event is fully consumed by the header, so the list starts scrolling only on the next event.
+- Commit: `0c01a24c37edf48418e3b2aef997b9c402f0e651`.
+- Existing UI and data behavior preserved. No Supabase/database changes. CodeAssist Build/device verification pending.
