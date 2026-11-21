@@ -1,6 +1,7 @@
 package com.teddy.bpositive.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -134,31 +135,53 @@ fun NoteDetailScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp)
-                .padding(horizontal = 18.dp),
+                .padding(horizontal = 22.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            TextButton(onClick = {
-                if (editing) {
-                    editing = false
-                    activeTool = "none"
-                    keyboard?.hide()
-                } else onBack()
-            }) {
-                Text("‹", fontSize = 34.sp, color = textColor, lineHeight = 36.sp)
+            IconButton(
+                onClick = {
+                    if (editing) {
+                        editing = false
+                        activeTool = "none"
+                        keyboard?.hide()
+                    } else onBack()
+                },
+                modifier = Modifier.size(40.dp)
+            ) {
+                NoteToolbarIcon("back", textColor)
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 if (editing) {
-                    TextButton(onClick = { body = body.copy(selection = TextRange(0)) }) {
-                        Text("↶", fontSize = 27.sp, color = subtleColor)
+                    IconButton(
+                        onClick = { body = body.copy(selection = TextRange(0)) },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        NoteToolbarIcon("undo", subtleColor)
                     }
-                    TextButton(onClick = { body = body.copy(selection = TextRange(body.text.length)) }) {
-                        Text("↷", fontSize = 27.sp, color = subtleColor)
+                    IconButton(
+                        onClick = { body = body.copy(selection = TextRange(body.text.length)) },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        NoteToolbarIcon("redo", subtleColor)
                     }
-                }
-                TextButton(onClick = { saveAndStay() }) {
-                    Text("✓", fontSize = 30.sp, color = Color(0xFFFFC928), fontWeight = FontWeight.Bold)
+                    IconButton(
+                        onClick = { saveAndStay() },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        NoteToolbarIcon("check", Color(0xFFFFC928))
+                    }
+                } else {
+                    IconButton(
+                        onClick = { saveAndStay() },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        NoteToolbarIcon("bookmark", textColor)
+                    }
                 }
             }
         }
@@ -399,4 +422,62 @@ fun NoteDetailScreen(
         }
         }
 }
+}
+
+@Composable
+private fun NoteToolbarIcon(
+    type: String,
+    tint: Color
+) {
+    Canvas(Modifier.size(24.dp)) {
+        val sx = size.width / 24f
+        val sy = size.height / 24f
+        fun p(x: Float, y: Float) = Offset(x * sx, y * sy)
+        val stroke = 2.1f * sx
+        val style = androidx.compose.ui.graphics.drawscope.Stroke(
+            width = stroke,
+            cap = androidx.compose.ui.graphics.StrokeCap.Round,
+            join = androidx.compose.ui.graphics.StrokeJoin.Round
+        )
+        when (type) {
+            "back" -> {
+                drawLine(tint, p(19f, 12f), p(5f, 12f), stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                drawLine(tint, p(5f, 12f), p(12f, 5f), stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                drawLine(tint, p(5f, 12f), p(12f, 19f), stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+            }
+            "bookmark" -> {
+                val path = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(7f * sx, 3.5f * sy)
+                    lineTo(17f * sx, 3.5f * sy)
+                    quadraticTo(19f * sx, 3.5f * sy, 19f * sx, 5.5f * sy)
+                    lineTo(19f * sx, 21f * sy)
+                    lineTo(12f * sx, 16f * sy)
+                    lineTo(5f * sx, 21f * sy)
+                    lineTo(5f * sx, 5.5f * sy)
+                    quadraticTo(5f * sx, 3.5f * sy, 7f * sx, 3.5f * sy)
+                    close()
+                }
+                drawPath(path, tint, style = style)
+            }
+            "check" -> {
+                drawLine(tint, p(4f, 12f), p(10f, 18f), stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                drawLine(tint, p(10f, 18f), p(21f, 6f), stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+            }
+            "undo", "redo" -> {
+                val path = androidx.compose.ui.graphics.Path()
+                if (type == "undo") {
+                    path.moveTo(20f * sx, 18f * sy)
+                    path.cubicTo(20f * sx, 9f * sy, 13f * sx, 7f * sy, 5f * sx, 12f * sy)
+                    drawLine(tint, p(5f, 12f), p(10f, 7f), stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                    drawLine(tint, p(5f, 12f), p(10f, 17f), stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                } else {
+                    path.moveTo(4f * sx, 18f * sy)
+                    path.cubicTo(4f * sx, 9f * sy, 11f * sx, 7f * sy, 19f * sx, 12f * sy)
+                    drawLine(tint, p(19f, 12f), p(14f, 7f), stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                    drawLine(tint, p(19f, 12f), p(14f, 17f), stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                }
+                drawPath(path, tint, style = style)
+            }
+        }
+    }
 }
