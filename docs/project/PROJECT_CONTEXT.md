@@ -465,5 +465,7 @@ Commits:
 - `f1767f7dfc` — route Home and Notes feature screens
 - `16e202dc4b` — remove obsolete dashboard route
 - `59da046916`, `fa2dac5102`, `c7aca95602` — correct Compose theme color capture in Canvas-drawn icons
+- `2b558efa03` — align Notes title and action icon row vertically to the reference screenshot
+- `24c79a9b45` — hide the app's WorkspaceTopBar while the dedicated Notes screen is open, allowing the Notes screen to use the screenshot-style header while preserving the Global Bottom Navigation
 
 Pre-change checks: GitHub had only the `main` branch, and Supabase was `ACTIVE_HEALTHY` with 18 applied migrations. No Supabase migration, schema change, destructive database action or paid upgrade was made. User Build/device verification for this UI change is pending.
