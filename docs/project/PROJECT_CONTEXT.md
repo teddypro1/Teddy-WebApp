@@ -502,7 +502,7 @@ Commit: `aea5df26b6af0ef59743fa9e5f329377b37234ff`.
 No database, Supabase, Landing Page or Reader/Editor changes. User subsequently confirmed Build 25 successfully built and reported that the continuous header collapse and first-card behavior were substantially improved. A remaining issue was title-text jitter during font-size changes; that issue is addressed in the next focused refinement.
 
 
-## 26. Build 26 — Smooth scroll-linked Notes title scaling (implementation committed; Build pending)
+## 26. Build 26 — Smooth scroll-linked Notes title scaling (user-confirmed successful)
 
 The user reported that the continuous header collapse was smooth but the `Notes` title visibly jittered/lagged while shrinking. The requested behavior is for title size to track finger/scroll movement continuously, at the same pace, without visible jumps.
 
@@ -515,4 +515,21 @@ Implementation in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScree
 
 Commit: `e85900fea7872a9d134eb3a35725fe60eb2b8c28`.
 
-Source is committed on `main`; CodeAssist Build and device verification are pending. Specifically test slow gradual scroll, fast scroll, direction reversal, and repeated collapse/expand. Do not mark Build 26 successful until the user confirms.
+User confirmed Build 26 successfully built. Device testing showed modest stability improvement, but the title still did not meet the desired smoothness; a deeper Compose phase-optimization refinement follows in Build 27.
+
+
+## 27. Build 27 — Compose phase-optimized scroll-driven header (implementation committed; Build pending)
+
+Following Build 26 device testing, the user reported that title scaling was somewhat more stable but still not sufficiently smooth. The current implementation was found to read `collapseProgress` during composition, causing the `NotesScreen` composition scope (including the LazyColumn subtree) to be invalidated for every nested-scroll update.
+
+Build 27 moves scroll-state reads into Compose's rendering phases:
+- `collapseProgress` is retained as a `MutableFloatState`, but the header receives it as `State<Float>`.
+- Header height reads the state inside a custom `Modifier.layout` measure block.
+- Title and action-row offsets read the state inside placement lambdas (`Modifier.offset { ... }`).
+- Title scale reads the state inside `graphicsLayer`, keeping the fixed Text layout and updating only the graphics layer.
+- The main screen no longer reads the changing float during composition, avoiding per-pixel recomposition of the screen and LazyColumn as the intended optimization.
+- Existing nested-scroll consumption logic, card layout, icons, FAB and navigation remain unchanged.
+
+Commit: `1ec5ff1f53948e8741d7047900e77b548091fb4b`.
+
+Source committed on `main`; CodeAssist Build and device verification pending. No Supabase/database changes. Do not mark Build 27 successful until user confirmation.
