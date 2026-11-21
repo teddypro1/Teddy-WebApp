@@ -1147,7 +1147,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                 )
             },
             topBar = {
-                if (openedNoteId == null) WorkspaceTopBar(
+                if (openedNoteId == null && !(selectedTab == "Home" && showNotesFeature)) WorkspaceTopBar(
                     fullName = currentProfile?.fullName.orEmpty(),
                     avatarUrl = currentProfile?.avatarUrl.orEmpty(),
                     darkMode = darkMode,
