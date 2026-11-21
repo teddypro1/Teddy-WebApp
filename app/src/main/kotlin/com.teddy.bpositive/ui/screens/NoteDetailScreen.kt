@@ -6,7 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -169,15 +169,12 @@ fun NoteDetailScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .pointerInput(editing, locked) {
-                    if (!editing && !locked) {
-                        detectTapGestures { position ->
-                            val margin = 22.dp.toPx()
-                            if (position.x < margin || position.x > size.width - margin) {
-                                beginEditing(atPosition = body.text.length)
-                            }
-                        }
-                    }
+                .clickable(
+                    enabled = !editing && !locked,
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    beginEditing(atPosition = body.text.length)
                 }
                 .padding(horizontal = 22.dp)
         ) {
