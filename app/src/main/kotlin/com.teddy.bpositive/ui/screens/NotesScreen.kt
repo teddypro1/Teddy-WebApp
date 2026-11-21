@@ -41,30 +41,32 @@ fun NotesScreen(
                 .fillMaxSize()
                 .padding(horizontal = 7.dp)
         ) {
+            Text(
+                text = "Notes",
+                modifier = Modifier.padding(start = 10.dp, top = 24.dp),
+                fontSize = 34.sp,
+                lineHeight = 40.sp,
+                fontWeight = FontWeight.Normal,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(Modifier.height(48.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 10.dp, end = 12.dp, top = 24.dp, bottom = 48.dp),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(end = 12.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Notes",
-                    fontSize = 34.sp,
-                    lineHeight = 40.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(22.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 2.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     NotesActionIcon(kind = "checklist")
                     NotesActionIcon(kind = "search")
                     NotesActionIcon(kind = "settings")
                 }
             }
+            Spacer(Modifier.height(18.dp))
 
             if (notes.isEmpty()) {
                 Box(
