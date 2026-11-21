@@ -7,6 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,9 +43,11 @@ import java.util.Locale
 @Composable
 fun NotesScreen(
     notes: List<Note>,
-    contentPadding: PaddingValues
+    contentPadding: PaddingValues,
+    listState: LazyListState,
+    collapseProgress: MutableFloatState,
+    onNoteClick: (Note) -> Unit
 ) {
-    val collapseProgress = remember { mutableFloatStateOf(0f) }
     val density = androidx.compose.ui.platform.LocalDensity.current
     val collapseRangePx = with(density) { 128.dp.toPx() }
 
@@ -131,11 +134,12 @@ fun NotesScreen(
                         .weight(1f),
                     // Keep the list end tight; the FAB floats above it and the app
                     // Scaffold already accounts for the global bottom navigation.
+                    state = listState,
                     contentPadding = PaddingValues(bottom = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     items(notes, key = { it.id }) { note ->
-                        NoteListItem(note = note)
+                        NoteListItem(note = note, onClick = { onNoteClick(note) })
                     }
                 }
             }
@@ -251,11 +255,12 @@ private fun NotesCollapsingHeader(
 }
 
 @Composable
-private fun NoteListItem(note: Note) {
+private fun NoteListItem(note: Note, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .height(104.dp)
+            .clickable(onClick = onClick)
             .background(
                 color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(8.dp)
