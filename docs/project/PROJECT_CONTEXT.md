@@ -1,6 +1,6 @@
 # Teddy-WebApp — Project Context & Progress Log
 
-সর্বশেষ হালনাগাদ: ২০২৬-১১-২০  
+সর্বশেষ হালনাগাদ: ২০২৬-১১-২১  
 Repository: https://github.com/teddypro1/Teddy-WebApp  
 এই নথি AI development assistant-এর জন্য canonical project handoff। কোনো কাজ শুরুর আগে এই নথি পড়বে এবং live GitHub/Supabase state যাচাই করবে। নথির কোনো তথ্য পুরোনো হতে পারে; live state সর্বদা অগ্রাধিকার পাবে।
 
@@ -499,4 +499,20 @@ Build 25 refinement committed directly to `main`:
 
 Commit: `aea5df26b6af0ef59743fa9e5f329377b37234ff`.
 
-No database, Supabase, Landing Page or Reader/Editor changes. Source committed; CodeAssist Build and device verification pending. Verify collapse/expand smoothness, first-card stability, list scrolling after full collapse, and bottom-of-list spacing before marking successful.
+No database, Supabase, Landing Page or Reader/Editor changes. User subsequently confirmed Build 25 successfully built and reported that the continuous header collapse and first-card behavior were substantially improved. A remaining issue was title-text jitter during font-size changes; that issue is addressed in the next focused refinement.
+
+
+## 26. Build 26 — Smooth scroll-linked Notes title scaling (implementation committed; Build pending)
+
+The user reported that the continuous header collapse was smooth but the `Notes` title visibly jittered/lagged while shrinking. The requested behavior is for title size to track finger/scroll movement continuously, at the same pace, without visible jumps.
+
+Implementation in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.kt`:
+- Keep the title Text composable at a fixed 34sp layout size and fixed 40sp line height.
+- Apply a scroll-progress-driven `graphicsLayer` scale from 1.0 to 26/34, anchored at the top-left transform origin.
+- This avoids changing `fontSize` and triggering repeated text remeasurement on every scroll delta, which is the suspected source of the jitter.
+- Title position, header height and action-row position remain tied to the same continuous `collapseProgress`; the existing nested-scroll behavior and note list are unchanged.
+- No database, Supabase, Home Landing Page, note card, FAB, navigation or Reader/Editor changes.
+
+Commit: `e85900fea7872a9d134eb3a35725fe60eb2b8c28`.
+
+Source is committed on `main`; CodeAssist Build and device verification are pending. Specifically test slow gradual scroll, fast scroll, direction reversal, and repeated collapse/expand. Do not mark Build 26 successful until the user confirms.
