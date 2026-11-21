@@ -557,3 +557,32 @@ Source committed directly to `main`. **User confirmed Build 28 successfully comp
 The user clarified the desired interaction: while the header is expanded or partially collapsed, downward scroll must be dedicated to collapsing the header. Note cards may move upward only as a consequence of the header's shrinking layout, but the LazyColumn's own scroll position must remain unchanged until the header reaches its fully collapsed state. Only subsequent scroll input should scroll the note list. This is a strict two-stage interaction, including when one drag event crosses the collapse threshold: the threshold-crossing delta is consumed by the header and must not also move the list in that same event. Upward scrolling should first return the list to its top, then expand the header.
 
 Build 29 changes the `onPreScroll` ownership rule in `NotesScreen.kt`: if the header is not fully collapsed at the start of a downward nested-scroll event, the header consumes that entire event and updates collapse progress, even if it reaches 1.0 during that event. The residual distance from that same event is intentionally not forwarded to LazyColumn; list scrolling starts with the next nested-scroll event. Existing upward expansion remains in `onPostScroll` after the list cannot consume more at its top boundary. Commit: `0c01a24c37edf48418e3b2aef997b9c402f0e651`. Existing visual geometry, draw-phase title interpolation, note cards, icons, FAB, Home Landing Page, global navigation and note/data behavior are unchanged. No Supabase/database changes. CodeAssist Build and device verification are pending; do not mark Build 29 successful until user confirmation.
+
+
+## 26. Build 30 — Full-screen Note Reader/Editor (source committed; Build pending)
+
+User-approved reference behavior:
+- Opening a note displays a dedicated full-screen screen inspired by the supplied source-app screenshots.
+- Reader mode is the initial state. The top row has Back and a yellow Save/check action; note title, modified date/time and character count appear above the body.
+- Tapping the title enters editing with title focus. Tapping the body enters editing with the body field focused. The body editor fills the remaining content surface, so tapping blank space below a short note should place the cursor at the end of the content; tapping text should retain the text field's tap-based cursor placement.
+- Editing mode shows Undo/Redo affordances, Save, and a bottom formatting toolbar for bullet/checklist/numbered insertion, bold, italic, underline and appearance palette.
+- Save updates the local note, queues the existing cloud upsert, hides the keyboard and returns to Reading Mode without closing the detail screen or navigating to the Notes list.
+- The Notes screen's LazyListState and header collapse progress are hoisted above the route switch, so opening and closing a note retains the previous list scroll position and expanded/collapsed header state.
+- No Supabase schema or migration change; note color remains local-only.
+
+Implementation files:
+- `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NoteDetailScreen.kt`
+- `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.kt`
+- `app/src/main/kotlin/com.teddy.bpositive/MainActivity.kt`
+
+Implementation commits on `main`:
+- `c252370c0138591ae45f6c4a98673b0b50d3b5f9` — first full-screen reader/editor implementation
+- `2020243b2cc292a1a6a5279e0fbd3a80214cf334` — connect note-card taps and retain Notes LazyListState
+- `a27c2a2a8e3ae105ae55c495532a3c050b7b01ac` — defer focus request until edit field is composed
+- `fea2949e1b9158ba7c985895607ab21cdb7ede84` — retain header collapse progress across reader navigation
+
+Verification status:
+- Source is committed directly to `main`; no assistant-side Android compilation or device test has been performed.
+- CodeAssist Build and user device verification are pending. Do not mark Build 30 successful until the user confirms.
+- The reminder, export and share panels are currently visual placeholders; the note-list Trash action remains the existing delete workflow. The lock toggle is in-memory only. These secondary actions need their own functional implementation before they can be described as complete.
+- Review the Back behavior, title/body focus, blank-area tap-to-end cursor, text cursor placement, Save-without-navigation, keyboard dismissal, and restoration of list scroll/header state.
