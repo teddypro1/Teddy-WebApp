@@ -288,7 +288,7 @@ Commit: `1ec5ff1f53948e8741d7047900e77b548091fb4b`.
 CodeAssist Build/device verification pending. Test gradual and rapid drag, reversing direction mid-motion, repeated collapse/expand, first-card stability and list scroll performance. No database/Supabase changes.
 
 
-## Build 28 — Draw-phase Notes title interpolation (implementation committed; Build pending)
+## Build 28 — Draw-phase Notes title interpolation (user-confirmed successful)
 
 After the user tested Build 27, they reported that overall movement was acceptable but the title still lacked the desired continuous smoothness. The uploaded 59-frame GIF was reviewed. Its frame delays are irregular (including long pauses), so it is not a reliable fixed-frame-rate performance capture; it does show the title/header/list states across the scroll recording.
 
@@ -302,4 +302,11 @@ Build 28 replaces the title's `graphicsLayer` scaling with draw-phase text layou
 
 Commit: `ecbad69bf6925e52f4b1dd3b593d6d9fcb1e5164`.
 
-Source committed directly to `main`. CodeAssist Build and device verification pending. No Supabase/database changes; live Supabase remained ACTIVE_HEALTHY with the existing 18 migrations. Do not mark Build 28 successful until the user confirms.
+Source committed directly to `main`. **User confirmed Build 28 successfully completed**, but reported that the title smoothness still did not reach the expected level. No Supabase/database changes; live Supabase remained ACTIVE_HEALTHY with the existing 18 migrations.
+
+
+## Build 29 — Header-first two-stage scroll handoff (implementation in progress)
+
+User requirement: scrolling down while the header is not fully collapsed must only collapse the header. The first note card can translate upward because the header above it becomes shorter, but the LazyColumn scroll offset must stay fixed. Even the scroll delta that completes the collapse must not also scroll the list in that same nested-scroll event; list scrolling begins on the next scroll delta after the header is already fully collapsed. Scrolling upward should scroll the list back to its top first, then expand the header.
+
+The implementation is scoped to nested-scroll gesture ownership in `NotesScreen.kt`; preserve existing title draw-phase interpolation, header geometry, note-card UI, action icons, FAB and global navigation. No data, database, Supabase, Home Landing Page or Reader/Editor changes. CodeAssist Build/device verification pending user confirmation.
