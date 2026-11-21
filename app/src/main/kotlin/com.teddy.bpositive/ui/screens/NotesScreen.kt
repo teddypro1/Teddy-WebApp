@@ -166,13 +166,12 @@ private fun NoteListItem(note: Note) {
 
 @Composable
 private fun NotesActionIcon(kind: String) {
+    val iconColor = MaterialTheme.colorScheme.onBackground
     Canvas(
         modifier = Modifier
             .size(25.dp)
     ) {
-        val color = MaterialTheme.colorScheme.onBackground
         val stroke = 2.2.dp.toPx()
-        val iconColor = MaterialTheme.colorScheme.onBackground
         when (kind) {
             "checklist" -> {
                 drawRoundRect(
