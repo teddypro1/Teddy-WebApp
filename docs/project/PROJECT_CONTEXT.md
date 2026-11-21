@@ -472,7 +472,7 @@ Commits:
 **User-confirmed on 2026-11-21:** the user reported the new Home Landing Page and Notes List UI Build completed successfully and supplied two device screenshots for review. The screenshots show the Notes title/action row, dark surface cards, title/preview/date-time, yellow FAB and Global Bottom Navigation. The two screenshots are the visual baseline for the next UI refinement phase. No Supabase migration, schema change, destructive database action or paid upgrade was made.
 
 
-## 25. Build 24 — Source-style Collapsing Notes Header and Scroll Refinement (implementation committed; Build pending)
+## 25. Build 24 — Source-style Collapsing Notes Header and Scroll Refinement (implementation committed; Build verified later)
 
 The user supplied a 30.35-second source-app screen recording on 2026-11-21. It was inspected at sampled timestamps throughout the recording. Reference behavior: expanded header has a large top-left Notes title and Checklist/Search/Settings icons on a separate right-aligned row; scrolling down collapses the title and moves all three icons onto the same row; scrolling upward expands the header after the list reaches its upper boundary; the final note should not leave a large artificial bottom gap. The global bottom navigation remains.
 
@@ -535,7 +535,7 @@ Commit: `1ec5ff1f53948e8741d7047900e77b548091fb4b`.
 Source committed on `main`; CodeAssist Build and device verification pending. No Supabase/database changes. Do not mark Build 27 successful until user confirmation.
 
 
-## Build 28 — Draw-phase Notes title interpolation (implementation committed; Build pending)
+## Build 28 — Draw-phase Notes title interpolation (user-confirmed successful)
 
 After the user tested Build 27, they reported that overall movement was acceptable but the title still lacked the desired continuous smoothness. The uploaded 59-frame GIF was reviewed. Its frame delays are irregular (including long pauses), so it is not a reliable fixed-frame-rate performance capture; it does show the title/header/list states across the scroll recording.
 
@@ -549,4 +549,11 @@ Build 28 replaces the title's `graphicsLayer` scaling with draw-phase text layou
 
 Commit: `ecbad69bf6925e52f4b1dd3b593d6d9fcb1e5164`.
 
-Source committed directly to `main`. CodeAssist Build and device verification pending. No Supabase/database changes; live Supabase remained ACTIVE_HEALTHY with the existing 18 migrations. Do not mark Build 28 successful until the user confirms.
+Source committed directly to `main`. **User confirmed Build 28 successfully completed** and reported that the result did not materially improve the title smoothness enough. No Supabase/database changes; live Supabase remained ACTIVE_HEALTHY with the existing 18 migrations.
+
+
+## Build 29 — Header-first two-stage scrolling (implementation in progress)
+
+The user clarified the desired interaction: while the header is expanded or partially collapsed, downward scroll must be dedicated to collapsing the header. Note cards may move upward only as a consequence of the header's shrinking layout, but the LazyColumn's own scroll position must remain unchanged until the header reaches its fully collapsed state. Only subsequent scroll input should scroll the note list. This is a strict two-stage interaction, including when one drag event crosses the collapse threshold: the threshold-crossing delta is consumed by the header and must not also move the list in that same event. Upward scrolling should first return the list to its top, then expand the header.
+
+Build 29 is limited to this scroll ownership/gesture handoff in `NotesScreen.kt`. Preserve the existing visual geometry, title draw-phase interpolation, note cards, icons, FAB, Home Landing Page, global navigation and all note/data behavior. No Supabase or database changes. Build verification remains pending until the user confirms.
