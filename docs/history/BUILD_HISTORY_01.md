@@ -310,3 +310,27 @@ Source committed directly to `main`. **User confirmed Build 28 successfully comp
 User requirement: scrolling down while the header is not fully collapsed must only collapse the header. The first note card can translate upward because the header above it becomes shorter, but the LazyColumn scroll offset must stay fixed. Even the scroll delta that completes the collapse must not also scroll the list in that same nested-scroll event; list scrolling begins on the next scroll delta after the header is already fully collapsed. Scrolling upward should scroll the list back to its top first, then expand the header.
 
 Implemented in `NotesScreen.kt` by changing `onPreScroll`: while the header is not fully collapsed at the beginning of a downward nested-scroll event, it consumes the entire event and updates collapse progress. If that event completes the collapse, its remaining distance is deliberately discarded instead of being passed to LazyColumn; list scrolling starts only on the next nested-scroll event. Existing upward expansion remains after the list reaches its top. Commit: `0c01a24c37edf48418e3b2aef997b9c402f0e651`. Existing title draw-phase interpolation, header geometry, note-card UI, action icons, FAB and global navigation are preserved. No data, database, Supabase, Home Landing Page or Reader/Editor changes. CodeAssist Build/device verification pending user confirmation.
+
+
+## Build 30 — Full-screen Note Reader/Editor (implementation committed; Build pending)
+
+User supplied three source-app screenshots and approved a full-screen note experience. The first screenshot shows the editing state with Back, Undo/Redo and Save in the top row, plus a lower editing toolbar. The second shows Reading Mode with Back, Save, note title, date/time and character count, body, and a bottom action row. The third shows the expanded formatting toolbar.
+
+Implemented directly on `main`:
+- Replaced the previous generic Reader/Editor layout with a source-inspired full-screen layout.
+- Reading Mode is the initial state. Title and body tap targets enter Editing Mode; title tap requests title focus, while body tap opens the body editor with cursor at the end when entering from the blank reading surface.
+- The body field fills the remaining content area; normal text taps use BasicTextField cursor placement.
+- Editing toolbar includes bullet/checklist/numbered insertion, bold, italic, underline and a local appearance palette.
+- Save persists title/body/color through the existing local storage and queued Supabase upsert callback, hides the keyboard and returns to Reading Mode without leaving the open note.
+- Notes LazyListState and header collapse progress are held in the parent route so the list can return to its prior scroll/header state after Back.
+- No Supabase migration, schema modification, paid upgrade or production database operation.
+
+Commits:
+- `c252370c0138591ae45f6c4a98673b0b50d3b5f9`
+- `2020243b2cc292a1a6a5279e0fbd3a80214cf334`
+- `a27c2a2a8e3ae105ae55c495532a3c050b7b01ac`
+- `fea2949e1b9158ba7c985895607ab21cdb7ede84`
+
+Known incomplete secondary actions: reminder, export and share panels are currently placeholders; lock is session-only; delete remains through the existing Notes-list Trash action. These are not yet complete functional workflows.
+
+CodeAssist Build and device verification pending user confirmation. Do not report Build 30 successful until the user confirms.
