@@ -362,3 +362,13 @@ Implemented in `NoteDetailScreen.kt`:
 - Final fix commit: `e3800c58e0ea9616a7302719c1c2254c7de99859`.
 - **User-confirmed on 2026-11-21:** Build completed successfully; ripple was removed and tapping across the screen entered Editing Mode.
 - No Supabase/database/schema changes.
+
+
+## Build 32 — Note Reader/Editor top-bar alignment and toolbar icons (implementation committed; Build pending)
+
+- Changed the top bar to use the same 22dp horizontal inset as the note content, aligning Back at the left and the action group against the right edge.
+- Added custom-drawn outline icons matching the supplied reference: Back arrow, bookmark in Reading Mode, Undo/Redo arrows and yellow Save checkmark in Editing Mode. No external icon dependency was added.
+- Kept `.imePadding()` on the screen's root content column. This keeps the Editing toolbar above the keyboard while the IME is visible and lets it return to the bottom when the keyboard is hidden, without exiting Editing Mode.
+- Commit: `31da483988dbb89e4271208b72a5b4cba35fea54`.
+- CodeAssist Build and on-device layout/keyboard verification are pending user confirmation.
+- No Supabase/database/schema changes.
