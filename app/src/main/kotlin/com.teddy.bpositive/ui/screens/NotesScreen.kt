@@ -56,13 +56,25 @@ fun NotesScreen(
                 available: Offset,
                 source: NestedScrollSource
             ): Offset {
-                if (available.y >= 0f || collapseProgress.floatValue >= 1f) return Offset.Zero
+                if (available.y >= 0f || collapseProgress.floatValue >= 1f) {
+                    return Offset.Zero
+                }
 
-                val remaining = (1f - collapseProgress.floatValue) * collapseRangePx
-                val consumed = minOf(-available.y, remaining)
-                collapseProgress.floatValue = (collapseProgress.floatValue + consumed / collapseRangePx)
-                    .coerceIn(0f, 1f)
-                return Offset(0f, -consumed)
+                // Strict two-stage handoff:
+                // 1) While the header is not fully collapsed, it owns the
+                //    entire downward scroll delta.
+                // 2) Even if this delta reaches progress == 1, do not pass
+                //    its leftover distance to LazyColumn. The list may start
+                //    scrolling only on the next nested-scroll delta.
+                //
+                // This prevents the first card from beginning its own scroll
+                // during the same gesture frame that finishes the collapse.
+                val collapseDistance = -available.y
+                collapseProgress.floatValue = (
+                    collapseProgress.floatValue + collapseDistance / collapseRangePx
+                ).coerceIn(0f, 1f)
+
+                return Offset(0f, available.y)
             }
 
             // Expand progressively only when the list cannot consume more
