@@ -370,5 +370,16 @@ Implemented in `NoteDetailScreen.kt`:
 - Added custom-drawn outline icons matching the supplied reference: Back arrow, bookmark in Reading Mode, Undo/Redo arrows and yellow Save checkmark in Editing Mode. No external icon dependency was added.
 - Kept `.imePadding()` on the screen's root content column. This keeps the Editing toolbar above the keyboard while the IME is visible and lets it return to the bottom when the keyboard is hidden, without exiting Editing Mode.
 - Commit: `31da483988dbb89e4271208b72a5b4cba35fea54`.
-- CodeAssist Build and on-device layout/keyboard verification are pending user confirmation.
+- **User-confirmed on 2026-11-21:** CodeAssist Build completed successfully. Follow-up device testing exposed alignment, reading-scroll and keyboard-toolbar defects; Build 33 addresses them.
+- No Supabase/database/schema changes.
+
+
+## Build 33 — Note Reader/Editor alignment, reading scroll and keyboard toolbar (single commit; Build pending)
+
+- Replaced Material `IconButton` controls in the top bar with exact 24dp clickable icon bounds. This removes the default minimum touch-target inset from the visual alignment calculation: the Back icon now starts at the 22dp content inset, and right-side icons end at the matching 22dp inset. Tap targets match the icon bounds and do not add visual padding.
+- Added vertical scrolling to the Note content region. Scroll gestures move through long notes in Reading Mode; tap gestures remain the entry to Editing Mode, while the existing body text position calculation is retained for cursor placement.
+- Removed vertical `weight` constraints from children inside the scroll container and gave the body area a 240dp minimum height so the scrollable column can measure content correctly.
+- Added `android:windowSoftInputMode="adjustResize"` to MainActivity. The screen's existing root `.imePadding()` now receives the keyboard resize/inset and keeps the Editing Toolbar immediately above the keyboard. When the keyboard hides while Editing Mode remains active, the toolbar returns to the bottom of the screen.
+- Build 32 successful confirmation was recorded in Master Documentation and Build History in this same commit.
+- **Build 33 CodeAssist Build and device verification are pending.** Do not mark successful until the user confirms.
 - No Supabase/database/schema changes.

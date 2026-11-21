@@ -61,6 +61,7 @@ fun NoteDetailScreen(
     val titleFocus = remember(note.id) { FocusRequester() }
     var bodyLayoutResult by remember(note.id) { mutableStateOf<TextLayoutResult?>(null) }
     var lastBodyTapPosition by remember(note.id) { mutableStateOf(Offset.Zero) }
+    val noteScrollState = rememberScrollState()
     val palette = listOf("#FFFFFF", "#FFF3B0", "#FADADD", "#D7F5E8", "#DCEBFF", "#E9DDFB")
     val textColor = MaterialTheme.colorScheme.onBackground
     val subtleColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -139,49 +140,58 @@ fun NoteDetailScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(
-                onClick = {
-                    if (editing) {
-                        editing = false
-                        activeTool = "none"
-                        keyboard?.hide()
-                    } else onBack()
-                },
-                modifier = Modifier.size(40.dp)
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        if (editing) {
+                            editing = false
+                            activeTool = "none"
+                            keyboard?.hide()
+                        } else onBack()
+                    },
+                contentAlignment = Alignment.Center
             ) {
                 NoteToolbarIcon("back", textColor)
             }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (editing) {
-                    IconButton(
-                        onClick = { body = body.copy(selection = TextRange(0)) },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        NoteToolbarIcon("undo", subtleColor)
-                    }
-                    IconButton(
-                        onClick = { body = body.copy(selection = TextRange(body.text.length)) },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        NoteToolbarIcon("redo", subtleColor)
-                    }
-                    IconButton(
-                        onClick = { saveAndStay() },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        NoteToolbarIcon("check", Color(0xFFFFC928))
-                    }
+                    Box(
+                        Modifier.size(24.dp).clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) { body = body.copy(selection = TextRange(0)) },
+                        contentAlignment = Alignment.Center
+                    ) { NoteToolbarIcon("undo", subtleColor) }
+                    Box(
+                        Modifier.size(24.dp).clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) { body = body.copy(selection = TextRange(body.text.length)) },
+                        contentAlignment = Alignment.Center
+                    ) { NoteToolbarIcon("redo", subtleColor) }
+                    Box(
+                        Modifier.size(24.dp).clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) { saveAndStay() },
+                        contentAlignment = Alignment.Center
+                    ) { NoteToolbarIcon("check", Color(0xFFFFC928)) }
                 } else {
-                    IconButton(
-                        onClick = { saveAndStay() },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        NoteToolbarIcon("bookmark", textColor)
-                    }
+                    Box(
+                        Modifier.size(24.dp).clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) { saveAndStay() },
+                        contentAlignment = Alignment.Center
+                    ) { NoteToolbarIcon("bookmark", textColor) }
                 }
             }
         }
@@ -190,6 +200,7 @@ fun NoteDetailScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .verticalScroll(noteScrollState)
                 .clickable(
                     enabled = !editing && !locked,
                     interactionSource = remember { MutableInteractionSource() },
@@ -254,7 +265,7 @@ fun NoteDetailScreen(
                     onValueChange = { body = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
+                        .heightIn(min = 240.dp)
                         .focusRequester(bodyFocus),
                     textStyle = TextStyle(
                         color = textColor,
@@ -279,7 +290,7 @@ fun NoteDetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
+                        .heightIn(min = 240.dp)
                         .pointerInput(body.text) {
                             awaitEachGesture {
                                 val down = awaitFirstDown(pass = PointerEventPass.Initial)

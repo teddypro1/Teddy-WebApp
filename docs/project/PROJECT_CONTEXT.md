@@ -623,5 +623,16 @@ Implemented in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NoteDetailScr
 - Preserved the root `.imePadding()` behavior. The editing toolbar remains attached to the bottom of the available app area: it moves immediately above the software keyboard while the keyboard is open, and returns to the bottom when the keyboard is hidden without leaving Editing Mode.
 - Source file: `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NoteDetailScreen.kt`.
 - Commit: `31da483988dbb89e4271208b72a5b4cba35fea54`.
-- CodeAssist Build and device verification are pending. Do not mark Build 32 successful until the user confirms.
+- **User-confirmed on 2026-11-21:** CodeAssist Build completed successfully. User tested the screen and reported remaining alignment, reading-scroll and keyboard-toolbar behavior defects, addressed in Build 33.
+- No Supabase/database/schema changes.
+
+
+## Build 33 — Note Reader/Editor alignment, reading scroll and keyboard toolbar (single commit; Build pending)
+
+- Replaced Material `IconButton` controls in the top bar with exact 24dp clickable icon bounds. This removes the default minimum touch-target inset from the visual alignment calculation: the Back icon now starts at the 22dp content inset, and right-side icons end at the matching 22dp inset. Tap targets match the icon bounds and do not add visual padding.
+- Added vertical scrolling to the Note content region. Scroll gestures move through long notes in Reading Mode; tap gestures remain the entry to Editing Mode, while the existing body text position calculation is retained for cursor placement.
+- Removed vertical `weight` constraints from children inside the scroll container and gave the body area a 240dp minimum height so the scrollable column can measure content correctly.
+- Added `android:windowSoftInputMode="adjustResize"` to MainActivity. The screen's existing root `.imePadding()` now receives the keyboard resize/inset and keeps the Editing Toolbar immediately above the keyboard. When the keyboard hides while Editing Mode remains active, the toolbar returns to the bottom of the screen.
+- Build 32 successful confirmation was recorded in Master Documentation and Build History in this same commit.
+- **Build 33 CodeAssist Build and device verification are pending.** Do not mark successful until the user confirms.
 - No Supabase/database/schema changes.
