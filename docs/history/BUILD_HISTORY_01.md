@@ -352,3 +352,13 @@ Implemented in `NoteDetailScreen.kt`:
 - Commits: `c4c095294e84fd79f5f2a692bab356715723c513`, `970a7926ff3d0abc01851d79f530bf20b5ff4467`.
 - CodeAssist Build and device testing are pending user confirmation. A commit is not evidence of a successful Build.
 - No database, Supabase, migration or paid-plan changes.
+
+
+## Build 31 — Note Reader/Editor ripple removal and full-width tap target (user-confirmed successful)
+
+- Removed visible ripple feedback throughout Note Reader/Editor while retaining the 22dp visual content margin.
+- Taps across the full content region, including the horizontal margins and spacing areas, now enter Editing Mode; title/body tap behavior remains dedicated.
+- CodeAssist initially reported `LocalIndication provides null` as a nullable-type error and a missing `}` at the end of `NoteDetailScreen.kt`. The source was corrected by removing the invalid LocalIndication entry, keeping `LocalRippleConfiguration provides null`, and adding the missing closing brace.
+- Final fix commit: `e3800c58e0ea9616a7302719c1c2254c7de99859`.
+- **User-confirmed on 2026-11-21:** Build completed successfully; ripple was removed and tapping across the screen entered Editing Mode.
+- No Supabase/database/schema changes.
