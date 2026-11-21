@@ -35,3 +35,12 @@ See [Build History](docs/history/BUILD_HISTORY_01.md), [Supabase History](docs/h
 - No Landing Page, Reader/Editor, database or Supabase changes.
 - Commits: `05ad4253d023a388750af75820e6bebc1f32e14e`, `7260543d4080bb9026819ee83d770c95a88683a4`.
 - Build/device verification pending user confirmation.
+
+
+## Build 25 — Continuous Notes Header (implementation committed; Build pending)
+
+- Replaced abrupt Boolean collapse with continuous scroll-progress-driven interpolation of header height, title size/position and action-row position.
+- Header consumes downward drag before the note list, preventing the first card from scrolling independently during collapse.
+- Header expands progressively from unconsumed upward scroll at the list top.
+- Commit: `aea5df26b6af0ef59743fa9e5f329377b37234ff`.
+- CodeAssist Build and device verification pending.
