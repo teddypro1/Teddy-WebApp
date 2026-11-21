@@ -63,3 +63,13 @@ See [Build History](docs/history/BUILD_HISTORY_01.md), [Supabase History](docs/h
 - Existing nested-scroll behavior and all note/card/FAB/navigation behavior remain unchanged.
 - Commit: `1ec5ff1f53948e8741d7047900e77b548091fb4b`.
 - CodeAssist Build and device verification pending user confirmation.
+
+
+## 2026-11-21 — Build 28: draw-phase Notes title interpolation (implementation committed; Build pending)
+
+- Replaced `graphicsLayer` title scaling with Canvas `drawText` using `rememberTextMeasurer`.
+- Actual text font size interpolates continuously from 34sp to 26sp; line height and vertical position follow the same scroll progress.
+- This reshapes glyphs at each interpolated size instead of scaling a fixed Text layer. No independent time-based animation was added, preserving direct finger-to-scroll coupling.
+- Existing nested scroll, header geometry, action icons, note list/cards, FAB and navigation remain unchanged.
+- Commit: `ecbad69bf6925e52f4b1dd3b593d6d9fcb1e5164`.
+- CodeAssist Build/device verification pending user confirmation. No Supabase changes.
