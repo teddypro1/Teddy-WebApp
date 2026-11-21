@@ -46,10 +46,20 @@ See [Build History](docs/history/BUILD_HISTORY_01.md), [Supabase History](docs/h
 - CodeAssist Build and device verification pending.
 
 
-## 2026-11-21 — Build 26: smooth scroll-linked Notes title scaling (implementation committed; Build pending)
+## 2026-11-21 — Build 26: smooth scroll-linked Notes title scaling (user-confirmed successful)
 
 - Replaced per-scroll `fontSize` changes with a fixed-size Text layout and a `graphicsLayer` scale driven directly by header collapse progress.
 - The title scales from 34sp-equivalent to 26sp-equivalent, anchored at its top-left corner, to reduce text remeasurement and visible jitter while preserving finger/scroll synchronization.
 - Existing header geometry, nested-scroll behavior, note cards, FAB and navigation are unchanged.
 - Commit: `e85900fea7872a9d134eb3a35725fe60eb2b8c28`.
+- User confirmed Build successful; device test found a modest improvement, but remaining title instability prompted Build 27.
+
+
+## 2026-11-21 — Build 27: Compose phase-optimized Notes header (implementation committed; Build pending)
+
+- Moved scroll-progress reads out of composition and into the measure, placement and graphics-layer phases.
+- Header height is recalculated in a custom layout measure block; title/action positions update in placement lambdas; title scaling updates in `graphicsLayer`.
+- Intended to prevent per-scroll recomposition of the parent Notes screen and LazyColumn while preserving direct finger-to-scroll response.
+- Existing nested-scroll behavior and all note/card/FAB/navigation behavior remain unchanged.
+- Commit: `1ec5ff1f53948e8741d7047900e77b548091fb4b`.
 - CodeAssist Build and device verification pending user confirmation.
