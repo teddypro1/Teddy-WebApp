@@ -21,10 +21,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -187,31 +190,32 @@ private fun NotesCollapsingHeader(
             .clipToBounds()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        Text(
-            text = "Notes",
+        val titleMeasurer = rememberTextMeasurer()
+        Canvas(
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 10.dp)
-                .offset {
-                    val progress = collapseProgress.value.coerceIn(0f, 1f)
-                    IntOffset(
-                        x = 0,
-                        y = (24f + (12f - 24f) * progress).dp.roundToPx()
-                    )
-                }
-                .graphicsLayer {
-                    val progress = collapseProgress.value.coerceIn(0f, 1f)
-                    val scale = 1f + ((26f / 34f) - 1f) * progress
-                    scaleX = scale
-                    scaleY = scale
-                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
-                },
-            fontSize = 34.sp,
-            lineHeight = 40.sp,
-            fontWeight = FontWeight.Normal,
-            color = titleColor,
-            maxLines = 1
-        )
+                .fillMaxSize()
+                .clipToBounds()
+        ) {
+            // Draw the title at its actual interpolated font size. Unlike
+            // scaling a pre-rasterized Text layer, this re-shapes the glyphs
+            // for every fractional scroll position and avoids scale jitter.
+            val progress = collapseProgress.value.coerceIn(0f, 1f)
+            val fontSize = (34f + (26f - 34f) * progress).sp
+            val titleTop = (24f + (12f - 24f) * progress).dp.toPx()
+            val titleLayout = titleMeasurer.measure(
+                text = AnnotatedString("Notes"),
+                style = TextStyle(
+                    color = titleColor,
+                    fontSize = fontSize,
+                    lineHeight = (40f + (32f - 40f) * progress).sp,
+                    fontWeight = FontWeight.Normal
+                )
+            )
+            drawText(
+                textLayoutResult = titleLayout,
+                topLeft = Offset(10.dp.toPx(), titleTop)
+            )
+        }
 
         Row(
             modifier = Modifier
