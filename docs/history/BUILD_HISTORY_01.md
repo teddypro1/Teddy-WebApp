@@ -347,8 +347,8 @@ CodeAssist Build and device verification pending user confirmation. Do not repor
 
 Implemented in `NoteDetailScreen.kt`:
 - Suppressed Material 3 ripple feedback and Foundation indication feedback throughout the Note Reader/Editor screen.
-- Added tap handling to the full-width content container while retaining the 22dp horizontal visual margin. Taps in either horizontal margin enter Editing Mode and place the body cursor at the end; existing title/body tap handling is retained.
+- Added tap handling to the full-width content container while retaining the 22dp horizontal visual margin. Taps anywhere in the full content region that are not handled by the title/body controls—including horizontal margins and metadata/spacing areas—enter Editing Mode and place the body cursor at the end; title/body tap handling is retained.
 - Editing remains blocked while the note is locked. Header and bottom action controls keep their dedicated actions.
-- Commit: `c4c095294e84fd79f5f2a692bab356715723c513`.
+- Commits: `c4c095294e84fd79f5f2a692bab356715723c513`, `970a7926ff3d0abc01851d79f530bf20b5ff4467`.
 - CodeAssist Build and device testing are pending user confirmation. A commit is not evidence of a successful Build.
 - No database, Supabase, migration or paid-plan changes.
