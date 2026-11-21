@@ -484,3 +484,19 @@ Implementation committed directly to `main` in `app/src/main/kotlin/com.teddy.bp
 - No Home Landing Page, Reader/Editor, navigation action, database schema, Supabase migration or paid-plan changes.
 
 Commits: `05ad4253d023a388750af75820e6bebc1f32e14e` (implementation), `7260543d4080bb9026819ee83d770c95a88683a4` (import cleanup). Source is committed but not compiled or device-tested by the assistant. User CodeAssist Build and device verification are pending; do not mark successful until the user confirms.
+
+
+## Build 25 — Continuous Scroll-Driven Notes Header (implementation committed; Build pending)
+
+After user confirmed Build 24 successful, they supplied a new device recording showing the header transition was abrupt and the first note moved upward during collapse. The recording was inspected frame-by-frame at sampled intervals.
+
+Build 25 refinement committed directly to `main`:
+- Replaced Boolean expanded/collapsed state with continuous `collapseProgress` (0..1).
+- Title font size, title position, action-row position and header height interpolate continuously from the finger's scroll distance; this is not a time-based snap animation.
+- Nested scroll consumes downward drag to collapse the header before passing remaining movement to the LazyColumn, preventing the first note from independently scrolling during header collapse.
+- Upward expansion is consumed progressively only from unconsumed upward scroll after the list reaches its top boundary.
+- Existing note card layout, action icon positions, FAB and global bottom navigation retained.
+
+Commit: `aea5df26b6af0ef59743fa9e5f329377b37234ff`.
+
+No database, Supabase, Landing Page or Reader/Editor changes. Source committed; CodeAssist Build and device verification pending. Verify collapse/expand smoothness, first-card stability, list scrolling after full collapse, and bottom-of-list spacing before marking successful.
