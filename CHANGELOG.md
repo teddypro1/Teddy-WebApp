@@ -2,6 +2,11 @@
 
 This file records significant project milestones only. Detailed chronology is maintained in `docs/history/`.
 
+## 2026-11-21
+
+- **Build 22 follow-up confirmed by user:** The user successfully built and tested the Reader tap-area fix; tapping the note content enters Editing Mode.
+- **New Home Landing Page and Notes List UI committed; Build pending:** Home Dashboard presentation replaced by a feature landing page with a Notes destination. Added a separate screenshot-inspired Notes list with Checklist/Search/Settings glyphs, equal-height rectangular cards, ellipsized content preview, `dd MMM yyyy, hh:mm a` date/time and bottom-right circular plus FAB. These controls and note cards are intentionally inert in this phase. Existing app-wide navigation, note data/backend/sync and current Reader/Editor source are preserved; Reader/Editor redesign is deferred. No Supabase schema change.
+
 ## 2026-11-20
 
 - **Build 22 confirmed successful by user:** Added a full-screen note reader/editor, kept the list as a short preview, removed the 3,000-character content guard, added locally persisted note colors and basic Markdown insertion shortcuts. A follow-up Dark Mode fix makes Note Cards use the app's dark surface/on-surface colors while Light Mode retains selected note colors (`08b02aec7f`). User confirmed the targeted color behavior works and Build Successful on 2026-11-20. No Supabase schema change. Note colors remain device-local; Markdown shortcuts still insert plain text markers rather than rendered rich formatting. Broader offline/realtime/conflict regression coverage is not implied by this confirmation.
