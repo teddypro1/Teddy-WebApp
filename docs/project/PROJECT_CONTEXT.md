@@ -447,7 +447,7 @@ The user subsequently confirmed that the follow-up reader tap-area correction al
 
 
 
-## 24. Home Landing Page and Notes List UI (implementation committed; user Build pending)
+## 24. Home Landing Page and Notes List UI (user-confirmed Build successful) 
 
 User approved a new two-level Home experience based on the supplied Google Keep Notes screenshot. The screenshot is the reference for both the Notes screen header/action-icon arrangement and the note-list card layout; no Reader/Editor redesign was requested yet.
 
@@ -469,4 +469,4 @@ Commits:
 - `24c79a9b45` — hide the app's WorkspaceTopBar while the dedicated Notes screen is open, allowing the Notes screen to use the screenshot-style header while preserving the Global Bottom Navigation
 - `137f27d293` — match the screenshot's yellow circular FAB with a white plus glyph
 
-Pre-change checks: GitHub had only the `main` branch, and Supabase was `ACTIVE_HEALTHY` with 18 applied migrations. No Supabase migration, schema change, destructive database action or paid upgrade was made. User Build/device verification for this UI change is pending.
+**User-confirmed on 2026-11-21:** the user reported the new Home Landing Page and Notes List UI Build completed successfully and supplied two device screenshots for review. The screenshots show the Notes title/action row, dark surface cards, title/preview/date-time, yellow FAB and Global Bottom Navigation. The two screenshots are the visual baseline for the next UI refinement phase. No Supabase migration, schema change, destructive database action or paid upgrade was made.
