@@ -1,4 +1,6 @@
 package com.teddy.bpositive.ui.dialogs
+import androidx.compose.ui.tooling.preview.Preview
+import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -72,4 +74,15 @@ fun PermanentDeleteConfirmationDialog(
             TextButton(onClick = onCancel) { Text("Cancel") }
         }
     )
+}
+
+@Preview(showBackground = true, name = "Delete Confirmation")
+@Composable
+private fun DeleteConfirmationDialogPreview() {
+    TeddyAppTheme(darkMode = false) { DeleteConfirmationDialog(onConfirm = {}, onCancel = {}) }
+}
+@Preview(showBackground = true, name = "Permanent Delete Confirmation")
+@Composable
+private fun PermanentDeleteConfirmationDialogPreview() {
+    TeddyAppTheme(darkMode = false) { PermanentDeleteConfirmationDialog(onConfirm = {}, onCancel = {}) }
 }

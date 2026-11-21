@@ -1,4 +1,8 @@
 package com.teddy.bpositive.ui.components
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.tooling.preview.Preview
+import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 import com.teddy.bpositive.model.Note
 import com.teddy.bpositive.data.SupabaseNotesApi
@@ -491,6 +495,26 @@ fun NoteCard(
                     )
                 }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Note Components")
+@Composable
+private fun NoteComponentsPreview() {
+    TeddyAppTheme(darkMode = false) {
+        val sampleNote = Note(1L, "A sample note", "Preview content for the note card and reusable components.", true, 1730000000000L, 1730000000000L)
+        val cloudNote = SupabaseNotesApi.CloudNote(2L, "preview-user", null, "Deleted sample note", "A deleted note in the Trash preview.", false, null, null, "2026-11-21T10:00:00Z")
+        val conflict = SupabaseNotesApi.ConflictCopy("preview-conflict", "preview-client", "Conflict copy", "A local copy preserved after a sync conflict.", false, null, null, null)
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            ProfileInfoRow("Name", "Preview User")
+            DashboardHeader()
+            StatsCard(emoji = "📝", label = "Total notes", count = 12)
+            NoteCard(note = sampleNote, onEdit = {}, onPin = {}, onDelete = {})
+            NoteEditor(title = "Preview title", content = "Preview note content", isEditing = false, onTitleChange = {}, onContentChange = {}, onSave = {}, onCancel = {})
+            TrashNoteCard(note = cloudNote, onRestore = {}, onDeletePermanently = {})
+            ConflictCopyCard(conflict, onRestore = {}, onDismiss = {})
+            EmptyNotes()
         }
     }
 }

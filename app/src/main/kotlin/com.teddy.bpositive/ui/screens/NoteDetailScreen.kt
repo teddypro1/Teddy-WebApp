@@ -1,4 +1,6 @@
 package com.teddy.bpositive.ui.screens
+import androidx.compose.ui.tooling.preview.Preview
+import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
@@ -490,5 +492,21 @@ private fun NoteToolbarIcon(
                 drawPath(path, tint, style = style)
             }
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Note Detail")
+@Composable
+private fun NoteDetailScreenPreview() {
+    TeddyAppTheme(darkMode = false) {
+        NoteDetailScreen(
+            note = Note(
+                id = 1L, title = "A note preview",
+                content = "This is sample note content. Use this preview to inspect reading layout, typography, spacing, and toolbar placement.",
+                isPinned = false, createdAt = 1730000000000L, updatedAt = 1730000000000L
+            ),
+            contentPadding = PaddingValues(0.dp),
+            onBack = {}, onSave = { _, _, _ -> }
+        )
     }
 }

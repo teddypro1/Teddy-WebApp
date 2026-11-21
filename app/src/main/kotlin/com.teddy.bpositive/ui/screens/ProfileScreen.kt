@@ -1,4 +1,6 @@
 package com.teddy.bpositive.ui.screens
+import androidx.compose.ui.tooling.preview.Preview
+import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 import com.teddy.bpositive.data.SupabaseProfilesApi
 import com.teddy.bpositive.ui.components.ProfileInfoRow
@@ -145,5 +147,21 @@ fun ProfilePage(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Profile Page")
+@Composable
+private fun ProfilePagePreview() {
+    TeddyAppTheme(darkMode = false) {
+        ProfilePage(
+            profile = SupabaseProfilesApi.Profile(
+                id = "preview-user", fullName = "Preview User", username = "preview_user",
+                bio = "A sample profile for Compose Preview.", avatarUrl = null,
+                createdAt = "2026-11-01T10:00:00Z", updatedAt = "2026-11-21T10:00:00Z"
+            ),
+            email = "preview@example.com", contentPadding = PaddingValues(0.dp),
+            canEdit = true, onEdit = {}
+        )
     }
 }

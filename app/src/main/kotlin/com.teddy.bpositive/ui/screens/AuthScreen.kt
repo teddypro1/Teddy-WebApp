@@ -1,4 +1,5 @@
 package com.teddy.bpositive.ui.screens
+import androidx.compose.ui.tooling.preview.Preview
 
 import android.widget.Toast
 import com.teddy.bpositive.data.SupabaseAuthRepository
@@ -224,4 +225,10 @@ fun AuthScreen(
             }
         }
     }
+}
+
+@Preview(showBackground = true, name = "Authentication")
+@Composable
+private fun AuthScreenPreview() {
+    AuthScreen(onAuthenticated = {})
 }

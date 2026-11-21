@@ -1,4 +1,6 @@
 package com.teddy.bpositive.ui.dialogs
+import androidx.compose.ui.tooling.preview.Preview
+import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -87,4 +89,19 @@ fun ProfileEditorDialog(
             TextButton(enabled = !isSaving, onClick = onDismiss) { Text("Cancel") }
         }
     )
+}
+
+@Preview(showBackground = true, name = "Profile Editor Dialog")
+@Composable
+private fun ProfileEditorDialogPreview() {
+    TeddyAppTheme(darkMode = false) {
+        ProfileEditorDialog(
+            fullName = "Preview User", username = "preview_user",
+            bio = "A sample profile used to inspect the dialog layout.",
+            avatarUrl = "", email = "preview@example.com", createdAt = "November 21, 2026",
+            isSaving = false, canSave = true,
+            onFullNameChange = {}, onUsernameChange = {}, onBioChange = {},
+            onAvatarUrlChange = {}, onDismiss = {}, onSave = {}
+        )
+    }
 }

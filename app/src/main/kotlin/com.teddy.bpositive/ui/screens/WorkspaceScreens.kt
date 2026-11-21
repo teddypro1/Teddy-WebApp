@@ -1,4 +1,7 @@
 package com.teddy.bpositive.ui.screens
+import androidx.compose.ui.tooling.preview.Preview
+import com.teddy.bpositive.data.TopicRepository
+import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 import com.teddy.bpositive.data.SupabaseNotesApi
 import com.teddy.bpositive.ui.components.EmptyNotes
@@ -198,5 +201,37 @@ fun SettingsScreen(
                 Text("Version 1.0", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Trash Screen")
+@Composable
+private fun TrashScreenPreview() {
+    TeddyAppTheme(darkMode = false) {
+        TrashScreen(
+            deletedNotes = listOf(
+                SupabaseNotesApi.CloudNote(
+                    id = 10L, userId = "preview-user", clientId = null,
+                    title = "Deleted sample", content = "A deleted note in the Trash preview.",
+                    isPinned = false, createdAt = null, updatedAt = null, deletedAt = "2026-11-21T10:00:00Z"
+                )
+            ),
+            contentPadding = PaddingValues(0.dp), onRestore = {}, onDeletePermanently = {}
+        )
+    }
+}
+@Preview(showBackground = true, name = "Settings Screen")
+@Composable
+private fun SettingsScreenPreview() {
+    TeddyAppTheme(darkMode = false) {
+        SettingsScreen(
+            darkMode = false, accountEmail = "preview@example.com", isAdmin = true,
+            onOpenAdminPanel = {}, onDarkModeChange = {}, onSignOut = {}, onSendTestNotification = {},
+            topicPreferences = TopicRepository.Preferences(allUsers = true, announcements = true, updates = false),
+            topicStatus = "", installedVersionName = "1.0.1", installedVersionCode = 2L,
+            latestVersionName = "1.0.2", latestVersionCode = 3L,
+            updateStatus = "Up to date", isCheckingUpdate = false, onCheckForUpdates = {},
+            onTopicChange = { _, _ -> }, contentPadding = PaddingValues(0.dp)
+        )
     }
 }

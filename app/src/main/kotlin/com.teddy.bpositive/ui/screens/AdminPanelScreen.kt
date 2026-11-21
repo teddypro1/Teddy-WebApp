@@ -1,4 +1,6 @@
 package com.teddy.bpositive.ui.screens
+import androidx.compose.ui.tooling.preview.Preview
+import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 import com.teddy.bpositive.data.AdminRepository
 import androidx.compose.foundation.layout.*
@@ -430,5 +432,20 @@ private fun DeliveryDetails(details: List<AdminRepository.DeliveryDetail>) {
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Admin Panel")
+@Composable
+private fun AdminPanelScreenPreview() {
+    TeddyAppTheme(darkMode = false) {
+        AdminPanelScreen(
+            accountEmail = "admin@example.com", isLoading = false, isSending = false,
+            title = "A sample announcement",
+            message = "Preview content for the admin notification composer.",
+            history = emptyList(), directory = emptyList(), isLoadingDirectory = false,
+            statusMessage = "Preview mode", onTitleChange = {}, onMessageChange = {},
+            onSend = { _, _ -> }, onSendTopic = {}, onRefresh = {}, onRefreshDirectory = {}
+        )
     }
 }

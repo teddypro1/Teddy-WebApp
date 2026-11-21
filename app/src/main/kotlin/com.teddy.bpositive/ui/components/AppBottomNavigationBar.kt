@@ -1,4 +1,6 @@
 package com.teddy.bpositive.ui.components
+import androidx.compose.ui.tooling.preview.Preview
+import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.NavigationBar
@@ -37,5 +39,13 @@ fun AppBottomNavigationBar(
                 alwaysShowLabel = true
             )
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Bottom Navigation")
+@Composable
+private fun AppBottomNavigationBarPreview() {
+    TeddyAppTheme(darkMode = false) {
+        AppBottomNavigationBar(selectedTab = "Home", onTabSelected = {}, showAdmin = true)
     }
 }

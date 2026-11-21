@@ -1,4 +1,6 @@
 package com.teddy.bpositive.ui.screens
+import androidx.compose.ui.tooling.preview.Preview
+import com.teddy.bpositive.ui.theme.TeddyAppTheme
 import com.teddy.bpositive.data.InboxRepository
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -33,4 +35,19 @@ fun NotificationInboxScreen(items:List<InboxRepository.Item>,loading:Boolean,sta
   if(loading&&items.isNotEmpty())LinearProgressIndicator(Modifier.fillMaxWidth())
   Spacer(Modifier.height(24.dp))
  }
+}
+
+@Preview(showBackground = true, name = "Notification Inbox")
+@Composable
+private fun NotificationInboxScreenPreview() {
+    TeddyAppTheme(darkMode = false) {
+        NotificationInboxScreen(
+            items = listOf(
+                InboxRepository.Item("preview-1", "Welcome to Teddy WebApp", "A sample notification shown in the inbox preview.", "2026-11-21T08:30:00Z", null),
+                InboxRepository.Item("preview-2", "Workspace update", "A previously read notification.", "2026-11-20T14:00:00Z", "2026-11-20T14:10:00Z")
+            ),
+            loading = false, status = "", padding = PaddingValues(0.dp),
+            onRefresh = {}, onRead = {}
+        )
+    }
 }

@@ -1,4 +1,6 @@
 package com.teddy.bpositive.ui.components
+import androidx.compose.ui.tooling.preview.Preview
+import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -88,4 +90,12 @@ fun WorkspaceTopBar(
             }
         }
     )
+}
+
+@Preview(showBackground = true, name = "Workspace Top Bar")
+@Composable
+private fun WorkspaceTopBarPreview() {
+    TeddyAppTheme(darkMode = false) {
+        WorkspaceTopBar(fullName = "Preview User", avatarUrl = "", darkMode = false, onProfileClick = {}, onToggleDarkMode = {})
+    }
 }

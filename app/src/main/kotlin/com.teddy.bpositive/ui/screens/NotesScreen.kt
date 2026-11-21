@@ -1,4 +1,7 @@
 package com.teddy.bpositive.ui.screens
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.tooling.preview.Preview
+import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 import com.teddy.bpositive.model.Note
 import androidx.compose.animation.AnimatedContent
@@ -339,5 +342,23 @@ private fun NotesActionIcon(kind: String) {
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Notes Screen")
+@Composable
+private fun NotesScreenPreview() {
+    TeddyAppTheme(darkMode = false) {
+        NotesScreen(
+            notes = listOf(
+                Note(1L, "Project ideas", "A sample note used to inspect the notes list card.", true, 1730000000000L, 1730000000000L),
+                Note(2L, "Reading list", "Books and articles to read later.", false, 1730000000000L, 1730000000000L),
+                Note(3L, "Daily plan", "Tasks and reminders for the day.", false, 1730000000000L, 1730000000000L)
+            ),
+            contentPadding = PaddingValues(0.dp),
+            listState = rememberLazyListState(),
+            collapseProgress = remember { mutableFloatStateOf(0f) },
+            onNoteClick = {}
+        )
     }
 }

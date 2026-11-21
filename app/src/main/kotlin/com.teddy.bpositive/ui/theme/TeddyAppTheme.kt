@@ -1,4 +1,11 @@
 package com.teddy.bpositive.ui.theme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -29,4 +36,25 @@ fun TeddyAppTheme(
         },
         content = content
     )
+}
+
+@Preview(showBackground = true, name = "Teddy App Theme - Light")
+@Composable
+private fun TeddyAppThemeLightPreview() {
+    TeddyAppTheme(darkMode = false) {
+        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Teddy WebApp")
+            Text("Light theme preview", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+@Preview(showBackground = true, name = "Teddy App Theme - Dark")
+@Composable
+private fun TeddyAppThemeDarkPreview() {
+    TeddyAppTheme(darkMode = true) {
+        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Teddy WebApp")
+            Text("Dark theme preview", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }

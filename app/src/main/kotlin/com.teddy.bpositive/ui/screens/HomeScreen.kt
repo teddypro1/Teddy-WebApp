@@ -1,4 +1,6 @@
 package com.teddy.bpositive.ui.screens
+import androidx.compose.ui.tooling.preview.Preview
+import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -97,5 +99,13 @@ fun HomeScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Home Screen")
+@Composable
+private fun HomeScreenPreview() {
+    TeddyAppTheme(darkMode = false) {
+        HomeScreen(contentPadding = PaddingValues(0.dp), onOpenNotes = {})
     }
 }
