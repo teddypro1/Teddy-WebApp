@@ -46,6 +46,7 @@ fun NoteDetailScreen(
     var colorHex by remember(note.id) { mutableStateOf(note.colorHex) }
     var activeTool by remember(note.id) { mutableStateOf("none") }
     var locked by remember(note.id) { mutableStateOf(false) }
+    var focusTitleAfterEnter by remember(note.id) { mutableStateOf(false) }
     val keyboard = LocalSoftwareKeyboardController.current
     val bodyFocus = remember(note.id) { FocusRequester() }
     val titleFocus = remember(note.id) { FocusRequester() }
@@ -53,13 +54,19 @@ fun NoteDetailScreen(
     val textColor = MaterialTheme.colorScheme.onBackground
     val subtleColor = MaterialTheme.colorScheme.onSurfaceVariant
 
-    fun beginEditing(atEnd: Boolean = true) {
+    fun beginEditing(atEnd: Boolean = true, focusTitle: Boolean = false) {
         if (locked) return
         editing = true
         activeTool = "none"
-        if (atEnd) body = body.copy(selection = TextRange(body.text.length))
-        bodyFocus.requestFocus()
-        keyboard?.show()
+        focusTitleAfterEnter = focusTitle
+        if (atEnd && !focusTitle) body = body.copy(selection = TextRange(body.text.length))
+    }
+
+    LaunchedEffect(editing, focusTitleAfterEnter) {
+        if (editing) {
+            if (focusTitleAfterEnter) titleFocus.requestFocus() else bodyFocus.requestFocus()
+            keyboard?.show()
+        }
     }
 
     fun saveAndStay() {
@@ -145,6 +152,7 @@ fun NoteDetailScreen(
                 .fillMaxWidth()
                 .weight(1f)
                 .padding(horizontal = 28.dp)
+                .clickable(enabled = !editing) { beginEditing(atEnd = true) }
         ) {
             if (editing) {
                 BasicTextField(
@@ -180,7 +188,7 @@ fun NoteDetailScreen(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { beginEditing() }
+                        .clickable { beginEditing(focusTitle = true) }
                 )
             }
 
