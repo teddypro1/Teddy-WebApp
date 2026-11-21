@@ -85,3 +85,14 @@ See [Build History](docs/history/BUILD_HISTORY_01.md), [Supabase History](docs/h
 - Implemented in `NotesScreen.kt`; the threshold-crossing scroll event is fully consumed by the header, so the list starts scrolling only on the next event.
 - Commit: `0c01a24c37edf48418e3b2aef997b9c402f0e651`.
 - Existing UI and data behavior preserved. No Supabase/database changes. CodeAssist Build/device verification pending.
+
+
+## Build 30 — Full-screen Note Reader/Editor (implementation committed; Build pending)
+
+- Reworked the full-screen note screen around the supplied source-app Reader and Editor references.
+- Added title/body editing focus, full remaining-area body field, end-of-content cursor placement when entering from blank reading space, and formatting controls for list insertion, bold, italic and underline.
+- Save persists the note, hides the keyboard and returns to Reading Mode on the same screen.
+- Hoisted Notes LazyListState and header collapse progress so returning from a note restores the previous list position/header state.
+- Commits: `c252370c0138591ae45f6c4a98673b0b50d3b5f9`, `2020243b2cc292a1a6a5279e0fbd3a80214cf334`, `a27c2a2a8e3ae105ae55c495532a3c050b7b01ac`, `fea2949e1b9158ba7c985895607ab21cdb7ede84`.
+- Reminder/export/share panels remain placeholders; lock is session-only; delete continues through the Notes-list Trash workflow.
+- No Supabase/database changes. CodeAssist Build and device verification pending user confirmation.
