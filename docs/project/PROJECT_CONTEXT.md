@@ -586,3 +586,21 @@ Verification status:
 - CodeAssist Build and user device verification are pending. Do not mark Build 30 successful until the user confirms.
 - The reminder, export and share panels are currently visual placeholders; the note-list Trash action remains the existing delete workflow. The lock toggle is in-memory only. These secondary actions need their own functional implementation before they can be described as complete.
 - Review the Back behavior, title/body focus, blank-area tap-to-end cursor, text cursor placement, Save-without-navigation, keyboard dismissal, and restoration of list scroll/header state.
+
+
+## Build 30 follow-up — Note Reader/Editor horizontal margin (user-confirmed successful)
+
+- Reduced the Note Reader/Editor content area's horizontal inset from 24dp to 22dp. The visible content layout is otherwise unchanged.
+- Commit: `873dead37b946308fc0b7759a54024cbcd01052d`.
+- **User-confirmed on 2026-11-21:** CodeAssist Build completed successfully after this change.
+- No database, Supabase, navigation or other screen changes.
+
+## Build 31 — Note Reader/Editor tap feedback and full-width margin touch target (source committed; Build pending)
+
+Implemented in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NoteDetailScreen.kt`:
+- Disabled visible ripple/indication feedback for Note Reader/Editor interactions, including Material 3 controls and Foundation clickable elements.
+- Preserved the existing 22dp horizontal visual inset while adding a tap handler to the content area's outer width. Tapping either horizontal margin now enters Editing Mode and places the body cursor at the end; existing title/body tap behavior remains in place.
+- The lock state still prevents entering Editing Mode. Header and bottom action controls retain their own actions.
+- Commit: `c4c095294e84fd79f5f2a692bab356715723c513`.
+- CodeAssist Build and device verification are pending. Do not mark Build 31 successful until the user explicitly confirms.
+- No Supabase/database/schema changes.
