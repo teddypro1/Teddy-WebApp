@@ -237,3 +237,19 @@ Implemented in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.k
 Commits: `05ad4253d023a388750af75820e6bebc1f32e14e`, `7260543d4080bb9026819ee83d770c95a88683a4`.
 
 Source committed; CodeAssist Build and device testing pending user confirmation.
+
+
+## Build 25 — Continuous Scroll-Driven Header (Build pending)
+
+User confirmed Build 24 successful, then supplied a 24-second device recording showing abrupt header state changes and unintended first-card movement during collapse. Recording inspected at sampled intervals.
+
+Implemented in `NotesScreen.kt`:
+- Replaced Boolean header state with continuous `collapseProgress` (0..1).
+- Header height, Notes title font size/position and action-row position now interpolate directly with scroll distance, so slow finger movement produces gradual shrinking.
+- Nested scroll consumes downward movement to collapse the header before LazyColumn receives the remaining drag; first card should not independently scroll during this phase.
+- Upward expansion is consumed progressively from unconsumed upward scroll after the list reaches its top.
+- Note cards, icons, FAB and global navigation retained.
+
+Commit: `aea5df26b6af0ef59743fa9e5f329377b37234ff`.
+
+Build and device verification pending user confirmation.
