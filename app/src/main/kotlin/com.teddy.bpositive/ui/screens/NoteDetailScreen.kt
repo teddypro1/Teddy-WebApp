@@ -122,6 +122,7 @@ fun NoteDetailScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(contentPadding)
+            .imePadding()
             .background(MaterialTheme.colorScheme.background)
     ) {
         Row(
@@ -161,7 +162,7 @@ fun NoteDetailScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .padding(horizontal = 28.dp)
+                .padding(horizontal = 24.dp)
         ) {
             if (editing) {
                 BasicTextField(
@@ -275,7 +276,6 @@ fun NoteDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
-                    .imePadding()
                     .padding(horizontal = 16.dp, vertical = 10.dp)
             ) {
                 Row(
