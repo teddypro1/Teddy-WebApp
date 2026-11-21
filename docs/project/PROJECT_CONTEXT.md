@@ -604,3 +604,13 @@ Implemented in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NoteDetailScr
 - Commits: `c4c095294e84fd79f5f2a692bab356715723c513`, `970a7926ff3d0abc01851d79f530bf20b5ff4467`.
 - CodeAssist Build and device verification are pending. Do not mark Build 31 successful until the user explicitly confirms.
 - No Supabase/database/schema changes.
+
+
+## Build 31 — Note Reader/Editor ripple removal and full-width tap target (user-confirmed successful)
+
+- Removed visible ripple feedback throughout the Note Reader/Editor using the screen's ripple configuration.
+- Preserved the 22dp visual horizontal inset and enabled taps across the full content region, including margin and spacing areas, to enter Editing Mode. Title/body controls retain their dedicated focus and cursor behavior.
+- The initial source attempt was corrected after CodeAssist reported a nullable `LocalIndication` type error and a missing closing brace. The final source removes the invalid `LocalIndication provides null` entry, retains `LocalRippleConfiguration provides null`, and closes the composable scopes correctly.
+- Final source fix commit: `e3800c58e0ea9616a7302719c1c2254c7de99859`.
+- **User-confirmed on 2026-11-21:** CodeAssist Build completed successfully; user also verified that ripple feedback was gone and taps across the content area entered Editing Mode.
+- No Supabase/database/schema changes.
