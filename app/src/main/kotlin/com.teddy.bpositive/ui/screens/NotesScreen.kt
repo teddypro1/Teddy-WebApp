@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
@@ -94,13 +95,13 @@ fun NotesScreen(
             }
         }
 
-        val plusColor = MaterialTheme.colorScheme.onPrimary
+        val plusColor = Color.White
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 16.dp, bottom = 18.dp)
                 .size(64.dp)
-                .background(MaterialTheme.colorScheme.primary, CircleShape),
+                .background(Color(0xFFFFC928), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Canvas(modifier = Modifier.size(28.dp)) {
