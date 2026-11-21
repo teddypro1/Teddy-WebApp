@@ -44,3 +44,12 @@ See [Build History](docs/history/BUILD_HISTORY_01.md), [Supabase History](docs/h
 - Header expands progressively from unconsumed upward scroll at the list top.
 - Commit: `aea5df26b6af0ef59743fa9e5f329377b37234ff`.
 - CodeAssist Build and device verification pending.
+
+
+## 2026-11-21 — Build 26: smooth scroll-linked Notes title scaling (implementation committed; Build pending)
+
+- Replaced per-scroll `fontSize` changes with a fixed-size Text layout and a `graphicsLayer` scale driven directly by header collapse progress.
+- The title scales from 34sp-equivalent to 26sp-equivalent, anchored at its top-left corner, to reduce text remeasurement and visible jitter while preserving finger/scroll synchronization.
+- Existing header geometry, nested-scroll behavior, note cards, FAB and navigation are unchanged.
+- Commit: `e85900fea7872a9d134eb3a35725fe60eb2b8c28`.
+- CodeAssist Build and device verification pending user confirmation.
