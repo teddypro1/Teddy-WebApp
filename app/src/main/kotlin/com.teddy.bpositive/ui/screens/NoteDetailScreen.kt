@@ -162,7 +162,7 @@ fun NoteDetailScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = 22.dp)
         ) {
             if (editing) {
                 BasicTextField(
