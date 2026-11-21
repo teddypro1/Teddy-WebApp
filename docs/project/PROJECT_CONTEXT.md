@@ -533,3 +533,20 @@ Build 27 moves scroll-state reads into Compose's rendering phases:
 Commit: `1ec5ff1f53948e8741d7047900e77b548091fb4b`.
 
 Source committed on `main`; CodeAssist Build and device verification pending. No Supabase/database changes. Do not mark Build 27 successful until user confirmation.
+
+
+## Build 28 — Draw-phase Notes title interpolation (implementation committed; Build pending)
+
+After the user tested Build 27, they reported that overall movement was acceptable but the title still lacked the desired continuous smoothness. The uploaded 59-frame GIF was reviewed. Its frame delays are irregular (including long pauses), so it is not a reliable fixed-frame-rate performance capture; it does show the title/header/list states across the scroll recording.
+
+Build 28 replaces the title's `graphicsLayer` scaling with draw-phase text layout:
+- Uses `rememberTextMeasurer()` and Canvas `drawText`.
+- Interpolates the actual font size continuously from 34sp to 26sp using the current scroll progress.
+- Interpolates line height and vertical title position from the same progress value.
+- Glyphs are re-shaped at the interpolated font size rather than scaling an already-laid-out Text layer, targeting the remaining visual jitter/softness.
+- Keeps scroll progress as the sole driver; no independent time-based animation or spring is added, so the title should remain directly coupled to finger movement.
+- Existing header measure behavior, action icons, list, note cards, FAB and bottom navigation are otherwise unchanged.
+
+Commit: `ecbad69bf6925e52f4b1dd3b593d6d9fcb1e5164`.
+
+Source committed directly to `main`. CodeAssist Build and device verification pending. No Supabase/database changes; live Supabase remained ACTIVE_HEALTHY with the existing 18 migrations. Do not mark Build 28 successful until the user confirms.
