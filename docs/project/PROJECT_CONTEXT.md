@@ -614,3 +614,14 @@ Implemented in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NoteDetailScr
 - Final source fix commit: `e3800c58e0ea9616a7302719c1c2254c7de99859`.
 - **User-confirmed on 2026-11-21:** CodeAssist Build completed successfully; user also verified that ripple feedback was gone and taps across the content area entered Editing Mode.
 - No Supabase/database/schema changes.
+
+
+## Build 32 — Note Reader/Editor top-bar alignment and toolbar icons (source committed; Build pending)
+
+- Aligned the top app-bar controls to the same 22dp horizontal inset used by the note title/content. The Back control is on the left; right-side actions are grouped and right-aligned.
+- Replaced text glyphs with custom-drawn outline icons: Back arrow, Reading Mode bookmark, Editing Mode Undo/Redo arrows, and yellow Save checkmark. No new dependency was added.
+- Preserved the root `.imePadding()` behavior. The editing toolbar remains attached to the bottom of the available app area: it moves immediately above the software keyboard while the keyboard is open, and returns to the bottom when the keyboard is hidden without leaving Editing Mode.
+- Source file: `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NoteDetailScreen.kt`.
+- Commit: `31da483988dbb89e4271208b72a5b4cba35fea54`.
+- CodeAssist Build and device verification are pending. Do not mark Build 32 successful until the user confirms.
+- No Supabase/database/schema changes.
