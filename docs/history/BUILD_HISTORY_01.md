@@ -217,5 +217,6 @@ Commits:
 - Added a round bottom-right plus FAB. Header icons, FAB and note cards are deliberately inert until their destination screens and actions are designed in a later phase.
 - Existing app-wide top bar and Global Bottom Navigation remain. Existing notes data, database, sync, pin/trash/conflict logic and Reader/Editor source remain; Reader/Editor visual redesign is explicitly deferred.
 - Note list cards use the current theme's surface/on-surface colors, without per-note custom colors.
-- Commits: `e05a48d536`, `61003e446b`, `f1767f7dfc`, `16e202dc4b`, `59da046916`, `fa2dac5102`, `c7aca95602`.
+- Commits: `e05a48d536`, `61003e446b`, `f1767f7dfc`, `16e202dc4b`, `59da046916`, `fa2dac5102`, `c7aca95602`, `2b558efa03`, `24c79a9b45`.
+- The dedicated Notes screen hides the workspace top bar so its own title/action controls occupy the reference positions; the Global Bottom Navigation remains.
 - No Supabase migration or schema change. Build/device verification is pending user confirmation.
