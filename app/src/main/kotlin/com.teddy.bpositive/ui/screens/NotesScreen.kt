@@ -36,26 +36,41 @@ fun NotesScreen(
     notes: List<Note>,
     contentPadding: PaddingValues
 ) {
-    var isHeaderCollapsed by remember { mutableStateOf(false) }
-    val scrollConnection = remember {
+    var collapseProgress by remember { mutableFloatStateOf(0f) }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val collapseRangePx = with(density) { 128.dp.toPx() }
+
+    val scrollConnection = remember(collapseRangePx) {
         object : NestedScrollConnection {
-            // Scrolling down collapses the header immediately.
+            // Consume downward drag for the header first. The note list starts
+            // scrolling only after the header has completed its collapse.
             override fun onPreScroll(
                 available: Offset,
                 source: NestedScrollSource
             ): Offset {
-                if (available.y < -1f) isHeaderCollapsed = true
-                return Offset.Zero
+                if (available.y >= 0f || collapseProgress >= 1f) return Offset.Zero
+
+                val remaining = (1f - collapseProgress) * collapseRangePx
+                val consumed = minOf(-available.y, remaining)
+                collapseProgress = (collapseProgress + consumed / collapseRangePx)
+                    .coerceIn(0f, 1f)
+                return Offset(0f, -consumed)
             }
 
-            // Scrolling up expands the header only after the list reaches its top.
+            // Expand progressively only when the list cannot consume more
+            // upward scroll (i.e. the list has reached its top boundary).
             override fun onPostScroll(
                 consumed: Offset,
                 available: Offset,
                 source: NestedScrollSource
             ): Offset {
-                if (available.y > 1f) isHeaderCollapsed = false
-                return Offset.Zero
+                if (available.y <= 0f || collapseProgress <= 0f) return Offset.Zero
+
+                val availableExpansion = collapseProgress * collapseRangePx
+                val used = minOf(available.y, availableExpansion)
+                collapseProgress = (collapseProgress - used / collapseRangePx)
+                    .coerceIn(0f, 1f)
+                return Offset(0f, used)
             }
         }
     }
@@ -72,7 +87,7 @@ fun NotesScreen(
                 .nestedScroll(scrollConnection)
         ) {
             NotesCollapsingHeader(
-                collapsed = isHeaderCollapsed,
+                collapseProgress = collapseProgress,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -137,73 +152,48 @@ fun NotesScreen(
 
 @Composable
 private fun NotesCollapsingHeader(
-    collapsed: Boolean,
+    collapseProgress: Float,
     modifier: Modifier = Modifier
 ) {
     val titleColor = MaterialTheme.colorScheme.onBackground
+    val progress = collapseProgress.coerceIn(0f, 1f)
 
-    AnimatedContent(
-        targetState = collapsed,
+    // All header geometry follows the same continuous scroll progress.
+    val headerHeight = (190f + (62f - 190f) * progress).dp
+    val titleSize = (34f + (26f - 34f) * progress).sp
+    val titleY = (24f + (12f - 24f) * progress).dp
+    val actionsY = (132f + (18f - 132f) * progress).dp
+
+    Box(
         modifier = modifier
+            .fillMaxWidth()
+            .height(headerHeight)
             .background(MaterialTheme.colorScheme.background)
-            .animateContentSize(),
-        label = "notes_collapsing_header"
-    ) { isCollapsed ->
-        if (isCollapsed) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 62.dp)
-                    .padding(start = 18.dp, end = 22.dp, top = 8.dp, bottom = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Notes",
-                    fontSize = 26.sp,
-                    lineHeight = 32.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = titleColor
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(22.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    NotesActionIcon(kind = "checklist")
-                    NotesActionIcon(kind = "search")
-                    NotesActionIcon(kind = "settings")
-                }
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 10.dp, end = 22.dp, top = 24.dp, bottom = 18.dp)
-            ) {
-                Text(
-                    text = "Notes",
-                    modifier = Modifier.padding(start = 0.dp),
-                    fontSize = 34.sp,
-                    lineHeight = 40.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = titleColor
-                )
-                Spacer(Modifier.height(48.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(22.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        NotesActionIcon(kind = "checklist")
-                        NotesActionIcon(kind = "search")
-                        NotesActionIcon(kind = "settings")
-                    }
-                }
-            }
+    ) {
+        Text(
+            text = "Notes",
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 10.dp)
+                .offset(y = titleY),
+            fontSize = titleSize,
+            lineHeight = (titleSize.value * 1.18f).sp,
+            fontWeight = FontWeight.Normal,
+            color = titleColor,
+            maxLines = 1
+        )
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(end = 22.dp)
+                .offset(y = actionsY),
+            horizontalArrangement = Arrangement.spacedBy(22.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            NotesActionIcon(kind = "checklist")
+            NotesActionIcon(kind = "search")
+            NotesActionIcon(kind = "settings")
         }
     }
 }
