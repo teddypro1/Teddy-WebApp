@@ -253,3 +253,19 @@ Implemented in `NotesScreen.kt`:
 Commit: `aea5df26b6af0ef59743fa9e5f329377b37234ff`.
 
 Build and device verification pending user confirmation.
+
+
+## Build 26 — Smooth scroll-linked Notes title scaling (implementation committed; Build pending)
+
+After Build 25, the user reported that the header itself moved smoothly but the `Notes` title looked unstable/jittery while shrinking. The user requested that title scaling match the exact scroll speed and remain smooth during slow or fast gestures.
+
+Implemented in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.kt`:
+- Text layout now remains fixed at 34sp with a 40sp line height.
+- `graphicsLayer` scales the rendered title continuously from 1.0 to `26/34`, using a top-left transform origin.
+- Avoids changing the Text composable's font size on every scroll update, reducing repeated text measurement/layout work that could produce jitter.
+- Scale and title position remain driven by the same `collapseProgress`; no time-based animation or easing is inserted, so the visual response remains directly coupled to scroll distance.
+- No other screen, card, navigation, FAB, data, database or Supabase behavior changed.
+
+Commit: `e85900fea7872a9d134eb3a35725fe60eb2b8c28`.
+
+CodeAssist Build and device verification pending user confirmation. Suggested checks: slow drag with tiny increments, quick swipe, reverse direction mid-collapse, and repeated collapse/expand. Confirm no title jitter and no regression in first-card stability.
