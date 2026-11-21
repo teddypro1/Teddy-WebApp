@@ -1196,58 +1196,6 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     contentPadding = padding,
                     onOpenNotes = { showNotesFeature = true }
                 )
-            } else if (selectedTab == "Home__LEGACY_DISABLED") {
-                HomeScreen(
-                    notes = notes,
-                    deletedNotes = deletedNotes,
-                    conflictCopies = conflictCopies,
-                    contentPadding = padding,
-                    searchQuery = searchQuery,
-                    showPinnedOnly = showPinnedOnly,
-                    showTrash = showTrash,
-                    showConflicts = showConflicts,
-                    sortNewest = sortNewest,
-                    showEditor = showEditor,
-                    title = title,
-                    content = content,
-                    editingId = editingId,
-                    filteredNotes = filteredNotes,
-                    onSearchQueryChange = { searchQuery = it },
-                    onShowPinnedOnlyChange = { showPinnedOnly = it },
-                    onToggleSort = { sortNewest = !sortNewest },
-                    onNewNote = {
-                        if (!showEditor) {
-                            editingId = null
-                            title = ""
-                            content = ""
-                            showEditor = true
-                        }
-                    },
-                    onToggleTrash = {
-                        showTrash = !showTrash
-                        showConflicts = false
-                        searchQuery = ""
-                        showPinnedOnly = false
-                    },
-                    onToggleConflicts = {
-                        showConflicts = !showConflicts
-                        showTrash = false
-                        searchQuery = ""
-                        showPinnedOnly = false
-                        if (showConflicts) refreshConflictCopies()
-                    },
-                    onTitleChange = { title = it },
-                    onContentChange = { content = it },
-                    onSave = { saveNote() },
-                    onCancel = { clearEditor() },
-                    onEditNote = { editNote(it) },
-                    onTogglePin = { togglePin(it) },
-                    onDeleteNote = { deleteTarget = it.id },
-                    onRestoreDeleted = { restoreDeletedNote(it) },
-                    onDeletePermanently = { permanentDeleteTarget = it.id },
-                    onRestoreConflict = { restoreConflictCopy(it) },
-                    onDismissConflict = { dismissConflictCopy(it) }
-                )
             } else if (selectedTab == "Trash") {
                 TrashScreen(
                     deletedNotes = deletedNotes,
