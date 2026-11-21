@@ -159,7 +159,7 @@ The diagnostic model distinguishes per-device attempts and results. A successful
 Only `main` is used. Older commits may have been developed via temporary branches before the user made the final main-only decision; this historical fact does not change the current policy. No new branches should be created.
 
 
-## Build 22 — full-screen Note Reader & Editor (implementation committed; pending user Build)
+## Build 22 — full-screen Note Reader & Editor (user-confirmed Build successful)
 
 User-approved scope:
 - Keep Note List as a short preview only.
@@ -202,3 +202,20 @@ Commits:
 **User-confirmed:** On 2026-11-20, the user reported the color issue was working as expected and explicitly confirmed Build Successful after pulling the correction. This confirms the reported Build and the targeted visual fix only; it does not imply every Build 22 regression scenario (offline sync, realtime, conflicts, long-note persistence) was exhaustively tested.
 
 
+
+
+## Build 22 follow-up — full Reader tap target (user-confirmed)
+
+- Expanded the Reading Mode tap target so tapping the blank area of the reader also enters Editing Mode, not only the title/body text.
+- Commit: `7b7bf8bc913c441592dba53843bf0683fa6783ba` is the preceding change-set baseline; follow-up commit recorded in GitHub history as the tap-target fix.
+- **User-confirmed:** Build succeeded and the user tested that tapping the note content enters Editing Mode. The user has now approved replacing the current Home and Note List presentation, while leaving the Reader/Editor redesign for a later stage.
+
+## New Home Landing Page and Notes List UI — implementation committed; Build pending
+
+- Replaced the Home Dashboard UI with a feature landing page and Notes feature destination.
+- Added a separate Notes list screen based on the user's supplied Google Keep screenshot: large Notes title, Checklist/Search/Settings icons at top-right, same-height rectangular cards, title, two-line ellipsized preview, and date/time format `dd MMM yyyy, hh:mm a`.
+- Added a round bottom-right plus FAB. Header icons, FAB and note cards are deliberately inert until their destination screens and actions are designed in a later phase.
+- Existing app-wide top bar and Global Bottom Navigation remain. Existing notes data, database, sync, pin/trash/conflict logic and Reader/Editor source remain; Reader/Editor visual redesign is explicitly deferred.
+- Note list cards use the current theme's surface/on-surface colors, without per-note custom colors.
+- Commits: `e05a48d536`, `61003e446b`, `f1767f7dfc`, `16e202dc4b`, `59da046916`, `fa2dac5102`, `c7aca95602`.
+- No Supabase migration or schema change. Build/device verification is pending user confirmation.
