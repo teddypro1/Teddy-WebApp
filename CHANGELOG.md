@@ -5,7 +5,7 @@ This file records significant project milestones only. Detailed chronology is ma
 ## 2026-11-21
 
 - **Build 22 follow-up confirmed by user:** The user successfully built and tested the Reader tap-area fix; tapping the note content enters Editing Mode.
-- **New Home Landing Page and Notes List UI committed; Build pending:** Home Dashboard presentation replaced by a feature landing page with a Notes destination. Added a separate screenshot-inspired Notes list with Checklist/Search/Settings glyphs, equal-height rectangular cards, ellipsized content preview, `dd MMM yyyy, hh:mm a` date/time and bottom-right circular plus FAB. These controls and note cards are intentionally inert in this phase. Existing app-wide navigation, note data/backend/sync and current Reader/Editor source are preserved; Reader/Editor redesign is deferred. No Supabase schema change.
+- **New Home Landing Page and Notes List UI committed; Build pending:** Home Dashboard presentation replaced by a feature landing page with a Notes destination. Added a separate screenshot-inspired Notes list with Checklist/Search/Settings glyphs, equal-height rectangular cards, ellipsized content preview, `dd MMM yyyy, hh:mm a` date/time and bottom-right circular plus FAB. These controls and note cards are intentionally inert in this phase. Existing app-wide navigation, note data/backend/sync and current Reader/Editor source are preserved; Reader/Editor redesign is deferred. The Notes screen uses its own reference-style header while retaining the Global Bottom Navigation. No Supabase schema change.
 
 ## 2026-11-20
 
