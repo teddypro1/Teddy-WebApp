@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -160,7 +161,9 @@ private fun NotesCollapsingHeader(
 
     // All header geometry follows the same continuous scroll progress.
     val headerHeight = (190f + (62f - 190f) * progress).dp
-    val titleSize = (34f + (26f - 34f) * progress).sp
+    // Keep text layout at a constant size and scale its rendered layer instead.
+    // This avoids per-scroll font remeasurement, which can cause visible jitter.
+    val titleScale = 1f + ((26f / 34f) - 1f) * progress
     val titleY = (24f + (12f - 24f) * progress).dp
     val actionsY = (132f + (18f - 132f) * progress).dp
 
@@ -175,9 +178,14 @@ private fun NotesCollapsingHeader(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(start = 10.dp)
-                .offset(y = titleY),
-            fontSize = titleSize,
-            lineHeight = (titleSize.value * 1.18f).sp,
+                .offset(y = titleY)
+                .graphicsLayer {
+                    scaleX = titleScale
+                    scaleY = titleScale
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
+                },
+            fontSize = 34.sp,
+            lineHeight = 40.sp,
             fontWeight = FontWeight.Normal,
             color = titleColor,
             maxLines = 1
