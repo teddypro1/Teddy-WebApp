@@ -403,7 +403,7 @@ Additional user-supplied CodeAssist 3.46.0 screenshots dated 2026-11-20 are docu
 These are screenshot-derived IDE preferences only. They do not establish that downloads, cache clearing, backups or a successful Build occurred. The user reported removing three accidentally added Quick Add dependencies; the subsequent list screenshot no longer showed Firebase BOM, Firebase Analytics or Play Services Auth, while Firebase Messaging remained. Build verification is still separate.
 
 
-## 23. Build 22 — Note reader/editor redesign (implementation committed; user Build pending)
+## 23. Build 22 — Note reader/editor redesign (user-confirmed Build successful)
 
 On 2026-11-20, the user approved Build 22 to replace direct inline note editing with a dedicated full-screen note experience:
 - Note List remains a preview only (title + short content excerpt); tapping a note opens a separate screen.
@@ -435,7 +435,7 @@ Implementation commits (directly on `main`):
 
 No Supabase schema/migration or paid plan change was made. Supabase remained `ACTIVE_HEALTHY` at pre-change verification, with 18 applied migrations and existing `public.notes` columns unchanged. GitHub branch verification showed only `main`.
 
-### Dark Mode Note Card correction — user-confirmed Build success
+### Dark Mode Note Card correction and reader tap-area fix — user-confirmed Build success
 
 The first Build 22 UI showed white Note Cards in Dark Mode because the saved light `colorHex` continued to control the card background. The focused correction in `NoteComponents.kt` now uses `MaterialTheme.colorScheme.surface` and `onSurface` in Dark Mode, while Light Mode retains the selected per-note color.
 
@@ -443,5 +443,27 @@ The first Build 22 UI showed white Note Cards in Dark Mode because the saved lig
 - `08b02aec7f` — Note Card background follows the active Dark Theme surface.
 - **User-confirmed on 2026-11-20:** the user reported the targeted color behavior works and explicitly confirmed Build Successful.
 
-This confirmation covers the reported Build and targeted visual issue only. It does not establish exhaustive testing of all offline sync, realtime, conflict recovery, long-note and other regression scenarios. No Supabase schema/migration or paid plan change was made.
+The user subsequently confirmed that the follow-up reader tap-area correction also built successfully and was tested: tapping the note text enters Editing Mode. This confirms the tested interaction and Build, not exhaustive regression coverage of every offline sync, realtime, conflict recovery or long-note scenario. No Supabase schema/migration or paid plan change was made.
 
+
+
+## 24. Home Landing Page and Notes List UI (implementation committed; user Build pending)
+
+User approved a new two-level Home experience based on the supplied Google Keep Notes screenshot. The screenshot is the reference for both the Notes screen header/action-icon arrangement and the note-list card layout; no Reader/Editor redesign was requested yet.
+
+Implementation committed directly to `main`:
+- Replaced the old Home Dashboard presentation with a feature-oriented Landing Page. The first feature card introduces Notes and has an Open Notes destination button; the structure can later host other feature cards.
+- Added a separate Notes screen with a large top-left Notes title, top-right Checklist/Search/Settings glyphs, equal-height rectangular note cards, title, two-line content preview with ellipsis, and date/time formatted as `dd MMM yyyy, hh:mm a` (example: `21 Nov 2026, 08:30 AM`).
+- Added a circular bottom-right plus FAB. The three header icons, FAB and note cards are intentionally presentation-only and do not navigate or trigger actions in this phase.
+- Cards use the active Material Theme surface/on-surface colors. No per-note card color is applied in this new list.
+- The existing app-wide top bar and Global Bottom Navigation remain. The old dashboard data, local storage, Supabase schema, sync logic, pin/trash/conflict data and existing Reader/Editor implementation are not deleted. The Reader/Editor UI has not been redesigned.
+- This is a first implementation pass from the screenshot; exact visual fidelity, spacing and icon geometry remain subject to the user's CodeAssist device review and any screenshot-based adjustments.
+
+Commits:
+- `e05a48d536` — replace dashboard with feature landing page
+- `61003e446b` — add Notes list screen
+- `f1767f7dfc` — route Home and Notes feature screens
+- `16e202dc4b` — remove obsolete dashboard route
+- `59da046916`, `fa2dac5102`, `c7aca95602` — correct Compose theme color capture in Canvas-drawn icons
+
+Pre-change checks: GitHub had only the `main` branch, and Supabase was `ACTIVE_HEALTHY` with 18 applied migrations. No Supabase migration, schema change, destructive database action or paid upgrade was made. User Build/device verification for this UI change is pending.
