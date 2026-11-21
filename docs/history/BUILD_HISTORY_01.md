@@ -221,3 +221,19 @@ Commits:
 - The dedicated Notes screen hides the workspace top bar so its own title/action controls occupy the reference positions; the Global Bottom Navigation remains.
 - **User-confirmed on 2026-11-21:** Build completed successfully and the user tested the screen, supplying two screenshots. These screenshots are retained as the visual baseline for subsequent comparison and refinement.
 - No Supabase migration or schema change.
+
+
+## Build 24 — Source-style Collapsing Notes Header and Scroll Refinement (Build pending)
+
+Reference: the user's 30.35-second source-app recording, sampled throughout. Expanded header shows a large Notes title above right-aligned Checklist/Search/Settings icons. Downward scrolling collapses the title and places the three icons on the same row. Upward scrolling expands the header only after the list reaches its top boundary. The final card should not leave a large artificial bottom gap.
+
+Implemented in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.kt`:
+- Nested-scroll connection collapses on downward scroll and expands on upward unconsumed scroll at the list top.
+- Animated transition between expanded and collapsed header.
+- Retains 104dp note cards, two-line ellipsized preview, timestamp, visual-only action icons, yellow FAB and global bottom navigation.
+- LazyColumn bottom content padding reduced from 100dp to 8dp; Scaffold bottom-bar inset remains.
+- No Landing Page, Reader/Editor, database or Supabase changes.
+
+Commits: `05ad4253d023a388750af75820e6bebc1f32e14e`, `7260543d4080bb9026819ee83d770c95a88683a4`.
+
+Source committed; CodeAssist Build and device testing pending user confirmation.
