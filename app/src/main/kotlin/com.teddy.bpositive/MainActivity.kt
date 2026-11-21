@@ -44,6 +44,7 @@ import com.teddy.bpositive.ui.screens.TrashScreen
 import com.teddy.bpositive.ui.screens.SettingsScreen
 import com.teddy.bpositive.ui.screens.AdminPanelScreen
 import com.teddy.bpositive.ui.screens.HomeScreen
+import com.teddy.bpositive.ui.screens.NotesScreen
 import com.teddy.bpositive.ui.screens.NoteDetailScreen
 import com.teddy.bpositive.ui.screens.NotificationInboxScreen
 import com.teddy.bpositive.ui.dialogs.ProfileEditorDialog
@@ -767,6 +768,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     }
 
     var openedNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var showNotesFeature by rememberSaveable { mutableStateOf(false) }
 
     var showEditor by rememberSaveable {
         mutableStateOf(false)
@@ -1119,6 +1121,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     showAdmin = hasVerifiedAdminAccess,
                     onTabSelected = { tab ->
                         selectedTab = tab
+                        showNotesFeature = false
                         if (tab == "Inbox") {
                             val session = activeSession
                             if (session != null) {
@@ -1183,7 +1186,17 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         }
                     )
                 } else openedNoteId = null
+            } else if (selectedTab == "Home" && showNotesFeature) {
+                NotesScreen(
+                    notes = filteredNotes,
+                    contentPadding = padding
+                )
             } else if (selectedTab == "Home") {
+                HomeScreen(
+                    contentPadding = padding,
+                    onOpenNotes = { showNotesFeature = true }
+                )
+            } else if (selectedTab == "Home__LEGACY_DISABLED") {
                 HomeScreen(
                     notes = notes,
                     deletedNotes = deletedNotes,
