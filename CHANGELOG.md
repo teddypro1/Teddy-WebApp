@@ -24,3 +24,14 @@ This file records significant project milestones only. Detailed chronology is ma
 ## Earlier history
 
 See [Build History](docs/history/BUILD_HISTORY_01.md), [Supabase History](docs/history/SUPABASE_HISTORY.md) and [Release History](docs/history/RELEASE_HISTORY.md).
+
+
+## Build 24 — Collapsing Notes Header (implementation committed; Build pending)
+
+- Added source-reference-style expanded/collapsed Notes header using nested scrolling.
+- Downward scroll collapses the title and aligns Checklist/Search/Settings on one row; upward unconsumed scroll at the list top expands it.
+- Animated the header transition.
+- Reduced artificial bottom padding after the last note card while preserving Scaffold bottom-navigation insets.
+- No Landing Page, Reader/Editor, database or Supabase changes.
+- Commits: `05ad4253d023a388750af75820e6bebc1f32e14e`, `7260543d4080bb9026819ee83d770c95a88683a4`.
+- Build/device verification pending user confirmation.
