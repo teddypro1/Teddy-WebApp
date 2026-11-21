@@ -334,3 +334,21 @@ Commits:
 Known incomplete secondary actions: reminder, export and share panels are currently placeholders; lock is session-only; delete remains through the existing Notes-list Trash action. These are not yet complete functional workflows.
 
 CodeAssist Build and device verification pending user confirmation. Do not report Build 30 successful until the user confirms.
+
+
+## Build 30 follow-up — Note Reader/Editor horizontal margin (user-confirmed successful)
+
+- Reduced the Note Reader/Editor content horizontal padding from 24dp to 22dp without changing the visible layout otherwise.
+- Commit: `873dead37b946308fc0b7759a54024cbcd01052d`.
+- **User-confirmed on 2026-11-21:** CodeAssist Build completed successfully.
+- No Supabase/database changes.
+
+## Build 31 — Note Reader/Editor ripple removal and full-width margin tap target (implementation committed; Build pending)
+
+Implemented in `NoteDetailScreen.kt`:
+- Suppressed Material 3 ripple feedback and Foundation indication feedback throughout the Note Reader/Editor screen.
+- Added tap handling to the full-width content container while retaining the 22dp horizontal visual margin. Taps in either horizontal margin enter Editing Mode and place the body cursor at the end; existing title/body tap handling is retained.
+- Editing remains blocked while the note is locked. Header and bottom action controls keep their dedicated actions.
+- Commit: `c4c095294e84fd79f5f2a692bab356715723c513`.
+- CodeAssist Build and device testing are pending user confirmation. A commit is not evidence of a successful Build.
+- No database, Supabase, migration or paid-plan changes.
