@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -21,6 +22,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -37,7 +41,7 @@ fun NotesScreen(
     notes: List<Note>,
     contentPadding: PaddingValues
 ) {
-    var collapseProgress by remember { mutableFloatStateOf(0f) }
+    val collapseProgress = remember { mutableFloatStateOf(0f) }
     val density = androidx.compose.ui.platform.LocalDensity.current
     val collapseRangePx = with(density) { 128.dp.toPx() }
 
@@ -49,11 +53,11 @@ fun NotesScreen(
                 available: Offset,
                 source: NestedScrollSource
             ): Offset {
-                if (available.y >= 0f || collapseProgress >= 1f) return Offset.Zero
+                if (available.y >= 0f || collapseProgress.floatValue >= 1f) return Offset.Zero
 
-                val remaining = (1f - collapseProgress) * collapseRangePx
+                val remaining = (1f - collapseProgress.floatValue) * collapseRangePx
                 val consumed = minOf(-available.y, remaining)
-                collapseProgress = (collapseProgress + consumed / collapseRangePx)
+                collapseProgress.floatValue = (collapseProgress.floatValue + consumed / collapseRangePx)
                     .coerceIn(0f, 1f)
                 return Offset(0f, -consumed)
             }
@@ -65,11 +69,11 @@ fun NotesScreen(
                 available: Offset,
                 source: NestedScrollSource
             ): Offset {
-                if (available.y <= 0f || collapseProgress <= 0f) return Offset.Zero
+                if (available.y <= 0f || collapseProgress.floatValue <= 0f) return Offset.Zero
 
-                val availableExpansion = collapseProgress * collapseRangePx
+                val availableExpansion = collapseProgress.floatValue * collapseRangePx
                 val used = minOf(available.y, availableExpansion)
-                collapseProgress = (collapseProgress - used / collapseRangePx)
+                collapseProgress.floatValue = (collapseProgress.floatValue - used / collapseRangePx)
                     .coerceIn(0f, 1f)
                 return Offset(0f, used)
             }
@@ -153,24 +157,34 @@ fun NotesScreen(
 
 @Composable
 private fun NotesCollapsingHeader(
-    collapseProgress: Float,
+    collapseProgress: State<Float>,
     modifier: Modifier = Modifier
 ) {
     val titleColor = MaterialTheme.colorScheme.onBackground
-    val progress = collapseProgress.coerceIn(0f, 1f)
 
-    // All header geometry follows the same continuous scroll progress.
-    val headerHeight = (190f + (62f - 190f) * progress).dp
-    // Keep text layout at a constant size and scale its rendered layer instead.
-    // This avoids per-scroll font remeasurement, which can cause visible jitter.
-    val titleScale = 1f + ((26f / 34f) - 1f) * progress
-    val titleY = (24f + (12f - 24f) * progress).dp
-    val actionsY = (132f + (18f - 132f) * progress).dp
-
+    // Read scroll state in the measure/placement/draw phases instead of
+    // composition. This prevents NotesScreen and its LazyColumn from being
+    // recomposed for every tiny nested-scroll delta.
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(headerHeight)
+            .layout { measurable, constraints ->
+                val progress = collapseProgress.value.coerceIn(0f, 1f)
+                val targetHeight = (190f + (62f - 190f) * progress)
+                    .dp
+                    .roundToPx()
+                    .coerceIn(constraints.minHeight, constraints.maxHeight)
+                val placeable = measurable.measure(
+                    constraints.copy(
+                        minHeight = targetHeight,
+                        maxHeight = targetHeight
+                    )
+                )
+                layout(placeable.width, targetHeight) {
+                    placeable.place(0, 0)
+                }
+            }
+            .clipToBounds()
             .background(MaterialTheme.colorScheme.background)
     ) {
         Text(
@@ -178,10 +192,18 @@ private fun NotesCollapsingHeader(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(start = 10.dp)
-                .offset(y = titleY)
+                .offset {
+                    val progress = collapseProgress.value.coerceIn(0f, 1f)
+                    IntOffset(
+                        x = 0,
+                        y = (24f + (12f - 24f) * progress).dp.roundToPx()
+                    )
+                }
                 .graphicsLayer {
-                    scaleX = titleScale
-                    scaleY = titleScale
+                    val progress = collapseProgress.value.coerceIn(0f, 1f)
+                    val scale = 1f + ((26f / 34f) - 1f) * progress
+                    scaleX = scale
+                    scaleY = scale
                     transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
                 },
             fontSize = 34.sp,
@@ -195,7 +217,13 @@ private fun NotesCollapsingHeader(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(end = 22.dp)
-                .offset(y = actionsY),
+                .offset {
+                    val progress = collapseProgress.value.coerceIn(0f, 1f)
+                    IntOffset(
+                        x = 0,
+                        y = (132f + (18f - 132f) * progress).dp.roundToPx()
+                    )
+                },
             horizontalArrangement = Arrangement.spacedBy(22.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
