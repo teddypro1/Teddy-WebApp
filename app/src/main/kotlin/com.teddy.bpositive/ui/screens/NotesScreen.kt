@@ -1,9 +1,10 @@
 package com.teddy.bpositive.ui.screens
 
 import com.teddy.bpositive.model.Note
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,7 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -19,8 +20,18 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.Velocity
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.toOffset
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
@@ -32,6 +43,30 @@ fun NotesScreen(
     notes: List<Note>,
     contentPadding: PaddingValues
 ) {
+    var isHeaderCollapsed by remember { mutableStateOf(false) }
+    val scrollConnection = remember {
+        object : NestedScrollConnection {
+            // Scrolling down collapses the header immediately.
+            override fun onPreScroll(
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                if (available.y < -1f) isHeaderCollapsed = true
+                return Offset.Zero
+            }
+
+            // Scrolling up expands the header only after the list reaches its top.
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                if (available.y > 1f) isHeaderCollapsed = false
+                return Offset.Zero
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -40,34 +75,13 @@ fun NotesScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 7.dp)
+                .background(MaterialTheme.colorScheme.background)
+                .nestedScroll(scrollConnection)
         ) {
-            Text(
-                text = "Notes",
-                modifier = Modifier.padding(start = 10.dp, top = 24.dp),
-                fontSize = 34.sp,
-                lineHeight = 40.sp,
-                fontWeight = FontWeight.Normal,
-                color = MaterialTheme.colorScheme.onBackground
+            NotesCollapsingHeader(
+                collapsed = isHeaderCollapsed,
+                modifier = Modifier.fillMaxWidth()
             )
-            Spacer(Modifier.height(48.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(end = 12.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(22.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    NotesActionIcon(kind = "checklist")
-                    NotesActionIcon(kind = "search")
-                    NotesActionIcon(kind = "settings")
-                }
-            }
-            Spacer(Modifier.height(18.dp))
 
             if (notes.isEmpty()) {
                 Box(
@@ -84,8 +98,12 @@ fun NotesScreen(
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 100.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    // Keep the list end tight; the FAB floats above it and the app
+                    // Scaffold already accounts for the global bottom navigation.
+                    contentPadding = PaddingValues(bottom = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     items(notes, key = { it.id }) { note ->
@@ -95,7 +113,6 @@ fun NotesScreen(
             }
         }
 
-        val plusColor = Color.White
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -107,19 +124,92 @@ fun NotesScreen(
             Canvas(modifier = Modifier.size(28.dp)) {
                 val center = Offset(size.width / 2f, size.height / 2f)
                 drawLine(
-                    plusColor,
+                    Color.White,
                     Offset(center.x, size.height * 0.18f),
                     Offset(center.x, size.height * 0.82f),
                     strokeWidth = 3.5.dp.toPx(),
                     cap = StrokeCap.Round
                 )
                 drawLine(
-                    plusColor,
+                    Color.White,
                     Offset(size.width * 0.18f, center.y),
                     Offset(size.width * 0.82f, center.y),
                     strokeWidth = 3.5.dp.toPx(),
                     cap = StrokeCap.Round
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotesCollapsingHeader(
+    collapsed: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val titleColor = MaterialTheme.colorScheme.onBackground
+
+    AnimatedContent(
+        targetState = collapsed,
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.background)
+            .animateContentSize(),
+        label = "notes_collapsing_header"
+    ) { isCollapsed ->
+        if (isCollapsed) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 62.dp)
+                    .padding(start = 18.dp, end = 22.dp, top = 8.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Notes",
+                    fontSize = 26.sp,
+                    lineHeight = 32.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = titleColor
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(22.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    NotesActionIcon(kind = "checklist")
+                    NotesActionIcon(kind = "search")
+                    NotesActionIcon(kind = "settings")
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 10.dp, end = 22.dp, top = 24.dp, bottom = 18.dp)
+            ) {
+                Text(
+                    text = "Notes",
+                    modifier = Modifier.padding(start = 0.dp),
+                    fontSize = 34.sp,
+                    lineHeight = 40.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = titleColor
+                )
+                Spacer(Modifier.height(48.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(22.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        NotesActionIcon(kind = "checklist")
+                        NotesActionIcon(kind = "search")
+                        NotesActionIcon(kind = "settings")
+                    }
+                }
             }
         }
     }
@@ -171,8 +261,7 @@ private fun NoteListItem(note: Note) {
 private fun NotesActionIcon(kind: String) {
     val iconColor = MaterialTheme.colorScheme.onBackground
     Canvas(
-        modifier = Modifier
-            .size(25.dp)
+        modifier = Modifier.size(25.dp)
     ) {
         val stroke = 2.2.dp.toPx()
         when (kind) {
