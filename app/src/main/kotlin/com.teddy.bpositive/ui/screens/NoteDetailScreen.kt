@@ -1,7 +1,6 @@
 package com.teddy.bpositive.ui.screens
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -122,7 +121,6 @@ fun NoteDetailScreen(
     }
 
     CompositionLocalProvider(
-        LocalIndication provides null,
         LocalRippleConfiguration provides null
     ) {
     Column(
@@ -400,4 +398,5 @@ fun NoteDetailScreen(
             }
         }
         }
+}
 }
