@@ -4,6 +4,8 @@ This file records significant project milestones only. Detailed chronology is ma
 
 ## 2026-11-21
 
+- **Build 28 confirmed successful by user:** draw-phase title interpolation Build completed, though the user reported that title smoothness still fell short of the target. This confirmation records Build completion, not satisfaction with the visual result.
+
 - **Build 22 follow-up confirmed by user:** The user successfully built and tested the Reader tap-area fix; tapping the note content enters Editing Mode.
 - **New Home Landing Page and Notes List UI — user-confirmed Build successful:** Home Dashboard presentation replaced by a feature landing page with a Notes destination. Added a separate screenshot-inspired Notes list with Checklist/Search/Settings glyphs, equal-height rectangular cards, ellipsized content preview, `dd MMM yyyy, hh:mm a` date/time and bottom-right circular plus FAB. These controls and note cards are intentionally inert in this phase. Existing app-wide navigation, note data/backend/sync and current Reader/Editor source are preserved; Reader/Editor redesign is deferred. The Notes screen uses its own reference-style header while retaining the Global Bottom Navigation; the FAB uses the screenshot's yellow circular accent. User confirmed successful Build and supplied two device screenshots on 2026-11-21; these are the baseline references for further UI refinement. No Supabase schema change.
 
@@ -73,3 +75,11 @@ See [Build History](docs/history/BUILD_HISTORY_01.md), [Supabase History](docs/h
 - Existing nested scroll, header geometry, action icons, note list/cards, FAB and navigation remain unchanged.
 - Commit: `ecbad69bf6925e52f4b1dd3b593d6d9fcb1e5164`.
 - CodeAssist Build/device verification pending user confirmation. No Supabase changes.
+
+
+## Build 29 — Header-first two-stage Notes scrolling (implementation in progress)
+
+- While the header is not fully collapsed, all downward scroll input belongs to the header; the note list's own scroll offset must remain unchanged.
+- The scroll delta that completes collapse is also consumed by the header. The list begins scrolling only on a subsequent delta.
+- On upward movement, the list returns to its top before the header expands.
+- Preserve existing UI and data behavior. No Supabase/database changes. Build/device verification pending.
