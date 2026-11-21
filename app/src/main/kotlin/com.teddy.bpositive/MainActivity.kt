@@ -772,7 +772,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var showNotesFeature by rememberSaveable { mutableStateOf(false) }
     // Hoisted above the Notes/Reader route so list position and header collapse survive opening a note.
     val notesListState = rememberLazyListState()
-    val notesHeaderCollapseProgress = rememberSaveable { mutableFloatStateOf(0f) }
+    val notesHeaderCollapseProgress = remember { mutableFloatStateOf(0f) }
 
     var showEditor by rememberSaveable {
         mutableStateOf(false)
