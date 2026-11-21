@@ -255,7 +255,7 @@ Commit: `aea5df26b6af0ef59743fa9e5f329377b37234ff`.
 Build and device verification pending user confirmation.
 
 
-## Build 26 — Smooth scroll-linked Notes title scaling (implementation committed; Build pending)
+## Build 26 — Smooth scroll-linked Notes title scaling (user-confirmed successful)
 
 After Build 25, the user reported that the header itself moved smoothly but the `Notes` title looked unstable/jittery while shrinking. The user requested that title scaling match the exact scroll speed and remain smooth during slow or fast gestures.
 
@@ -268,4 +268,21 @@ Implemented in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.k
 
 Commit: `e85900fea7872a9d134eb3a35725fe60eb2b8c28`.
 
-CodeAssist Build and device verification pending user confirmation. Suggested checks: slow drag with tiny increments, quick swipe, reverse direction mid-collapse, and repeated collapse/expand. Confirm no title jitter and no regression in first-card stability.
+User confirmed Build 26 successfully built. Device testing showed the title was somewhat more stable but still not sufficiently smooth, so a deeper Compose phase-optimization was prepared in Build 27.
+
+
+## Build 27 — Compose phase-optimized scroll-driven Notes header (implementation committed; Build pending)
+
+The user confirmed Build 26 successful but reported only a modest improvement in title smoothness. Inspection of the live source showed `collapseProgress` was read in composition by `NotesScreen`, causing the screen subtree to be recomposed on every nested-scroll update.
+
+Implemented in `NotesScreen.kt`:
+- `collapseProgress` remains a `MutableFloatState`, but is passed to the header as `State<Float>` without reading its value during composition.
+- Header height reads progress inside a custom `Modifier.layout` measure block.
+- Title and action-row positions read progress inside placement lambdas.
+- Title scale reads progress inside `graphicsLayer`, preserving fixed Text measurement and updating the rendered layer.
+- The intent is to confine invalidation to measure/placement/draw phases and avoid recomposing the Notes screen and LazyColumn for every scroll delta.
+- Nested-scroll math and visual geometry, note cards, action icons, FAB and bottom navigation are otherwise unchanged.
+
+Commit: `1ec5ff1f53948e8741d7047900e77b548091fb4b`.
+
+CodeAssist Build/device verification pending. Test gradual and rapid drag, reversing direction mid-motion, repeated collapse/expand, first-card stability and list scroll performance. No database/Supabase changes.
