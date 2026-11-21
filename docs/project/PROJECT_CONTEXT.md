@@ -599,8 +599,8 @@ Verification status:
 
 Implemented in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NoteDetailScreen.kt`:
 - Disabled visible ripple/indication feedback for Note Reader/Editor interactions, including Material 3 controls and Foundation clickable elements.
-- Preserved the existing 22dp horizontal visual inset while adding a tap handler to the content area's outer width. Tapping either horizontal margin now enters Editing Mode and places the body cursor at the end; existing title/body tap behavior remains in place.
+- Preserved the existing 22dp horizontal visual inset while adding a tap handler to the content area's outer width. Tapping any unhandled area of the full content region—including both horizontal margins and the metadata/spacing areas—enters Editing Mode and places the body cursor at the end; title/body taps retain their dedicated focus and cursor behavior.
 - The lock state still prevents entering Editing Mode. Header and bottom action controls retain their own actions.
-- Commit: `c4c095294e84fd79f5f2a692bab356715723c513`.
+- Commits: `c4c095294e84fd79f5f2a692bab356715723c513`, `970a7926ff3d0abc01851d79f530bf20b5ff4467`.
 - CodeAssist Build and device verification are pending. Do not mark Build 31 successful until the user explicitly confirms.
 - No Supabase/database/schema changes.
