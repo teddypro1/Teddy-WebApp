@@ -6,14 +6,13 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,8 +26,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextRange
@@ -72,7 +74,8 @@ fun NoteDetailScreen(
     val bodyFocus = remember(note.id) { FocusRequester() }
     val titleFocus = remember(note.id) { FocusRequester() }
     var bodyLayoutResult by remember(note.id) { mutableStateOf<TextLayoutResult?>(null) }
-    val bodyBringIntoViewRequester = remember(note.id) { BringIntoViewRequester() }
+    var noteViewportBounds by remember(note.id) { mutableStateOf<Rect?>(null) }
+    var bodyFieldBounds by remember(note.id) { mutableStateOf<Rect?>(null) }
     val noteScrollState = rememberScrollState()
     val palette = listOf("#FFFFFF", "#FFF3B0", "#FADADD", "#D7F5E8", "#DCEBFF", "#E9DDFB")
     val textColor = MaterialTheme.colorScheme.onBackground
@@ -114,8 +117,25 @@ fun NoteDetailScreen(
                 val cursorRect = bodyLayoutResult?.getCursorRect(
                     body.selection.start.coerceIn(0, body.text.length)
                 )
-                if (cursorRect != null) {
-                    bodyBringIntoViewRequester.bringIntoView(cursorRect)
+                val fieldBounds = bodyFieldBounds
+                val viewportBounds = noteViewportBounds
+                if (cursorRect != null && fieldBounds != null && viewportBounds != null) {
+                    // Convert the caret rectangle from TextField-local coordinates
+                    // into root coordinates, then compare it with the resized
+                    // scroll viewport (which already excludes the keyboard).
+                    val cursorTop = fieldBounds.top + cursorRect.top
+                    val cursorBottom = fieldBounds.top + cursorRect.bottom
+                    val safeInset = with(density) { 24.dp.toPx() }
+                    val visibleTop = viewportBounds.top + safeInset
+                    val visibleBottom = viewportBounds.bottom - safeInset
+                    val scrollDelta = when {
+                        cursorBottom > visibleBottom -> cursorBottom - visibleBottom
+                        cursorTop < visibleTop -> cursorTop - visibleTop
+                        else -> 0f
+                    }
+                    if (kotlin.math.abs(scrollDelta) > 1f) {
+                        noteScrollState.animateScrollBy(scrollDelta)
+                    }
                 }
             }
         }
@@ -239,6 +259,7 @@ fun NoteDetailScreen(
                 .fillMaxWidth()
                 .weight(1f)
                 .verticalScroll(noteScrollState)
+                .onGloballyPositioned { noteViewportBounds = it.boundsInRoot() }
                 // Do not add a parent click handler here: it also receives
                 // taps from the body field and would overwrite the tapped
                 // cursor offset with body.text.length.
@@ -305,7 +326,7 @@ fun NoteDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 240.dp)
-                        .bringIntoViewRequester(bodyBringIntoViewRequester)
+                        .onGloballyPositioned { bodyFieldBounds = it.boundsInRoot() }
                         .pointerInput(editing, locked, body.text) {
                             awaitEachGesture {
                                 val down = awaitFirstDown(
