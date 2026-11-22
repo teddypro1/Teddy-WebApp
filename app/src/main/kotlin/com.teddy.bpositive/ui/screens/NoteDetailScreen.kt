@@ -30,6 +30,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.TextLayoutResult
@@ -44,6 +45,7 @@ import com.teddy.bpositive.model.Note
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,6 +65,7 @@ fun NoteDetailScreen(
     var locked by remember(note.id) { mutableStateOf(false) }
     var focusTitleAfterEnter by remember(note.id) { mutableStateOf(false) }
     val keyboard = LocalSoftwareKeyboardController.current
+    val density = LocalDensity.current
     val bodyFocus = remember(note.id) { FocusRequester() }
     val titleFocus = remember(note.id) { FocusRequester() }
     var bodyLayoutResult by remember(note.id) { mutableStateOf<TextLayoutResult?>(null) }
@@ -89,6 +92,21 @@ fun NoteDetailScreen(
             } else {
                 bodyFocus.requestFocus()
                 keyboard?.show()
+
+                // Wait until the IME finishes resizing the reader viewport.
+                // A bring-into-view request made during the keyboard animation
+                // can be calculated against the old viewport and leave a
+                // bottom-of-note cursor hidden behind the keyboard.
+                snapshotFlow {
+                    WindowInsets.ime.getBottom(density) to
+                        WindowInsets.imeAnimationTarget.getBottom(density)
+                }.first { (current, target) ->
+                    target > 0 && current == target
+                }
+
+                // Let the final inset-driven layout pass complete before
+                // calculating the cursor rectangle and scrolling to it.
+                withFrameNanos { }
                 withFrameNanos { }
                 val cursorRect = bodyLayoutResult?.getCursorRect(
                     body.selection.start.coerceIn(0, body.text.length)
