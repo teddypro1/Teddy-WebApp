@@ -141,7 +141,7 @@ fun NotesScreen(
                     // Keep the list end tight; the FAB floats above it and the app
                     // Scaffold already accounts for the global bottom navigation.
                     state = listState,
-                    contentPadding = PaddingValues(bottom = 8.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     items(notes, key = { it.id }) { note ->
@@ -296,7 +296,7 @@ private fun NoteListItem(note: Note, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .background(
                 color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(14.dp)
             )
             .padding(horizontal = 10.dp, vertical = 9.dp)
     ) {
