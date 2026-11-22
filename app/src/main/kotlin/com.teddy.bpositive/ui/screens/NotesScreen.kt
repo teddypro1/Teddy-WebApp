@@ -142,7 +142,7 @@ fun NotesScreen(
                     // Scaffold already accounts for the global bottom navigation.
                     state = listState,
                     contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(notes, key = { it.id }) { note ->
                         NoteListItem(note = note, onClick = { onNoteClick(note) })
