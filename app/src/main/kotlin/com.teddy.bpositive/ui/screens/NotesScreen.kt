@@ -19,6 +19,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.RadioButton
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.*
 import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
@@ -60,15 +64,25 @@ fun NotesScreen(
     listState: LazyListState,
     collapseProgress: MutableFloatState,
     onNoteClick: (Note) -> Unit,
-    onCreateNote: () -> Unit
+    onCreateNote: () -> Unit,
+    onDeleteSelected: (List<Note>) -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val settings = remember { context.getSharedPreferences("notes_feature_settings", android.content.Context.MODE_PRIVATE) }
+    var compactCards by remember { mutableStateOf(settings.getBoolean("compact_cards", false)) }
+    var largeText by remember { mutableStateOf(settings.getBoolean("large_text", false)) }
+    var newestFirst by remember { mutableStateOf(settings.getBoolean("newest_first", true)) }
+    var showSettings by remember { mutableStateOf(false) }
+    var selectionMode by remember { mutableStateOf(false) }
+    var selectedIds by remember { mutableStateOf(setOf<Long>()) }
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    val filteredNotes = remember(notes, searchQuery) {
-        if (searchQuery.isBlank()) notes else notes.filter { note ->
+    val filteredNotes = remember(notes, searchQuery, newestFirst) {
+        val matches = if (searchQuery.isBlank()) notes else notes.filter { note ->
             note.title.contains(searchQuery, ignoreCase = true) ||
                 note.content.contains(searchQuery, ignoreCase = true)
         }
+        if (newestFirst) matches.sortedByDescending { it.updatedAt } else matches.sortedBy { it.updatedAt }
     }
 
     val density = androidx.compose.ui.platform.LocalDensity.current
@@ -126,13 +140,39 @@ fun NotesScreen(
             .fillMaxSize()
             .padding(contentPadding)
     ) {
-        Column(
+        if (showSettings) {
+            NotesFeatureSettingsScreen(
+                compactCards = compactCards,
+                largeText = largeText,
+                newestFirst = newestFirst,
+                onCompactCardsChange = { compactCards = it; settings.edit().putBoolean("compact_cards", it).apply() },
+                onLargeTextChange = { largeText = it; settings.edit().putBoolean("large_text", it).apply() },
+                onNewestFirstChange = { newestFirst = it; settings.edit().putBoolean("newest_first", it).apply() },
+                onBack = { showSettings = false },
+                onReset = {
+                    compactCards = false; largeText = false; newestFirst = true
+                    settings.edit().putBoolean("compact_cards", false).putBoolean("large_text", false).putBoolean("newest_first", true).apply()
+                }
+            )
+        } else Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .nestedScroll(scrollConnection)
         ) {
-            NotesCollapsingHeader(
+            if (selectionMode) {
+                Row(Modifier.fillMaxWidth().height(62.dp).padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = { selectionMode = false; selectedIds = emptySet() }) { Text("✕") }
+                    Text("${selectedIds.size} selected", modifier = Modifier.weight(1f), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                    TextButton(onClick = { selectedIds = if (selectedIds.size == filteredNotes.size) emptySet() else filteredNotes.map { it.id }.toSet() }) { Text(if (selectedIds.size == filteredNotes.size) "None" else "All") }
+                    TextButton(enabled = selectedIds.isNotEmpty(), onClick = {
+                        val chosen = notes.filter { selectedIds.contains(it.id) }
+                        onDeleteSelected(chosen)
+                        selectedIds = emptySet()
+                        selectionMode = false
+                    }) { Text("Delete") }
+                }
+            } else NotesCollapsingHeader(
                 collapseProgress = collapseProgress,
                 isSearchActive = isSearchActive,
                 searchQuery = searchQuery,
@@ -142,6 +182,8 @@ fun NotesScreen(
                     isSearchActive = false
                     searchQuery = ""
                 },
+                onChecklistClick = { selectionMode = true; selectedIds = emptySet() },
+                onSettingsClick = { showSettings = true },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -170,7 +212,15 @@ fun NotesScreen(
                     verticalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
                     items(filteredNotes, key = { it.id }) { note ->
-                        NoteListItem(note = note, onClick = { onNoteClick(note) })
+                        NoteListItem(
+                            note = note,
+                            compact = compactCards,
+                            largeText = largeText,
+                            selected = selectedIds.contains(note.id),
+                            selectionMode = selectionMode,
+                            onSelect = { checked -> selectedIds = if (checked) selectedIds + note.id else selectedIds - note.id },
+                            onClick = { if (selectionMode) selectedIds = if (selectedIds.contains(note.id)) selectedIds - note.id else selectedIds + note.id else onNoteClick(note) }
+                        )
                     }
                 }
             }
@@ -240,6 +290,8 @@ private fun NotesCollapsingHeader(
     onSearchQueryChange: (String) -> Unit,
     onSearchClick: () -> Unit,
     onSearchClose: () -> Unit,
+    onChecklistClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val titleColor = MaterialTheme.colorScheme.onBackground
@@ -354,19 +406,29 @@ private fun NotesCollapsingHeader(
             horizontalArrangement = Arrangement.spacedBy(22.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            NotesActionIcon(kind = "checklist")
+            NotesActionIcon(kind = "checklist", onClick = onChecklistClick)
             NotesActionIcon(kind = "search", onClick = onSearchClick)
-            NotesActionIcon(kind = "settings")
+            NotesActionIcon(kind = "settings", onClick = onSettingsClick)
         }
     }
 }
 
 @Composable
-private fun NoteListItem(note: Note, onClick: () -> Unit) {
-    Column(
+private fun NoteListItem(
+    note: Note,
+    compact: Boolean,
+    largeText: Boolean,
+    selected: Boolean,
+    selectionMode: Boolean,
+    onSelect: (Boolean) -> Unit,
+    onClick: () -> Unit
+) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        if (selectionMode) Checkbox(checked = selected, onCheckedChange = onSelect)
+        Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(104.dp)
+            .weight(1f)
+            .height(if (compact) 86.dp else 104.dp)
             .clickable(onClick = onClick)
             .background(
                 color = MaterialTheme.colorScheme.surface,
@@ -377,7 +439,7 @@ private fun NoteListItem(note: Note, onClick: () -> Unit) {
         Text(
             text = note.title.ifBlank { "Untitled" },
             color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 16.sp,
+            fontSize = if (largeText) 18.sp else 16.sp,
             lineHeight = 20.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
@@ -387,7 +449,7 @@ private fun NoteListItem(note: Note, onClick: () -> Unit) {
         Text(
             text = note.content.ifBlank { " " },
             color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 12.sp,
+            fontSize = if (largeText) 14.sp else 12.sp,
             lineHeight = 16.sp,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -397,10 +459,52 @@ private fun NoteListItem(note: Note, onClick: () -> Unit) {
             text = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.ENGLISH)
                 .format(Date(note.updatedAt)),
             color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 10.sp,
+            fontSize = if (largeText) 11.sp else 10.sp,
             lineHeight = 13.sp,
             maxLines = 1
         )
+    }
+    }
+}
+
+@Composable
+private fun NotesFeatureSettingsScreen(
+    compactCards: Boolean,
+    largeText: Boolean,
+    newestFirst: Boolean,
+    onCompactCardsChange: (Boolean) -> Unit,
+    onLargeTextChange: (Boolean) -> Unit,
+    onNewestFirstChange: (Boolean) -> Unit,
+    onBack: () -> Unit,
+    onReset: () -> Unit
+) {
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onBack) { Text("‹  Back") }
+            Text("Notes Settings", fontSize = 23.sp, fontWeight = FontWeight.SemiBold)
+        }
+        Text("Customize how your notes look and behave.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        androidx.compose.material3.Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Display", fontWeight = FontWeight.SemiBold)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) { Text("Compact cards"); Text("Show notes with less vertical spacing", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    Checkbox(checked = compactCards, onCheckedChange = onCompactCardsChange)
+                }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) { Text("Larger text"); Text("Increase note title and preview size", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    Checkbox(checked = largeText, onCheckedChange = onLargeTextChange)
+                }
+            }
+        }
+        androidx.compose.material3.Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Sort notes", fontWeight = FontWeight.SemiBold)
+                Row(verticalAlignment = Alignment.CenterVertically) { RadioButton(selected = newestFirst, onClick = { onNewestFirstChange(true) }); Text("Newest first") }
+                Row(verticalAlignment = Alignment.CenterVertically) { RadioButton(selected = !newestFirst, onClick = { onNewestFirstChange(false) }); Text("Oldest first") }
+            }
+        }
+        TextButton(onClick = onReset, modifier = Modifier.fillMaxWidth()) { Text("Reset to default") }
     }
 }
 
