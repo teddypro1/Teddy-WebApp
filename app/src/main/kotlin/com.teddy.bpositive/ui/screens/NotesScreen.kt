@@ -411,9 +411,13 @@ private fun NotesActionIcon(
     modifier: Modifier = Modifier
 ) {
     val iconColor = MaterialTheme.colorScheme.onBackground
-    Canvas(
-        modifier = modifier.size(25.dp).clickable(onClick = onClick)
+    Box(
+        modifier = modifier
+            .size(40.dp)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
     ) {
+        Canvas(modifier = Modifier.size(25.dp)) {
         val stroke = 2.2.dp.toPx()
         when (kind) {
             "checklist" -> {
@@ -452,6 +456,7 @@ private fun NotesActionIcon(
                     )
                 }
             }
+        }
         }
     }
 }
