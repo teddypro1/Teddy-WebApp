@@ -392,5 +392,8 @@ Implemented in `NoteDetailScreen.kt`:
 - Single implementation commit: `e75317c71ab453cd909012a8e3673ea860b3b835`.
 - **User-confirmed on 2026-11-22:** CodeAssist Build completed successfully.
 - CodeAssist's Preview Interpreter separately reported unresolved/ambiguous calls while parsing dependencies such as `InboxRepository`, `SupabaseProfilesApi` and `SupabaseAuth` (including `firstOrNull`, `ifBlank`, `contains`, `toRequestBody`, `optJSONObject`, `optString`, `has` and `android.os.Handler`), followed by dependent declarations not being lowered. These diagnostics affect Preview interpretation and do not establish that the Android app Build failed.
-- Preview rendering remains to be validated/fixed for affected files. Future work should isolate preview-only sample data from network/repository implementations, without changing runtime app behavior or unrelated source files.
+- Follow-up Preview isolation commit: `d6f87570ac184def609074db9ce81547f432eed8`.
+- Replaced the Preview composables in `NotificationInboxScreen.kt`, `ProfileScreen.kt`, `AdminPanelScreen.kt`, and `WorkspaceScreens.kt` with standalone sample-data UI and no-op callbacks. No runtime/backend code was changed by this follow-up.
+- **User-confirmed on 2026-11-22:** All four affected file previews render successfully: Notification Inbox, Profile, Admin Panel, and Workspace (Trash and Settings). Screenshots were supplied for the first two; the user confirmed the other two also work.
+- These are static Preview representations and are not proof of exact parity with runtime UI.
 - No Supabase/database/schema changes.
