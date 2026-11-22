@@ -397,3 +397,12 @@ Implemented in `NoteDetailScreen.kt`:
 - **User-confirmed on 2026-11-22:** All four affected file previews render successfully: Notification Inbox, Profile, Admin Panel, and Workspace (Trash and Settings). Screenshots were supplied for the first two; the user confirmed the other two also work.
 - These are static Preview representations and are not proof of exact parity with runtime UI.
 - No Supabase/database/schema changes.
+
+
+## Build 35 — Restore Note Reader/Editor scrolling baseline (Build pending)
+
+- Compared `NoteDetailScreen.kt` at `409c7b16ca020553f654e33d71d7d6c643d7eafc` with the current source. The only intervening code difference was the added conditional bottom padding of 120dp in Editing Mode and 24dp in Reading Mode.
+- Removed that extra padding only. The existing IME animation wait, caret rectangle calculation, viewport visibility check and `animateScrollBy()` logic remain unchanged.
+- Commit: `1210f4aff094f1b95cb8df286936f3f8037096f5`.
+- No unrelated source, database, Supabase, migration or configuration changes.
+- CodeAssist Build and device testing pending user confirmation.
