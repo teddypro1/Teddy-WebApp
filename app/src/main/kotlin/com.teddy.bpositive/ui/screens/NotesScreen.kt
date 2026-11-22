@@ -1,5 +1,6 @@
 package com.teddy.bpositive.ui.screens
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.tooling.preview.Preview
 import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
@@ -33,6 +34,13 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -54,6 +62,15 @@ fun NotesScreen(
     onNoteClick: (Note) -> Unit,
     onCreateNote: () -> Unit
 ) {
+    var isSearchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredNotes = remember(notes, searchQuery) {
+        if (searchQuery.isBlank()) notes else notes.filter { note ->
+            note.title.contains(searchQuery, ignoreCase = true) ||
+                note.content.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
     val density = androidx.compose.ui.platform.LocalDensity.current
     val collapseRangePx = with(density) { 128.dp.toPx() }
 
@@ -117,10 +134,18 @@ fun NotesScreen(
         ) {
             NotesCollapsingHeader(
                 collapseProgress = collapseProgress,
+                isSearchActive = isSearchActive,
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
+                onSearchClick = { isSearchActive = true },
+                onSearchClose = {
+                    isSearchActive = false
+                    searchQuery = ""
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            if (notes.isEmpty()) {
+            if (filteredNotes.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -128,7 +153,7 @@ fun NotesScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No notes yet",
+                        text = if (searchQuery.isBlank()) "No notes yet" else "No matching notes",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 15.sp
                     )
@@ -142,9 +167,9 @@ fun NotesScreen(
                     // Scaffold already accounts for the global bottom navigation.
                     state = listState,
                     contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
-                    items(notes, key = { it.id }) { note ->
+                    items(filteredNotes, key = { it.id }) { note ->
                         NoteListItem(note = note, onClick = { onNoteClick(note) })
                     }
                 }
@@ -210,9 +235,25 @@ fun NotesScreen(
 @Composable
 private fun NotesCollapsingHeader(
     collapseProgress: State<Float>,
+    isSearchActive: Boolean,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onSearchClick: () -> Unit,
+    onSearchClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val titleColor = MaterialTheme.colorScheme.onBackground
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(isSearchActive) {
+        if (isSearchActive) {
+            focusRequester.requestFocus()
+            keyboardController?.show()
+        } else {
+            keyboardController?.hide()
+        }
+    }
 
     // Read scroll state in the measure/placement/draw phases instead of
     // composition. This prevents NotesScreen and its LazyColumn from being
@@ -239,34 +280,67 @@ private fun NotesCollapsingHeader(
             .clipToBounds()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        val titleMeasurer = rememberTextMeasurer()
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .clipToBounds()
-        ) {
-            // Draw the title at its actual interpolated font size. Unlike
-            // scaling a pre-rasterized Text layer, this re-shapes the glyphs
-            // for every fractional scroll position and avoids scale jitter.
-            val progress = collapseProgress.value.coerceIn(0f, 1f)
-            val fontSize = (34f + (26f - 34f) * progress).sp
-            val titleTop = (24f + (12f - 24f) * progress).dp.toPx()
-            val titleLayout = titleMeasurer.measure(
-                text = AnnotatedString("Notes"),
-                style = TextStyle(
-                    color = titleColor,
-                    fontSize = fontSize,
-                    lineHeight = (40f + (32f - 40f) * progress).sp,
-                    fontWeight = FontWeight.Normal
+        if (!isSearchActive) {
+            val titleMeasurer = rememberTextMeasurer()
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clipToBounds()
+            ) {
+                val progress = collapseProgress.value.coerceIn(0f, 1f)
+                val fontSize = (34f + (26f - 34f) * progress).sp
+                val titleTop = (24f + (12f - 24f) * progress).dp.toPx()
+                val titleLayout = titleMeasurer.measure(
+                    text = AnnotatedString("Notes"),
+                    style = TextStyle(
+                        color = titleColor,
+                        fontSize = fontSize,
+                        lineHeight = (40f + (32f - 40f) * progress).sp,
+                        fontWeight = FontWeight.Normal
+                    )
                 )
+                drawText(textLayoutResult = titleLayout, topLeft = Offset(10.dp.toPx(), titleTop))
+            }
+        } else {
+            BasicTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 10.dp, top = 10.dp, end = 64.dp)
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 12.dp, vertical = 9.dp)
+                    .focusRequester(focusRequester),
+                singleLine = true,
+                textStyle = TextStyle(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 15.sp
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                decorationBox = { innerTextField ->
+                    Box {
+                        if (searchQuery.isEmpty()) {
+                            Text(
+                                text = "Search notes...",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 15.sp
+                            )
+                        }
+                        innerTextField()
+                    }
+                }
             )
-            drawText(
-                textLayoutResult = titleLayout,
-                topLeft = Offset(10.dp.toPx(), titleTop)
+            NotesActionIcon(
+                kind = "close",
+                onClick = onSearchClose,
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 17.dp, end = 22.dp)
             )
         }
 
-        Row(
+        if (!isSearchActive) Row(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(end = 22.dp)
@@ -281,7 +355,7 @@ private fun NotesCollapsingHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             NotesActionIcon(kind = "checklist")
-            NotesActionIcon(kind = "search")
+            NotesActionIcon(kind = "search", onClick = onSearchClick)
             NotesActionIcon(kind = "settings")
         }
     }
@@ -331,10 +405,14 @@ private fun NoteListItem(note: Note, onClick: () -> Unit) {
 }
 
 @Composable
-private fun NotesActionIcon(kind: String) {
+private fun NotesActionIcon(
+    kind: String,
+    onClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     val iconColor = MaterialTheme.colorScheme.onBackground
     Canvas(
-        modifier = Modifier.size(25.dp)
+        modifier = modifier.size(25.dp).clickable(onClick = onClick)
     ) {
         val stroke = 2.2.dp.toPx()
         when (kind) {
@@ -352,6 +430,10 @@ private fun NotesActionIcon(kind: String) {
             "search" -> {
                 drawCircle(iconColor, radius = size.width * .31f, center = Offset(size.width * .42f, size.height * .40f), style = Stroke(stroke))
                 drawLine(iconColor, Offset(size.width * .64f, size.height * .64f), Offset(size.width * .88f, size.height * .88f), stroke, StrokeCap.Round)
+            }
+            "close" -> {
+                drawLine(iconColor, Offset(size.width * .25f, size.height * .25f), Offset(size.width * .75f, size.height * .75f), stroke, StrokeCap.Round)
+                drawLine(iconColor, Offset(size.width * .75f, size.height * .25f), Offset(size.width * .25f, size.height * .75f), stroke, StrokeCap.Round)
             }
             else -> {
                 drawCircle(iconColor, radius = size.width * .19f, style = Stroke(stroke))
