@@ -1225,7 +1225,13 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     listState = notesListState,
                     collapseProgress = notesHeaderCollapseProgress,
                     onNoteClick = { note -> editNote(note) },
-                    onCreateNote = { createNewNote() }
+                    onCreateNote = { createNewNote() },
+                    onDeleteSelected = { selectedNotes ->
+                        selectedNotes.forEach { syncNoteDelete(it) }
+                        val selectedIds = selectedNotes.map { it.id }.toSet()
+                        notes.removeAll { selectedIds.contains(it.id) }
+                        saveChanges()
+                    }
                 )
             } else if (selectedTab == "Home") {
                 HomeScreen(
