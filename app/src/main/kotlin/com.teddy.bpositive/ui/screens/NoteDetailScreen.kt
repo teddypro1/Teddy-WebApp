@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -265,22 +266,23 @@ fun NoteDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 240.dp)
-                    .pointerInput(editing, body.text) {
+                    .pointerInput(editing, locked, body.text) {
                         awaitEachGesture {
-                            val down = awaitFirstDown(pass = PointerEventPass.Initial)
-                            lastBodyTapPosition = down.position
+                            val down = awaitFirstDown(
+                                requireUnconsumed = false,
+                                pass = PointerEventPass.Initial
+                            )
+                            val up = waitForUpOrCancellation(
+                                pass = PointerEventPass.Initial
+                            )
+                            if (up != null && !editing && !locked) {
+                                val cursorPosition = bodyLayoutResult
+                                    ?.getOffsetForPosition(down.position)
+                                    ?.coerceIn(0, body.text.length)
+                                    ?: body.text.length
+                                beginEditing(atPosition = cursorPosition)
+                            }
                         }
-                    }
-                    .clickable(
-                        enabled = !editing && !locked,
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
-                        val cursorPosition = bodyLayoutResult
-                            ?.getOffsetForPosition(lastBodyTapPosition)
-                            ?.coerceIn(0, body.text.length)
-                            ?: body.text.length
-                        beginEditing(atPosition = cursorPosition)
                     }
             ) {
                 BasicTextField(
