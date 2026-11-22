@@ -261,10 +261,32 @@ fun NoteDetailScreen(
             )
             Spacer(Modifier.height(30.dp))
 
-            if (editing) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 240.dp)
+                    .pointerInput(editing, body.text) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown(pass = PointerEventPass.Initial)
+                            lastBodyTapPosition = down.position
+                        }
+                    }
+                    .clickable(
+                        enabled = !editing && !locked,
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        val cursorPosition = bodyLayoutResult
+                            ?.getOffsetForPosition(lastBodyTapPosition)
+                            ?.coerceIn(0, body.text.length)
+                            ?: body.text.length
+                        beginEditing(atPosition = cursorPosition)
+                    }
+            ) {
                 BasicTextField(
                     value = body,
                     onValueChange = { body = it },
+                    readOnly = !editing,
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 240.dp)
@@ -274,7 +296,10 @@ fun NoteDetailScreen(
                         fontSize = 17.sp,
                         lineHeight = 27.sp
                     ),
-                    cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+                    onTextLayout = { bodyLayoutResult = it },
+                    cursorBrush = androidx.compose.ui.graphics.SolidColor(
+                        if (editing) MaterialTheme.colorScheme.primary else Color.Transparent
+                    ),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
                         imeAction = ImeAction.Default
@@ -288,34 +313,6 @@ fun NoteDetailScreen(
                         }
                     }
                 )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 240.dp)
-                        .pointerInput(body.text) {
-                            awaitEachGesture {
-                                val down = awaitFirstDown(pass = PointerEventPass.Initial)
-                                lastBodyTapPosition = down.position
-                            }
-                        }
-                        .clickable {
-                            val cursorPosition = bodyLayoutResult
-                                ?.getOffsetForPosition(lastBodyTapPosition)
-                                ?.coerceIn(0, body.text.length)
-                                ?: body.text.length
-                            beginEditing(atPosition = cursorPosition)
-                        }
-                ) {
-                    Text(
-                        body.text,
-                        color = textColor,
-                        fontSize = 17.sp,
-                        lineHeight = 27.sp,
-                        onTextLayout = { bodyLayoutResult = it },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
             }
         }
 
