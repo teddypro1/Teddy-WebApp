@@ -47,7 +47,7 @@ import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.flow.first
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun NoteDetailScreen(
     note: Note,
@@ -66,6 +66,9 @@ fun NoteDetailScreen(
     var focusTitleAfterEnter by remember(note.id) { mutableStateOf(false) }
     val keyboard = LocalSoftwareKeyboardController.current
     val density = LocalDensity.current
+    // Resolve composable WindowInsets properties in composition scope.
+    val imeInsets = WindowInsets.ime
+    val imeAnimationTargetInsets = WindowInsets.imeAnimationTarget
     val bodyFocus = remember(note.id) { FocusRequester() }
     val titleFocus = remember(note.id) { FocusRequester() }
     var bodyLayoutResult by remember(note.id) { mutableStateOf<TextLayoutResult?>(null) }
@@ -98,8 +101,8 @@ fun NoteDetailScreen(
                 // can be calculated against the old viewport and leave a
                 // bottom-of-note cursor hidden behind the keyboard.
                 snapshotFlow {
-                    WindowInsets.ime.getBottom(density) to
-                        WindowInsets.imeAnimationTarget.getBottom(density)
+                    imeInsets.getBottom(density) to
+                        imeAnimationTargetInsets.getBottom(density)
                 }.first { (current, target) ->
                     target > 0 && current == target
                 }
