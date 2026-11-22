@@ -264,10 +264,6 @@ fun NoteDetailScreen(
                 // taps from the body field and would overwrite the tapped
                 // cursor offset with body.text.length.
                 .padding(horizontal = 22.dp)
-                // Reserve scrollable space below the final line while editing.
-                // Without this, the last line can reach the scroll limit before
-                // it has moved clear of the keyboard.
-                .padding(bottom = if (editing) 120.dp else 24.dp)
         ) {
             if (editing) {
                 BasicTextField(
