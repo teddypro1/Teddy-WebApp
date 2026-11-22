@@ -239,13 +239,9 @@ fun NoteDetailScreen(
                 .fillMaxWidth()
                 .weight(1f)
                 .verticalScroll(noteScrollState)
-                .clickable(
-                    enabled = !editing && !locked,
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) {
-                    beginEditing(atPosition = body.text.length)
-                }
+                // Do not add a parent click handler here: it also receives
+                // taps from the body field and would overwrite the tapped
+                // cursor offset with body.text.length.
                 .padding(horizontal = 22.dp)
         ) {
             if (editing) {
