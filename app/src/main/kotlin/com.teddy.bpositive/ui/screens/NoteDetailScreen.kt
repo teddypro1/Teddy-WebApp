@@ -12,12 +12,15 @@ import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -63,7 +66,7 @@ fun NoteDetailScreen(
     val bodyFocus = remember(note.id) { FocusRequester() }
     val titleFocus = remember(note.id) { FocusRequester() }
     var bodyLayoutResult by remember(note.id) { mutableStateOf<TextLayoutResult?>(null) }
-    var lastBodyTapPosition by remember(note.id) { mutableStateOf(Offset.Zero) }
+    val bodyBringIntoViewRequester = remember(note.id) { BringIntoViewRequester() }
     val noteScrollState = rememberScrollState()
     val palette = listOf("#FFFFFF", "#FFF3B0", "#FADADD", "#D7F5E8", "#DCEBFF", "#E9DDFB")
     val textColor = MaterialTheme.colorScheme.onBackground
@@ -81,8 +84,19 @@ fun NoteDetailScreen(
 
     LaunchedEffect(editing, focusTitleAfterEnter) {
         if (editing) {
-            if (focusTitleAfterEnter) titleFocus.requestFocus() else bodyFocus.requestFocus()
-            keyboard?.show()
+            if (focusTitleAfterEnter) {
+                titleFocus.requestFocus()
+            } else {
+                bodyFocus.requestFocus()
+                keyboard?.show()
+                withFrameNanos { }
+                val cursorRect = bodyLayoutResult?.getCursorRect(
+                    body.selection.start.coerceIn(0, body.text.length)
+                )
+                if (cursorRect != null) {
+                    bodyBringIntoViewRequester.bringIntoView(cursorRect)
+                }
+            }
         }
     }
 
@@ -266,24 +280,6 @@ fun NoteDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 240.dp)
-                    .pointerInput(editing, locked, body.text) {
-                        awaitEachGesture {
-                            val down = awaitFirstDown(
-                                requireUnconsumed = false,
-                                pass = PointerEventPass.Initial
-                            )
-                            val up = waitForUpOrCancellation(
-                                pass = PointerEventPass.Initial
-                            )
-                            if (up != null && !editing && !locked) {
-                                val cursorPosition = bodyLayoutResult
-                                    ?.getOffsetForPosition(down.position)
-                                    ?.coerceIn(0, body.text.length)
-                                    ?: body.text.length
-                                beginEditing(atPosition = cursorPosition)
-                            }
-                        }
-                    }
             ) {
                 BasicTextField(
                     value = body,
@@ -292,6 +288,25 @@ fun NoteDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 240.dp)
+                        .bringIntoViewRequester(bodyBringIntoViewRequester)
+                        .pointerInput(editing, locked, body.text) {
+                            awaitEachGesture {
+                                val down = awaitFirstDown(
+                                    requireUnconsumed = false,
+                                    pass = PointerEventPass.Initial
+                                )
+                                val up = waitForUpOrCancellation(
+                                    pass = PointerEventPass.Initial
+                                )
+                                if (up != null && !editing && !locked) {
+                                    val cursorPosition = bodyLayoutResult
+                                        ?.getOffsetForPosition(down.position)
+                                        ?.coerceIn(0, body.text.length)
+                                        ?: body.text.length
+                                    beginEditing(atPosition = cursorPosition)
+                                }
+                            }
+                        }
                         .focusRequester(bodyFocus),
                     textStyle = TextStyle(
                         color = textColor,
