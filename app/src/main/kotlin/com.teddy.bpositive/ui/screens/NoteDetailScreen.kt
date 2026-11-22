@@ -80,6 +80,12 @@ fun NoteDetailScreen(
     val palette = listOf("#FFFFFF", "#FFF3B0", "#FADADD", "#D7F5E8", "#DCEBFF", "#E9DDFB")
     val textColor = MaterialTheme.colorScheme.onBackground
     val subtleColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val titleTextStyle = TextStyle(
+        color = textColor,
+        fontSize = 27.sp,
+        lineHeight = 34.sp,
+        fontWeight = FontWeight.Bold
+    )
 
     fun beginEditing(atPosition: Int? = null, focusTitle: Boolean = false) {
         if (locked) return
@@ -272,12 +278,7 @@ fun NoteDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(titleFocus),
-                    textStyle = TextStyle(
-                        color = textColor,
-                        fontSize = 27.sp,
-                        lineHeight = 34.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
+                    textStyle = titleTextStyle,
                     cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
@@ -285,7 +286,7 @@ fun NoteDetailScreen(
                     ),
                     decorationBox = { inner ->
                         Box {
-                            if (title.text.isEmpty()) Text("Title", color = subtleColor, fontSize = 27.sp)
+                            if (title.text.isEmpty()) Text("Title", color = subtleColor, fontSize = titleTextStyle.fontSize)
                             inner()
                         }
                     }
@@ -293,10 +294,7 @@ fun NoteDetailScreen(
             } else {
                 Text(
                     title.text.ifBlank { "Untitled" },
-                    color = textColor,
-                    fontSize = 27.sp,
-                    lineHeight = 34.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = titleTextStyle,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { beginEditing(focusTitle = true) }
