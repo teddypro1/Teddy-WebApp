@@ -177,18 +177,19 @@ fun NotesScreen(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
+                    val plusIconColor = MaterialTheme.colorScheme.onPrimary
                     Canvas(modifier = Modifier.size(18.dp)) {
                         val center = Offset(size.width / 2f, size.height / 2f)
                         val stroke = 2.4.dp.toPx()
                         drawLine(
-                            MaterialTheme.colorScheme.onPrimary,
+                            plusIconColor,
                             Offset(center.x, size.height * 0.12f),
                             Offset(center.x, size.height * 0.88f),
                             stroke,
                             StrokeCap.Round
                         )
                         drawLine(
-                            MaterialTheme.colorScheme.onPrimary,
+                            plusIconColor,
                             Offset(size.width * 0.12f, center.y),
                             Offset(size.width * 0.88f, center.y),
                             stroke,
