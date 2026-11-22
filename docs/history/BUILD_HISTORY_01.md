@@ -383,3 +383,14 @@ Implemented in `NoteDetailScreen.kt`:
 - Build 32 successful confirmation was recorded in Master Documentation and Build History in this same commit.
 - **Build 33 CodeAssist Build and device verification are pending.** Do not mark successful until the user confirms.
 - No Supabase/database/schema changes.
+
+
+## Build 34 — Compose UI Preview additions (single commit; user-confirmed successful Build)
+
+- Added `@Preview` composables at the end of 14 existing UI Kotlin files (17 Preview composables total), covering components, dialogs, screens and light/dark theme previews. Sample data and no-op callbacks are used for static UI inspection.
+- Only the 14 UI Kotlin files were changed for the implementation; no non-UI source, Gradle, manifest, Supabase or database files were changed.
+- Single implementation commit: `e75317c71ab453cd909012a8e3673ea860b3b835`.
+- **User-confirmed on 2026-11-22:** CodeAssist Build completed successfully.
+- CodeAssist's Preview Interpreter separately reported unresolved/ambiguous calls while parsing dependencies such as `InboxRepository`, `SupabaseProfilesApi` and `SupabaseAuth` (including `firstOrNull`, `ifBlank`, `contains`, `toRequestBody`, `optJSONObject`, `optString`, `has` and `android.os.Handler`), followed by dependent declarations not being lowered. These diagnostics affect Preview interpretation and do not establish that the Android app Build failed.
+- Preview rendering remains to be validated/fixed for affected files. Future work should isolate preview-only sample data from network/repository implementations, without changing runtime app behavior or unrelated source files.
+- No Supabase/database/schema changes.

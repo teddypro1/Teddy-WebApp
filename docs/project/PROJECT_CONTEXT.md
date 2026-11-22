@@ -636,3 +636,14 @@ Implemented in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NoteDetailScr
 - Build 32 successful confirmation was recorded in Master Documentation and Build History in this same commit.
 - **Build 33 CodeAssist Build and device verification are pending.** Do not mark successful until the user confirms.
 - No Supabase/database/schema changes.
+
+
+## Build 34 — Compose UI Preview additions (user-confirmed successful Build; Preview Interpreter limitations remain)
+
+- Added Preview composables at the ends of 14 existing UI Kotlin source files, covering reusable components, dialogs, application screens and theme previews. The additions use sample/static data and no-op callbacks where applicable.
+- Preview additions were limited to the UI source files; no Supabase, database, repository, Gradle, manifest, or other non-UI source files were changed by this task.
+- Commit: `e75317c71ab453cd909012a8e3673ea860b3b835`.
+- **User-confirmed on 2026-11-22:** CodeAssist Build completed successfully after the Preview additions.
+- During Preview rendering (separate from the successful app Build), CodeAssist reported interpreter errors in dependency/data-layer declarations, including Kotlin standard-library calls, OkHttp extension functions, `org.json` methods, `android.os.Handler`, and functions that could not be lowered after earlier parse failures. These are Preview Interpreter diagnostics and are not, by themselves, evidence of Android compilation failures.
+- Preview rendering is not yet verified as working across all UI files. Follow-up work should isolate Preview sample rendering from runtime data/network implementations without modifying application behavior or unrelated files.
+- No Supabase/database/schema changes.
