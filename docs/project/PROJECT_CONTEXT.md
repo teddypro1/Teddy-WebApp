@@ -649,3 +649,12 @@ Implemented in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NoteDetailScr
 - **User-confirmed on 2026-11-22:** Preview rendering now works in all four checked files: `NotificationInboxScreen.kt`, `ProfileScreen.kt`, `AdminPanelScreen.kt`, and `WorkspaceScreens.kt` (Trash and Settings previews). The user supplied screenshots for Notification Inbox and Profile; the user separately confirmed Admin Panel and Workspace previews also work.
 - These previews are static/sample representations with no-op actions; they do not establish that every preview exactly matches the live runtime UI.
 - No Supabase/database/schema changes.
+
+
+## Build 35 — Restore the existing Note Reader/Editor caret auto-scroll baseline (Build pending)
+
+- Compared the current Note Reader/Editor source with commit `409c7b16ca020553f654e33d71d7d6c643d7eafc`. GitHub confirmed the only intervening source change was a four-line conditional bottom-padding addition (`120.dp` while editing, `24.dp` while reading); the cursor measurement, IME-settle wait, viewport comparison and `animateScrollBy()` logic were otherwise unchanged.
+- Removed only that extra conditional bottom padding, restoring the earlier content layout while preserving the existing cursor-position calculation and automatic scroll implementation.
+- Source commit: `1210f4aff094f1b95cb8df286936f3f8037096f5`.
+- No other UI, editor behavior, data, database, Supabase, migration or configuration files changed.
+- **CodeAssist Build and device verification are pending user confirmation.**
