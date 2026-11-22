@@ -141,7 +141,7 @@ fun NotesScreen(
                     // Keep the list end tight; the FAB floats above it and the app
                     // Scaffold already accounts for the global bottom navigation.
                     state = listState,
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                    contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     items(notes, key = { it.id }) { note ->
