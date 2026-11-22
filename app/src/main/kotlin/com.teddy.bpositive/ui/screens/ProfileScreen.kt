@@ -154,14 +154,46 @@ fun ProfilePage(
 @Composable
 private fun ProfilePagePreview() {
     TeddyAppTheme(darkMode = false) {
-        ProfilePage(
-            profile = SupabaseProfilesApi.Profile(
-                id = "preview-user", fullName = "Preview User", username = "preview_user",
-                bio = "A sample profile for Compose Preview.", avatarUrl = null,
-                createdAt = "2026-11-01T10:00:00Z", updatedAt = "2026-11-21T10:00:00Z"
-            ),
-            email = "preview@example.com", contentPadding = PaddingValues(0.dp),
-            canEdit = true, onEdit = {}
-        )
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+                Column(
+                    Modifier.fillMaxWidth().padding(22.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        Modifier.size(104.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("P", fontSize = 38.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    Text("Preview User", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    Text("@preview_user", color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text("preview@example.com", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                    Spacer(Modifier.height(10.dp))
+                    Text("A sample profile for Compose Preview.", textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Spacer(Modifier.height(18.dp))
+                    Button(onClick = {}, Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
+                        Text("Edit Profile")
+                    }
+                }
+            }
+            Text("Personal Information", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    ProfileInfoRow("Full Name", "Preview User")
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    ProfileInfoRow("Username", "@preview_user")
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    ProfileInfoRow("Email", "preview@example.com")
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    ProfileInfoRow("Account Created", "01 Nov 2026")
+                }
+            }
+        }
     }
 }

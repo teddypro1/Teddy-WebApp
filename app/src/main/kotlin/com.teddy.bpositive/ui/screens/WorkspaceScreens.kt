@@ -208,30 +208,68 @@ fun SettingsScreen(
 @Composable
 private fun TrashScreenPreview() {
     TeddyAppTheme(darkMode = false) {
-        TrashScreen(
-            deletedNotes = listOf(
-                SupabaseNotesApi.CloudNote(
-                    id = 10L, userId = "preview-user", clientId = null,
-                    title = "Deleted sample", content = "A deleted note in the Trash preview.",
-                    isPinned = false, createdAt = null, updatedAt = null, deletedAt = "2026-11-21T10:00:00Z"
-                )
-            ),
-            contentPadding = PaddingValues(0.dp), onRestore = {}, onDeletePermanently = {}
-        )
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("Recently Deleted", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Text("Restore notes or permanently remove them.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Deleted sample", fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+                    Text("A deleted note in the Trash preview.")
+                    Text("Deleted 21 Nov 2026", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = {}) { Text("Restore") }
+                        TextButton(onClick = {}) { Text("Delete permanently") }
+                    }
+                }
+            }
+        }
     }
 }
+
 @Preview(showBackground = true, name = "Settings Screen")
 @Composable
 private fun SettingsScreenPreview() {
     TeddyAppTheme(darkMode = false) {
-        SettingsScreen(
-            darkMode = false, accountEmail = "preview@example.com", isAdmin = true,
-            onOpenAdminPanel = {}, onDarkModeChange = {}, onSignOut = {}, onSendTestNotification = {},
-            topicPreferences = TopicRepository.Preferences(allUsers = true, announcements = true, updates = false),
-            topicStatus = "", installedVersionName = "1.0.1", installedVersionCode = 2L,
-            latestVersionName = "1.0.2", latestVersionCode = 3L,
-            updateStatus = "Up to date", isCheckingUpdate = false, onCheckForUpdates = {},
-            onTopicChange = { _, _ -> }, contentPadding = PaddingValues(0.dp)
-        )
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text("Settings", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Text("Customize your Teddy WebApp experience.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Appearance", fontWeight = FontWeight.SemiBold)
+                        Text("Light mode is enabled", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                    }
+                    Switch(checked = false, onCheckedChange = {})
+                }
+            }
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Account", fontWeight = FontWeight.SemiBold)
+                    Text("preview@example.com", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedButton(onClick = {}, Modifier.fillMaxWidth()) { Text("Sign Out") }
+                }
+            }
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Notification topics", fontWeight = FontWeight.SemiBold)
+                    Text("Choose the announcement categories this account should receive on its registered Android devices.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                    listOf("All users", "Announcements", "Updates").forEach { topic ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text(topic)
+                            Switch(checked = topic == "All users", onCheckedChange = {})
+                        }
+                    }
+                }
+            }
+            Text("Update", fontWeight = FontWeight.SemiBold)
+            Text("Installed version: 1.0.1 (2)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+            Text("Latest version: 1.0.2 (3)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+        }
     }
 }

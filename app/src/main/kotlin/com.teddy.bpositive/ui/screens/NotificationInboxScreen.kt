@@ -41,13 +41,44 @@ fun NotificationInboxScreen(items:List<InboxRepository.Item>,loading:Boolean,sta
 @Composable
 private fun NotificationInboxScreenPreview() {
     TeddyAppTheme(darkMode = false) {
-        NotificationInboxScreen(
-            items = listOf(
-                InboxRepository.Item("preview-1", "Welcome to Teddy WebApp", "A sample notification shown in the inbox preview.", "2026-11-21T08:30:00Z", null),
-                InboxRepository.Item("preview-2", "Workspace update", "A previously read notification.", "2026-11-20T14:00:00Z", "2026-11-20T14:10:00Z")
-            ),
-            loading = false, status = "", padding = PaddingValues(0.dp),
-            onRefresh = {}, onRead = {}
-        )
+        Column(
+            Modifier.fillMaxSize().padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("Notification Inbox", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text("1 unread · 2 notifications", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                }
+                TextButton(onClick = {}) { Text("Refresh") }
+            }
+            Card(
+                Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Welcome to Teddy WebApp", Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                        Text("NEW", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                    }
+                    Text("A sample notification shown in the inbox preview.")
+                    Text("21 Nov 2026 08:30", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                    TextButton(onClick = {}) { Text("Mark as read") }
+                }
+            }
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Workspace update", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                    Text("A previously read notification.")
+                    Text("20 Nov 2026 14:00", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                    Text("Read", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
     }
 }

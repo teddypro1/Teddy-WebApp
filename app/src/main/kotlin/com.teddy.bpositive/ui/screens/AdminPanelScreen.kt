@@ -439,13 +439,37 @@ private fun DeliveryDetails(details: List<AdminRepository.DeliveryDetail>) {
 @Composable
 private fun AdminPanelScreenPreview() {
     TeddyAppTheme(darkMode = false) {
-        AdminPanelScreen(
-            accountEmail = "admin@example.com", isLoading = false, isSending = false,
-            title = "A sample announcement",
-            message = "Preview content for the admin notification composer.",
-            history = emptyList(), directory = emptyList(), isLoadingDirectory = false,
-            statusMessage = "Preview mode", onTitleChange = {}, onMessageChange = {},
-            onSend = { _, _ -> }, onSendTopic = {}, onRefresh = {}, onRefreshDirectory = {}
-        )
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text("Admin Dashboard", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Text("Restricted administrator tools for Teddy WebApp.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Administrator account", fontWeight = FontWeight.SemiBold)
+                    Text("admin@example.com", color = MaterialTheme.colorScheme.primary)
+                    Text("Access verified by Supabase Edge Function", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                }
+            }
+            Text("Notification analytics", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                AnalyticsCard("Notifications", "12", Modifier.weight(1f))
+                AnalyticsCard("Devices targeted", "28", Modifier.weight(1f))
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                AnalyticsCard("FCM accepted", "26", Modifier.weight(1f))
+                AnalyticsCard("Failed", "2", Modifier.weight(1f))
+            }
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Send notification", fontWeight = FontWeight.Bold)
+                    OutlinedTextField(value = "A sample announcement", onValueChange = {}, label = { Text("Notification title") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = "Preview content for the admin notification composer.", onValueChange = {}, label = { Text("Notification message") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
+                    Button(onClick = {}, modifier = Modifier.fillMaxWidth()) { Text("Send notification") }
+                }
+            }
+            Text("Notification history", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        }
     }
 }
