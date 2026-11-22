@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.State
@@ -50,7 +51,8 @@ fun NotesScreen(
     contentPadding: PaddingValues,
     listState: LazyListState,
     collapseProgress: MutableFloatState,
-    onNoteClick: (Note) -> Unit
+    onNoteClick: (Note) -> Unit,
+    onCreateNote: () -> Unit
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
     val collapseRangePx = with(density) { 128.dp.toPx() }
@@ -149,29 +151,55 @@ fun NotesScreen(
             }
         }
 
-        Box(
+        Surface(
+            onClick = onCreateNote,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 18.dp)
-                .size(64.dp)
-                .background(Color(0xFFFFC928), CircleShape),
-            contentAlignment = Alignment.Center
+                .padding(end = 18.dp, bottom = 18.dp)
+                .height(60.dp),
+            shape = RoundedCornerShape(22.dp),
+            color = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            shadowElevation = 10.dp,
+            tonalElevation = 3.dp
         ) {
-            Canvas(modifier = Modifier.size(28.dp)) {
-                val center = Offset(size.width / 2f, size.height / 2f)
-                drawLine(
-                    Color.White,
-                    Offset(center.x, size.height * 0.18f),
-                    Offset(center.x, size.height * 0.82f),
-                    strokeWidth = 3.5.dp.toPx(),
-                    cap = StrokeCap.Round
-                )
-                drawLine(
-                    Color.White,
-                    Offset(size.width * 0.18f, center.y),
-                    Offset(size.width * 0.82f, center.y),
-                    strokeWidth = 3.5.dp.toPx(),
-                    cap = StrokeCap.Round
+            Row(
+                modifier = Modifier.padding(horizontal = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(11.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .background(
+                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Canvas(modifier = Modifier.size(18.dp)) {
+                        val center = Offset(size.width / 2f, size.height / 2f)
+                        val stroke = 2.4.dp.toPx()
+                        drawLine(
+                            MaterialTheme.colorScheme.onPrimary,
+                            Offset(center.x, size.height * 0.12f),
+                            Offset(center.x, size.height * 0.88f),
+                            stroke,
+                            StrokeCap.Round
+                        )
+                        drawLine(
+                            MaterialTheme.colorScheme.onPrimary,
+                            Offset(size.width * 0.12f, center.y),
+                            Offset(size.width * 0.88f, center.y),
+                            stroke,
+                            StrokeCap.Round
+                        )
+                    }
+                }
+                Text(
+                    text = "New note",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -358,7 +386,8 @@ private fun NotesScreenPreview() {
             contentPadding = PaddingValues(0.dp),
             listState = rememberLazyListState(),
             collapseProgress = remember { mutableFloatStateOf(0f) },
-            onNoteClick = {}
+            onNoteClick = {},
+            onCreateNote = {}
         )
     }
 }

@@ -32,6 +32,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -55,9 +57,10 @@ fun NoteDetailScreen(
     note: Note,
     contentPadding: PaddingValues,
     onBack: () -> Unit,
-    onSave: (String, String, String) -> Unit
+    onSave: (String, String, String) -> Unit,
+    startInEditingMode: Boolean = false
 ) {
-    var editing by remember(note.id) { mutableStateOf(false) }
+    var editing by remember(note.id) { mutableStateOf(startInEditingMode) }
     var title by remember(note.id) { mutableStateOf(TextFieldValue(note.title)) }
     var body by remember(note.id) {
         mutableStateOf(TextFieldValue(note.content, selection = TextRange(note.content.length)))
@@ -65,8 +68,9 @@ fun NoteDetailScreen(
     var colorHex by remember(note.id) { mutableStateOf(note.colorHex) }
     var activeTool by remember(note.id) { mutableStateOf("none") }
     var locked by remember(note.id) { mutableStateOf(false) }
-    var focusTitleAfterEnter by remember(note.id) { mutableStateOf(false) }
+    var focusTitleAfterEnter by remember(note.id) { mutableStateOf(startInEditingMode) }
     val keyboard = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
     val density = LocalDensity.current
     // Resolve composable WindowInsets properties in composition scope.
     val imeInsets = WindowInsets.ime
@@ -101,6 +105,7 @@ fun NoteDetailScreen(
         if (editing) {
             if (focusTitleAfterEnter) {
                 titleFocus.requestFocus()
+                keyboard?.show()
             } else {
                 bodyFocus.requestFocus()
                 keyboard?.show()
@@ -148,6 +153,10 @@ fun NoteDetailScreen(
     }
 
     fun saveAndStay() {
+        if (startInEditingMode && title.text.isBlank() && body.text.isBlank()) {
+            Toast.makeText(context, "Write a title or note before saving.", Toast.LENGTH_SHORT).show()
+            return
+        }
         onSave(title.text, body.text, colorHex)
         editing = false
         activeTool = "none"

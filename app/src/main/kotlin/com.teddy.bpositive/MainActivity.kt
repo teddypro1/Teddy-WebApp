@@ -769,6 +769,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     }
 
     var openedNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var draftNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showNotesFeature by rememberSaveable { mutableStateOf(false) }
     // Hoisted above the Notes/Reader route so list position and header collapse survive opening a note.
     val notesListState = rememberLazyListState()
@@ -1098,7 +1099,27 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         notes[index] = updated
         saveChanges()
         syncNoteUpsert(updated)
+        if (draftNoteId == noteId) draftNoteId = null
         Toast.makeText(context, "Note saved.", Toast.LENGTH_SHORT).show()
+    }
+
+    fun createNewNote() {
+        val now = System.currentTimeMillis()
+        var newId = now
+        while (notes.any { it.id == newId }) newId++
+        notes.add(
+            0,
+            Note(
+                id = newId,
+                title = "",
+                content = "",
+                isPinned = false,
+                createdAt = now,
+                updatedAt = now
+            )
+        )
+        draftNoteId = newId
+        openedNoteId = newId
     }
 
     fun togglePin(note: Note) {
@@ -1183,10 +1204,18 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     NoteDetailScreen(
                         note = openedNote,
                         contentPadding = padding,
-                        onBack = { openedNoteId = null },
+                        onBack = {
+                            if (draftNoteId == openedNote.id) {
+                                notes.removeAll { it.id == openedNote.id }
+                                draftNoteId = null
+                                saveChanges()
+                            }
+                            openedNoteId = null
+                        },
                         onSave = { newTitle, newContent, newColor ->
                             saveOpenedNote(openedNote.id, newTitle, newContent, newColor)
-                        }
+                        },
+                        startInEditingMode = draftNoteId == openedNote.id
                     )
                 } else openedNoteId = null
             } else if (selectedTab == "Home" && showNotesFeature) {
@@ -1195,7 +1224,8 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     contentPadding = padding,
                     listState = notesListState,
                     collapseProgress = notesHeaderCollapseProgress,
-                    onNoteClick = { note -> editNote(note) }
+                    onNoteClick = { note -> editNote(note) },
+                    onCreateNote = { createNewNote() }
                 )
             } else if (selectedTab == "Home") {
                 HomeScreen(
@@ -1402,6 +1432,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         showProfileDialog = false
                         showEditor = false
                         openedNoteId = null
+                        draftNoteId = null
                         editingId = null
                         title = ""
                         content = ""
