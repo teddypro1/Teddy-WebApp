@@ -72,7 +72,8 @@ fun NotesScreen(
     onDeleteSelected: (List<Note>) -> Unit = {},
     onTogglePin: (Note) -> Unit = {},
     onDeleteNote: (Note) -> Unit = {},
-    onShareNote: (Note) -> Unit = {}
+    onShareNote: (Note) -> Unit = {},
+    onLockNote: (Note) -> Unit = {}
 ) {
     val context = LocalContext.current
     val settings = remember { context.getSharedPreferences("notes_feature_settings", android.content.Context.MODE_PRIVATE) }
@@ -279,9 +280,12 @@ fun NotesScreen(
                         }
                         NoteActionRow(
                             "Lock note",
-                            "Protect it with a password",
+                            "Vault setup is required before encryption",
                             "lock"
-                        ) { actionNote = null }
+                        ) {
+                            actionNote = null
+                            onLockNote(note)
+                        }
                         NoteActionRow(
                             "Share note",
                             "Send a copy to someone",
