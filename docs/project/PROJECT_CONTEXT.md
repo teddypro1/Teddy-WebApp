@@ -1,6 +1,6 @@
 # Teddy-WebApp — Project Context & Progress Log
 
-সর্বশেষ হালনাগাদ: ২০২৬-১১-২১  
+সর্বশেষ হালনাগাদ: ২০২৬-১১-২৩  
 Repository: https://github.com/teddypro1/Teddy-WebApp  
 এই নথি AI development assistant-এর জন্য canonical project handoff। কোনো কাজ শুরুর আগে এই নথি পড়বে এবং live GitHub/Supabase state যাচাই করবে। নথির কোনো তথ্য পুরোনো হতে পারে; live state সর্বদা অগ্রাধিকার পাবে।
 
@@ -658,3 +658,28 @@ Implemented in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NoteDetailScr
 - Source commit: `1210f4aff094f1b95cb8df286936f3f8037096f5`.
 - No other UI, editor behavior, data, database, Supabase, migration or configuration files changed.
 - **CodeAssist Build and device verification are pending user confirmation.**
+
+
+## Build 36 — Notes Selection Mode and Dedicated Notes Settings (user-confirmed successful)
+
+User confirmed on 2026-11-23 that CodeAssist Build completed successfully after the Notes actions implementation.
+
+Source commits on `main`:
+- `9d5c5643ab76bbe9a5f8d060cffb056a0009c80a` — Added Notes selection mode, per-note selection controls, a selection count, select-all/clear selection, bulk Delete action, and a dedicated Notes Settings screen.
+- `ee4a9e22298fcb1ef2a6b6321576754397b534c3` — Connected bulk deletion to the existing note-delete synchronization callback and local save path.
+- `79406bdcec6d2c40a0284a1195cec0d2383af92d` — Added the vertical-scroll import and prevented the Notes FAB from appearing while the dedicated Notes Settings screen is open.
+
+Implemented in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.kt`:
+- Checklist action opens Selection Mode.
+- Visible note cards gain checkboxes; tapping a card toggles its selection while Selection Mode is active.
+- The selection header displays the selected count, offers All/None selection for the currently displayed list, and provides bulk Delete and close actions.
+- Notes Settings opens as a separate screen within the Notes feature, not the app-wide Settings screen.
+- Settings currently include Compact Cards, Larger Text, Newest First / Oldest First sorting, and Reset to Default.
+- Notes feature preferences are persisted locally using SharedPreferences.
+- Existing Search title/content matching remains integrated with the visible note list and sorting.
+
+Bulk deletion is wired to the existing `syncNoteDelete` callback for each selected note, removes selected IDs from the current local notes collection, and calls the existing save path. No new archive state or Archive action was added because the current Note model does not expose a verified archive workflow.
+
+No Supabase schema/migration, production database, paid plan, or app-wide Settings changes were made.
+
+**User-confirmed on 2026-11-23:** “Successfully Build Completed!” The user explicitly confirmed the CodeAssist Build after these changes. This confirms compilation/build completion; no separate exhaustive device regression test has been reported yet.
