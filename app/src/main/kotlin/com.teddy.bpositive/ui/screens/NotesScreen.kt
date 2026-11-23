@@ -236,30 +236,29 @@ fun NotesScreen(
         actionNote?.let { note ->
             AlertDialog(
                 onDismissRequest = { actionNote = null },
-                icon = {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(52.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            NoteActionGlyph(
-                                kind = "bookmark",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(25.dp)
+                title = {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text("Note actions", fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                note.title.ifBlank { "Untitled note" },
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
-                    }
-                },
-                title = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Note actions", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            note.title.ifBlank { "Untitled note" },
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 13.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                        NoteActionGlyph(
+                            kind = "close",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .size(20.dp)
+                                .clickable { actionNote = null }
                         )
                     }
                 },
@@ -286,13 +285,6 @@ fun NotesScreen(
                             "delete",
                             destructive = true
                         ) { actionNote = null }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { actionNote = null }) {
-                        NoteActionGlyph(kind = "close", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Close")
                     }
                 },
                 shape = RoundedCornerShape(28.dp),
@@ -572,14 +564,14 @@ private fun NoteActionRow(
         tonalElevation = 1.dp
     ) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(13.dp)
         ) {
             Surface(
                 shape = RoundedCornerShape(13.dp),
                 color = iconBackground,
-                modifier = Modifier.size(42.dp)
+                modifier = Modifier.size(38.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     NoteActionGlyph(
