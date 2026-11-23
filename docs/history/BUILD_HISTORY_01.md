@@ -422,3 +422,13 @@ Implemented in `NoteDetailScreen.kt`:
 - **User-confirmed on 2026-11-23:** “Successfully Build Completed!” This confirms the CodeAssist Build completed. No separate exhaustive device regression test has yet been reported.
 - Archive was not implemented because the current Note model does not expose a verified archive workflow.
 - No Supabase schema, migration, production database, app-wide Settings, or paid-plan changes.
+
+
+## Build 37 — Note Card long-press action dialog (user-confirmed successful)
+
+- Added long-press on a Note Card to open a dialog with Pin, Lock / Encryption, Share, Delete and Close options.
+- This is presentation-only; the option callbacks currently close the dialog and do not yet perform note actions. Selection Mode behavior remains separate.
+- File: `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.kt`.
+- Commit: `5045f3c32e82be44505e8862b50551a1f8393e1f`.
+- **User-confirmed:** CodeAssist Build completed successfully (2026-11-23).
+- No database/Supabase changes.
