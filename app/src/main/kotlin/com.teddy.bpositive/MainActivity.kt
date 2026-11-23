@@ -2,6 +2,7 @@ package com.teddy.bpositive
 
 import android.os.Bundle
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -1122,6 +1123,28 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         openedNoteId = newId
     }
 
+    fun deleteNoteFromNotes(note: Note) {
+        syncNoteDelete(note)
+        notes.removeAll { it.id == note.id }
+        saveChanges()
+        Toast.makeText(context, "Note moved to Trash.", Toast.LENGTH_SHORT).show()
+    }
+
+    fun shareNote(note: Note) {
+        val shareText = buildString {
+            if (note.title.isNotBlank()) {
+                append(note.title)
+                append("\n\n")
+            }
+            append(note.content)
+        }
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, shareText)
+        }
+        context.startActivity(Intent.createChooser(shareIntent, "Share note"))
+    }
+
     fun togglePin(note: Note) {
 
         val index = notes.indexOfFirst {
@@ -1226,6 +1249,9 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     collapseProgress = notesHeaderCollapseProgress,
                     onNoteClick = { note -> editNote(note) },
                     onCreateNote = { createNewNote() },
+                    onTogglePin = { note -> togglePin(note) },
+                    onDeleteNote = { note -> deleteNoteFromNotes(note) },
+                    onShareNote = { note -> shareNote(note) },
                     onDeleteSelected = { selectedNotes ->
                         selectedNotes.forEach { syncNoteDelete(it) }
                         val selectedIds = selectedNotes.map { it.id }.toSet()
