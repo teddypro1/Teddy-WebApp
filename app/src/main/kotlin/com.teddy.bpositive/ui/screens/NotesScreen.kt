@@ -26,6 +26,14 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.*
 import androidx.compose.runtime.State
@@ -236,17 +244,68 @@ fun NotesScreen(
         actionNote?.let { note ->
             AlertDialog(
                 onDismissRequest = { actionNote = null },
-                title = { Text(note.title.ifBlank { "Untitled note" }, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        NoteActionRow("Pin", "Keep this note at the top", "📌") { actionNote = null }
-                        NoteActionRow("Lock / Encryption", "Protect this note with a password", "🔒") { actionNote = null }
-                        NoteActionRow("Share", "Share this note with others", "↗") { actionNote = null }
-                        NoteActionRow("Delete", "Move this note to Trash", "⌫", MaterialTheme.colorScheme.error) { actionNote = null }
+                icon = {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(52.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Outlined.Bookmark,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(25.dp)
+                            )
+                        }
                     }
                 },
-                confirmButton = { TextButton(onClick = { actionNote = null }) { Text("Close") } },
-                shape = RoundedCornerShape(24.dp)
+                title = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Note actions", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            note.title.ifBlank { "Untitled note" },
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                        NoteActionRow(
+                            "Pin note",
+                            "Keep this note at the top",
+                            Icons.Outlined.Bookmark
+                        ) { actionNote = null }
+                        NoteActionRow(
+                            "Lock note",
+                            "Protect it with a password",
+                            Icons.Outlined.Lock
+                        ) { actionNote = null }
+                        NoteActionRow(
+                            "Share note",
+                            "Send a copy to someone",
+                            Icons.Outlined.Share
+                        ) { actionNote = null }
+                        NoteActionRow(
+                            "Delete note",
+                            "Move this note to Trash",
+                            Icons.Outlined.Delete,
+                            destructive = true
+                        ) { actionNote = null }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { actionNote = null }) {
+                        Icon(Icons.Outlined.Close, contentDescription = null, modifier = Modifier.size(17.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Close")
+                    }
+                },
+                shape = RoundedCornerShape(28.dp),
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
             )
         }
 
@@ -499,20 +558,60 @@ private fun NoteListItem(
 private fun NoteActionRow(
     title: String,
     subtitle: String,
-    symbol: String,
-    titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    icon: ImageVector,
+    destructive: Boolean = false,
     onClick: () -> Unit
 ) {
-    Surface(onClick = onClick, color = Color.Transparent, shape = RoundedCornerShape(12.dp)) {
+    val accent = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+    val iconBackground = if (destructive) {
+        MaterialTheme.colorScheme.errorContainer
+    } else {
+        MaterialTheme.colorScheme.secondaryContainer
+    }
+    val iconForeground = if (destructive) {
+        MaterialTheme.colorScheme.onErrorContainer
+    } else {
+        MaterialTheme.colorScheme.onSecondaryContainer
+    }
+
+    Surface(
+        onClick = onClick,
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(18.dp),
+        tonalElevation = 1.dp
+    ) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 11.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+            horizontalArrangement = Arrangement.spacedBy(13.dp)
         ) {
-            Text(symbol, fontSize = 20.sp, color = titleColor)
-            Column(Modifier.weight(1f)) {
-                Text(title, color = titleColor, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+            Surface(
+                shape = RoundedCornerShape(13.dp),
+                color = iconBackground,
+                modifier = Modifier.size(42.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconForeground,
+                        modifier = Modifier.size(21.dp)
+                    )
+                }
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    title,
+                    color = if (destructive) accent else MaterialTheme.colorScheme.onSurface,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    subtitle,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
             }
         }
     }
