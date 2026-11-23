@@ -26,14 +26,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Bookmark
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.*
 import androidx.compose.runtime.State
@@ -251,9 +243,8 @@ fun NotesScreen(
                         modifier = Modifier.size(52.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Outlined.Bookmark,
-                                contentDescription = null,
+                            NoteActionGlyph(
+                                kind = "bookmark",
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(25.dp)
                             )
@@ -277,29 +268,29 @@ fun NotesScreen(
                         NoteActionRow(
                             "Pin note",
                             "Keep this note at the top",
-                            Icons.Outlined.Bookmark
+                            "bookmark"
                         ) { actionNote = null }
                         NoteActionRow(
                             "Lock note",
                             "Protect it with a password",
-                            Icons.Outlined.Lock
+                            "lock"
                         ) { actionNote = null }
                         NoteActionRow(
                             "Share note",
                             "Send a copy to someone",
-                            Icons.Outlined.Share
+                            "share"
                         ) { actionNote = null }
                         NoteActionRow(
                             "Delete note",
                             "Move this note to Trash",
-                            Icons.Outlined.Delete,
+                            "delete",
                             destructive = true
                         ) { actionNote = null }
                     }
                 },
                 confirmButton = {
                     TextButton(onClick = { actionNote = null }) {
-                        Icon(Icons.Outlined.Close, contentDescription = null, modifier = Modifier.size(17.dp))
+                        NoteActionGlyph(kind = "close", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
                         Spacer(Modifier.width(6.dp))
                         Text("Close")
                     }
@@ -558,7 +549,7 @@ private fun NoteListItem(
 private fun NoteActionRow(
     title: String,
     subtitle: String,
-    icon: ImageVector,
+    icon: String,
     destructive: Boolean = false,
     onClick: () -> Unit
 ) {
@@ -591,9 +582,8 @@ private fun NoteActionRow(
                 modifier = Modifier.size(42.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
+                    NoteActionGlyph(
+                        kind = icon,
                         tint = iconForeground,
                         modifier = Modifier.size(21.dp)
                     )
@@ -612,6 +602,69 @@ private fun NoteActionRow(
                     fontSize = 12.sp,
                     lineHeight = 16.sp
                 )
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun NoteActionGlyph(
+    kind: String,
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        val stroke = 2.dp.toPx()
+        val left = size.width * 0.18f
+        val right = size.width * 0.82f
+        val top = size.height * 0.12f
+        val bottom = size.height * 0.88f
+        when (kind) {
+            "bookmark" -> {
+                val path = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(left, top)
+                    lineTo(right, top)
+                    lineTo(right, bottom)
+                    lineTo(size.width / 2f, size.height * 0.68f)
+                    lineTo(left, bottom)
+                    close()
+                }
+                drawPath(path, tint, style = Stroke(width = stroke, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+            }
+            "lock" -> {
+                drawArc(tint, 180f, 180f, false,
+                    topLeft = Offset(size.width * 0.27f, size.height * 0.08f),
+                    size = Size(size.width * 0.46f, size.height * 0.55f),
+                    style = Stroke(width = stroke, cap = StrokeCap.Round))
+                drawRoundRect(tint,
+                    topLeft = Offset(size.width * 0.16f, size.height * 0.42f),
+                    size = Size(size.width * 0.68f, size.height * 0.48f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()),
+                    style = Stroke(width = stroke))
+                drawCircle(tint, radius = stroke * 0.8f, center = Offset(size.width / 2f, size.height * 0.61f))
+                drawLine(tint, Offset(size.width / 2f, size.height * 0.64f), Offset(size.width / 2f, size.height * 0.76f), stroke, StrokeCap.Round)
+            }
+            "share" -> {
+                val a = Offset(size.width * 0.28f, size.height * 0.50f)
+                val b = Offset(size.width * 0.73f, size.height * 0.25f)
+                val c = Offset(size.width * 0.73f, size.height * 0.75f)
+                drawLine(tint, a, b, stroke, StrokeCap.Round)
+                drawLine(tint, a, c, stroke, StrokeCap.Round)
+                drawCircle(tint, stroke * 2f, a, style = Stroke(stroke))
+                drawCircle(tint, stroke * 2f, b, style = Stroke(stroke))
+                drawCircle(tint, stroke * 2f, c, style = Stroke(stroke))
+            }
+            "delete" -> {
+                drawLine(tint, Offset(size.width * 0.12f, size.height * 0.25f), Offset(size.width * 0.88f, size.height * 0.25f), stroke, StrokeCap.Round)
+                drawLine(tint, Offset(size.width * 0.38f, size.height * 0.13f), Offset(size.width * 0.62f, size.height * 0.13f), stroke, StrokeCap.Round)
+                drawRoundRect(tint, Offset(size.width * 0.23f, size.height * 0.30f), Size(size.width * 0.54f, size.height * 0.58f), androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()), style = Stroke(stroke))
+                drawLine(tint, Offset(size.width * 0.43f, size.height * 0.42f), Offset(size.width * 0.43f, size.height * 0.75f), stroke, StrokeCap.Round)
+                drawLine(tint, Offset(size.width * 0.57f, size.height * 0.42f), Offset(size.width * 0.57f, size.height * 0.75f), stroke, StrokeCap.Round)
+            }
+            "close" -> {
+                drawLine(tint, Offset(size.width * 0.22f, size.height * 0.22f), Offset(size.width * 0.78f, size.height * 0.78f), stroke, StrokeCap.Round)
+                drawLine(tint, Offset(size.width * 0.78f, size.height * 0.22f), Offset(size.width * 0.22f, size.height * 0.78f), stroke, StrokeCap.Round)
             }
         }
     }
