@@ -69,7 +69,10 @@ fun NotesScreen(
     collapseProgress: MutableFloatState,
     onNoteClick: (Note) -> Unit,
     onCreateNote: () -> Unit,
-    onDeleteSelected: (List<Note>) -> Unit = {}
+    onDeleteSelected: (List<Note>) -> Unit = {},
+    onTogglePin: (Note) -> Unit = {},
+    onDeleteNote: (Note) -> Unit = {},
+    onShareNote: (Note) -> Unit = {}
 ) {
     val context = LocalContext.current
     val settings = remember { context.getSharedPreferences("notes_feature_settings", android.content.Context.MODE_PRIVATE) }
@@ -80,6 +83,7 @@ fun NotesScreen(
     var selectionMode by remember { mutableStateOf(false) }
     var selectedIds by remember { mutableStateOf(setOf<Long>()) }
     var actionNote by remember { mutableStateOf<Note?>(null) }
+    var deleteConfirmationNote by remember { mutableStateOf<Note?>(null) }
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     val filteredNotes = remember(notes, searchQuery, newestFirst) {
@@ -266,10 +270,13 @@ fun NotesScreen(
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         NoteActionRow(
-                            "Pin note",
-                            "Keep this note at the top",
+                            if (note.isPinned) "Unpin note" else "Pin note",
+                            if (note.isPinned) "Remove this note from pinned items" else "Keep this note easy to find",
                             "bookmark"
-                        ) { actionNote = null }
+                        ) {
+                            actionNote = null
+                            onTogglePin(note)
+                        }
                         NoteActionRow(
                             "Lock note",
                             "Protect it with a password",
@@ -279,17 +286,40 @@ fun NotesScreen(
                             "Share note",
                             "Send a copy to someone",
                             "share"
-                        ) { actionNote = null }
+                        ) {
+                            actionNote = null
+                            onShareNote(note)
+                        }
                         NoteActionRow(
                             "Delete note",
                             "Move this note to Trash",
                             "delete",
                             destructive = true
-                        ) { actionNote = null }
+                        ) {
+                            actionNote = null
+                            deleteConfirmationNote = note
+                        }
                     }
                 },
                 shape = RoundedCornerShape(28.dp),
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            )
+        }
+
+        deleteConfirmationNote?.let { note ->
+            AlertDialog(
+                onDismissRequest = { deleteConfirmationNote = null },
+                title = { Text("Move note to Trash?") },
+                text = { Text("This note will be moved to Trash. You can restore it later.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        deleteConfirmationNote = null
+                        onDeleteNote(note)
+                    }) { Text("Move to Trash", color = MaterialTheme.colorScheme.error) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { deleteConfirmationNote = null }) { Text("Cancel") }
+                }
             )
         }
 
@@ -506,15 +536,36 @@ private fun NoteListItem(
             )
             .padding(horizontal = 10.dp, vertical = 9.dp)
     ) {
-        Text(
-            text = note.title.ifBlank { "Untitled" },
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = if (largeText) 18.sp else 16.sp,
-            lineHeight = 20.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = note.title.ifBlank { "Untitled" },
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = if (largeText) 18.sp else 16.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            if (note.isPinned) {
+                Box(
+                    modifier = Modifier
+                        .size(27.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    NoteActionGlyph(
+                        kind = "pin",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(4.dp))
         Text(
             text = note.content.ifBlank { " " },
@@ -624,6 +675,35 @@ private fun NoteActionGlyph(
                     close()
                 }
                 drawPath(path, tint, style = Stroke(width = stroke, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+            }
+            "pin" -> {
+                drawCircle(
+                    tint,
+                    radius = size.width * 0.17f,
+                    center = Offset(size.width * 0.50f, size.height * 0.25f),
+                    style = Stroke(width = stroke)
+                )
+                drawLine(
+                    tint,
+                    Offset(size.width * 0.50f, size.height * 0.42f),
+                    Offset(size.width * 0.50f, size.height * 0.72f),
+                    stroke,
+                    StrokeCap.Round
+                )
+                drawLine(
+                    tint,
+                    Offset(size.width * 0.50f, size.height * 0.72f),
+                    Offset(size.width * 0.34f, size.height * 0.91f),
+                    stroke,
+                    StrokeCap.Round
+                )
+                drawLine(
+                    tint,
+                    Offset(size.width * 0.50f, size.height * 0.42f),
+                    Offset(size.width * 0.70f, size.height * 0.58f),
+                    stroke,
+                    StrokeCap.Round
+                )
             }
             "lock" -> {
                 drawArc(tint, 180f, 180f, false,
