@@ -406,3 +406,19 @@ Implemented in `NoteDetailScreen.kt`:
 - Commit: `1210f4aff094f1b95cb8df286936f3f8037096f5`.
 - No unrelated source, database, Supabase, migration or configuration changes.
 - CodeAssist Build and device testing pending user confirmation.
+
+
+## Build 36 — Notes Selection Mode and Dedicated Notes Settings (user-confirmed successful)
+
+- Checklist icon now opens Selection Mode. Each visible Note Card receives a checkbox; tapping a card toggles selection. The selection header shows the selected count and provides All/None, Delete and close actions.
+- Bulk Delete is connected to the existing `syncNoteDelete` path for each selected note, removes the selected IDs from the local notes collection and invokes the existing save path.
+- The Notes Settings icon opens a dedicated Notes feature Settings screen, separate from the app-wide Settings screen.
+- Notes Settings currently provide Compact Cards, Larger Text, Newest First / Oldest First sorting, and Reset to Default. Preferences persist locally using SharedPreferences.
+- Search filtering by title/content remains combined with the displayed list and selected sorting order.
+- Source commits:
+  - `9d5c5643ab76bbe9a5f8d060cffb056a0009c80a` — Selection Mode and dedicated Notes Settings.
+  - `ee4a9e22298fcb1ef2a6b6321576754397b534c3` — Bulk Delete connected to existing delete synchronization and save flow.
+  - `79406bdcec6d2c40a0284a1195cec0d2383af92d` — Settings navigation/import polish; hide Notes FAB while Settings is open.
+- **User-confirmed on 2026-11-23:** “Successfully Build Completed!” This confirms the CodeAssist Build completed. No separate exhaustive device regression test has yet been reported.
+- Archive was not implemented because the current Note model does not expose a verified archive workflow.
+- No Supabase schema, migration, production database, app-wide Settings, or paid-plan changes.
