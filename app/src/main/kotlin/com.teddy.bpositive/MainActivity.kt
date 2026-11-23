@@ -1252,6 +1252,13 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     onTogglePin = { note -> togglePin(note) },
                     onDeleteNote = { note -> deleteNoteFromNotes(note) },
                     onShareNote = { note -> shareNote(note) },
+                    onLockNote = {
+                        Toast.makeText(
+                            context,
+                            "Secure Vault setup is not connected yet. This note has not been encrypted.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    },
                     onDeleteSelected = { selectedNotes ->
                         selectedNotes.forEach { syncNoteDelete(it) }
                         val selectedIds = selectedNotes.map { it.id }.toSet()
