@@ -236,6 +236,7 @@ fun NotesScreen(
         actionNote?.let { note ->
             AlertDialog(
                 onDismissRequest = { actionNote = null },
+                confirmButton = {},
                 title = {
                     Box(modifier = Modifier.fillMaxWidth()) {
                         Column(
