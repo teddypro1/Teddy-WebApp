@@ -683,3 +683,14 @@ Bulk deletion is wired to the existing `syncNoteDelete` callback for each select
 No Supabase schema/migration, production database, paid plan, or app-wide Settings changes were made.
 
 **User-confirmed on 2026-11-23:** “Successfully Build Completed!” The user explicitly confirmed the CodeAssist Build after these changes. This confirms compilation/build completion; no separate exhaustive device regression test has been reported yet.
+
+
+## Build 37 — Note Card long-press action dialog (user-confirmed successful)
+
+- Added a long-press gesture to each Note Card (disabled while Selection Mode is active).
+- Long press opens an action dialog showing Pin, Lock / Encryption, Share, Delete and Close options.
+- This milestone is UI-only: the action rows currently dismiss the dialog and do not execute the corresponding note operations. Existing Selection Mode bulk Delete remains unchanged.
+- Implementation file: `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.kt`.
+- Commit: `5045f3c32e82be44505e8862b50551a1f8393e1f`.
+- **User-confirmed on 2026-11-23:** CodeAssist Build completed successfully.
+- No Supabase/database/schema changes.
