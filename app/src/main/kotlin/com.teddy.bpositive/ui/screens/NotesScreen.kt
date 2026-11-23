@@ -9,6 +9,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
@@ -23,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.*
 import androidx.compose.runtime.State
@@ -76,6 +79,7 @@ fun NotesScreen(
     var showSettings by remember { mutableStateOf(false) }
     var selectionMode by remember { mutableStateOf(false) }
     var selectedIds by remember { mutableStateOf(setOf<Long>()) }
+    var actionNote by remember { mutableStateOf<Note?>(null) }
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     val filteredNotes = remember(notes, searchQuery, newestFirst) {
@@ -220,11 +224,30 @@ fun NotesScreen(
                             selected = selectedIds.contains(note.id),
                             selectionMode = selectionMode,
                             onSelect = { checked -> selectedIds = if (checked) selectedIds + note.id else selectedIds - note.id },
-                            onClick = { if (selectionMode) selectedIds = if (selectedIds.contains(note.id)) selectedIds - note.id else selectedIds + note.id else onNoteClick(note) }
+                            onClick = { if (selectionMode) selectedIds = if (selectedIds.contains(note.id)) selectedIds - note.id else selectedIds + note.id else onNoteClick(note) },
+                            onLongPress = { if (!selectionMode) actionNote = note }
                         )
                     }
                 }
             }
+        }
+
+
+        actionNote?.let { note ->
+            AlertDialog(
+                onDismissRequest = { actionNote = null },
+                title = { Text(note.title.ifBlank { "Untitled note" }, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        NoteActionRow("Pin", "Keep this note at the top", "📌") { actionNote = null }
+                        NoteActionRow("Lock / Encryption", "Protect this note with a password", "🔒") { actionNote = null }
+                        NoteActionRow("Share", "Share this note with others", "↗") { actionNote = null }
+                        NoteActionRow("Delete", "Move this note to Trash", "⌫", MaterialTheme.colorScheme.error) { actionNote = null }
+                    }
+                },
+                confirmButton = { TextButton(onClick = { actionNote = null }) { Text("Close") } },
+                shape = RoundedCornerShape(24.dp)
+            )
         }
 
         if (!showSettings) Surface(
@@ -422,7 +445,8 @@ private fun NoteListItem(
     selected: Boolean,
     selectionMode: Boolean,
     onSelect: (Boolean) -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongPress: () -> Unit
 ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         if (selectionMode) Checkbox(checked = selected, onCheckedChange = onSelect)
@@ -430,7 +454,9 @@ private fun NoteListItem(
         modifier = Modifier
             .weight(1f)
             .height(if (compact) 86.dp else 104.dp)
-            .clickable(onClick = onClick)
+            .pointerInput(note.id, selectionMode) {
+                detectTapGestures(onLongPress = { onLongPress() }, onTap = { onClick() })
+            }
             .background(
                 color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(14.dp)
@@ -465,6 +491,30 @@ private fun NoteListItem(
             maxLines = 1
         )
     }
+    }
+}
+
+
+@Composable
+private fun NoteActionRow(
+    title: String,
+    subtitle: String,
+    symbol: String,
+    titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    onClick: () -> Unit
+) {
+    Surface(onClick = onClick, color = Color.Transparent, shape = RoundedCornerShape(12.dp)) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text(symbol, fontSize = 20.sp, color = titleColor)
+            Column(Modifier.weight(1f)) {
+                Text(title, color = titleColor, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+            }
+        }
     }
 }
 
