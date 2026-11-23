@@ -442,3 +442,15 @@ Implemented in `NoteDetailScreen.kt`:
 - Source commits: `069c7f6433621778e59ec0685dbead6197639dff` (Canvas glyphs) and `9104acd83e287ddbc01873b8a96e9aaa03379a13` (dependency removal). A later local sync commit was `bdfab93888f6c4424b298d4f3b883d9b578c03dd`; merge commit `a391b9322df967bdac3592014161445c8ff2ee1b`.
 - User reported the icons looked good. The dialog actions remain UI-only; action rows still only dismiss the dialog.
 - No Supabase/database/schema changes.
+
+
+## Build 39 — Notes vault cryptography foundation (user-confirmed successful Build; feature integration pending)
+
+- User confirmed CodeAssist Build completed successfully after adding `app/src/main/kotlin/com.teddy.bpositive/security/NotesEncryption.kt`.
+- Added client-side cryptographic primitives only; no UI, note storage, sync, or Supabase integration has been connected yet.
+- Uses AES-256-GCM for authenticated encryption, PBKDF2-HMAC-SHA256 for deriving wrapping keys, a random 256-bit master key, and a generated 256-bit URL-safe Recovery Key.
+- The master key is independently wrapped for the Master Password and Recovery Key. The serialized vault envelope contains salts, nonces and wrapped master-key ciphertext; it does not contain the plaintext password, recovery key, or master key.
+- Includes password unlock, recovery-key unlock, password re-wrapping, and note-field encrypt/decrypt primitives.
+- Implementation commit: `cfdc0cdcbfd186985d0d0b60c01c9bfbbaed11b8`.
+- User-confirmed Build success is not a cryptographic security audit or end-to-end test. The primitives are not yet wired into the app, local persistence, Supabase, or the Note action UI. Do not represent notes as encrypted or the Lock feature as functional yet.
+- No Supabase schema, migration, production database, or paid-plan changes.
