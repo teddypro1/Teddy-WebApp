@@ -432,3 +432,13 @@ Implemented in `NoteDetailScreen.kt`:
 - Commit: `5045f3c32e82be44505e8862b50551a1f8393e1f`.
 - **User-confirmed:** CodeAssist Build completed successfully (2026-11-23).
 - No database/Supabase changes.
+
+
+## Build 38 — Replace Material Icons Extended with lightweight Canvas glyphs (user-confirmed successful)
+
+- User confirmed on 2026-11-23 that CodeAssist Build completed successfully and supplied a screenshot showing the Note actions dialog with the custom icons.
+- Removed `androidx.compose.material:material-icons-extended` from `app/module.toml` to avoid packaging the large extended icon library.
+- Replaced the five Material icon vector imports/usages in `NotesScreen.kt` with local Canvas-drawn glyphs for Bookmark, Lock, Share, Delete and Close.
+- Source commits: `069c7f6433621778e59ec0685dbead6197639dff` (Canvas glyphs) and `9104acd83e287ddbc01873b8a96e9aaa03379a13` (dependency removal). A later local sync commit was `bdfab93888f6c4424b298d4f3b883d9b578c03dd`; merge commit `a391b9322df967bdac3592014161445c8ff2ee1b`.
+- User reported the icons looked good. The dialog actions remain UI-only; action rows still only dismiss the dialog.
+- No Supabase/database/schema changes.
