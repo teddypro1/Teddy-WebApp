@@ -776,3 +776,20 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - The user confirmed the CodeAssist Build completed successfully. This is not a cryptographic audit or proof of hardware-backed Keystore storage.
 - Recovery-Key unlock UI, multi-device envelope sync, password-change/recovery flows and Note Lock integration are not yet implemented. Existing notes are **not encrypted** by this milestone; the Note Lock action remains inactive. Do not claim end-to-end encryption or functional note locking.
 - No Supabase schema, migration, production database or paid-plan changes. The existing Supabase Free Plan remains the budget constraint.
+
+## Build 43 — Secure Vault Recovery Key Unlock (user-confirmed successful Build)
+
+- **User-confirmed on 2026-11-24:** “Successfully Build Completed!” CodeAssist Build completed successfully, as explicitly reported by the user.
+- Added a Recovery Key unlock mode to the existing Secure Vault unlock card. The user can switch between Master Password and Recovery Key modes; Recovery Key input is masked.
+- Recovery Key verification uses the existing `NotesEncryption.unlockWithRecoveryKey()` path. On successful verification, the returned master-key byte array is cleared and the input state is cleared. Failed verification also clears the input state and displays a generic failure message.
+- Switching back to Master Password clears the Recovery Key input; the existing Master Password verification path remains available and clears its returned key bytes after verification.
+- Updated `deriveRecoveryKey()` to clear its trimmed temporary character array in a `finally` block after key derivation.
+- Files changed:
+  - `app/src/main/kotlin/com.teddy.bpositive/security/NotesEncryption.kt`
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/SecureVaultScreen.kt`
+- Implementation commits:
+  - `f9c83d5a5c67c0a232553c024c82ae4cac498903` — Clear temporary Recovery Key character array after derivation.
+  - `5e27be90bd23cff2247662f7067894d9448a9cb1` — Add Recovery Key unlock mode and retain Master Password fallback.
+- Build success confirms compilation as reported by the user. Separate device-level positive/negative Recovery Key verification tests have not yet been reported; do not claim those tests passed.
+- Scope limitations remain: existing notes are not encrypted; Note Lock is not integrated; multi-device Vault-envelope sync and password-change/recovery workflows remain pending. Recovery Key unlock verifies access to the existing Vault master key but does not itself encrypt notes.
+- No Supabase schema, migration, production database or paid-plan changes.
