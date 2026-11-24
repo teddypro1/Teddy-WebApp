@@ -1520,18 +1520,24 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     onOpenNotes = { showNotesFeature = true }
                 )
             } else if (selectedTab == "Messages" && showChatScreen && activeChatProfile != null) {
-                MessagingChatScreen(
-                    displayName = activeChatProfile?.fullName.orEmpty(),
-                    username = activeChatProfile?.username.orEmpty(),
-                    onBack = {
-                        showChatScreen = false
-                        activeConversationId = null
-                        activeChatProfile = null
-                    },
-                    onSendMessage = {
-                        Toast.makeText(context, "Message sending will be enabled in Build 05.", Toast.LENGTH_SHORT).show()
-                    }
-                )
+                val chatSession = activeSession
+                val chatConversationId = activeConversationId
+                if (chatSession != null && !chatConversationId.isNullOrBlank()) {
+                    MessagingChatScreen(
+                        context = context,
+                        session = chatSession,
+                        conversationId = chatConversationId,
+                        displayName = activeChatProfile?.fullName.orEmpty(),
+                        username = activeChatProfile?.username.orEmpty(),
+                        onBack = {
+                            showChatScreen = false
+                            activeConversationId = null
+                            activeChatProfile = null
+                        }
+                    )
+                } else {
+                    Text("Your session or conversation is unavailable. Please go back and try again.")
+                }
             } else if (selectedTab == "Messages" && showUserSearch) {
                 MessagingUserSearchScreen(
                     contentPadding = padding,
