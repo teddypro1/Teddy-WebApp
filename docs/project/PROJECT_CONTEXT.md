@@ -1036,7 +1036,7 @@ These three closely related milestones are intentionally grouped into one source
 - **User confirmation (2026-11-24):** The user explicitly confirmed successful CodeAssist Build. Device-level Lock/Unlock, cloud round-trip and lifecycle runtime tests were not separately reported.
 
 
-## 16. Builds 61–63 — Per-note Secure Vault recovery, safety and sync integration (single grouped commit; CodeAssist Build pending)
+## 16. Builds 61–63 — Per-note Secure Vault recovery, safety and sync integration (single grouped commit; USER-CONFIRMED CODEASSIST BUILD SUCCESS)
 
 These three milestones are grouped into one source commit so the user pulls once and runs one CodeAssist Build.
 
@@ -1061,4 +1061,18 @@ These three milestones are grouped into one source commit so the user pulls once
   - `app/src/main/kotlin/com.teddy.bpositive/ui/components/NoteComponents.kt`
   - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/SecureVaultScreen.kt`
 - No Supabase migration, production database mutation, destructive operation or paid-plan change.
-- **CodeAssist compilation and device-level tests are pending user confirmation.** Verify Lock/Unlock, background masking, Trash restore, conflict restore and cloud synchronization on device.
+- **User confirmation (2026-11-24):** The user reported successful CodeAssist Build after the follow-up import-only correction commit `e0437bb46ae9ee386bf641ad41e5d9f37c007fe5`. This confirms compilation of Builds 61–63 plus the correction. Device-level Lock/Unlock, background masking, Trash restore, conflict restore and cloud round-trip tests remain unreported.
+
+
+## 17. Build 64 — Final Secure Vault account-session isolation (CodeAssist Build pending)
+
+This is the final planned implementation build for the current per-note Secure Vault task.
+
+- Wipes the in-memory Vault master key when the authenticated account changes or signs out. The previous account's key cannot remain resident for a later account session.
+- On account-ID changes, clears any pending per-note Lock/Unlock action and resets open-note/editor state, including plaintext title/content. This prevents a pending action or editor draft from an earlier account being applied to a different account with a colliding local note ID.
+- Reuses the existing `VaultSessionManager.lock()` implementation; no new cryptographic primitive, dependency, storage format or cloud schema is introduced.
+- Existing app-background key clearing remains unchanged.
+- File changed: `app/src/main/kotlin/com.teddy.bpositive/MainActivity.kt`.
+- No Supabase migration, production database mutation, destructive operation or paid-plan change.
+- **CodeAssist compilation and account-switch runtime verification are pending user confirmation.** Test: unlock account A's Vault, switch/sign out, sign in as account B, and confirm account A's Vault key is not treated as unlocked; verify no pending note action or editor plaintext carries over.
+- This closes the planned Build 60–64 implementation sequence. Do not label the overall task fully verified until the user confirms Build 64 compilation and the relevant device checks.

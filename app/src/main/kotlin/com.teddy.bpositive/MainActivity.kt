@@ -300,6 +300,14 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
 
     val isAuthenticated = activeSession != null
 
+    // Wipe the previous account's in-memory Vault key whenever the authenticated
+    // account changes or signs out. The key is never carried across account sessions.
+    DisposableEffect(activeSession?.userId) {
+        onDispose {
+            com.teddy.bpositive.security.VaultSessionManager.lock()
+        }
+    }
+
     LaunchedEffect(Unit) {
         checkForAppUpdates()
     }
@@ -804,6 +812,19 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
 
     var content by rememberSaveable {
         mutableStateOf("")
+    }
+
+    // Account changes must not carry a pending note action or plaintext editor
+    // state into another account, even when both accounts have colliding local IDs.
+    LaunchedEffect(userId) {
+        com.teddy.bpositive.security.VaultSessionManager.lock()
+        pendingVaultNoteAction = null
+        openedNoteId = null
+        draftNoteId = null
+        showEditor = false
+        editingId = null
+        title = ""
+        content = ""
     }
 
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
