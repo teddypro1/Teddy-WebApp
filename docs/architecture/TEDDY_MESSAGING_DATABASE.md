@@ -1,6 +1,6 @@
 # Teddy Messaging — Build 01 Database Architecture
 
-**Status:** Prepared in Git; production migration NOT applied.  
+**Status:** Security-reviewed and committed in Git; production migration pending.  
 **Scope:** Additive database foundation for Phase 1 private text chat, with explicit extension points for later capabilities.
 
 ## 1. Existing-system compatibility
@@ -81,10 +81,10 @@ No anon table grants are introduced. The migration explicitly grants required au
 
 ## 7. Deployment and verification gate
 
-This migration is committed for review only. It has not been applied to Supabase. Before production application:
+This migration is security-reviewed and committed for the user's approved application. It has not yet been applied to Supabase. Before production application:
 1. Review the exact SQL and confirm the migration.
-2. Reconcile the repository's checked-in migration directory with the live Supabase migration history. The live project reports 19 migrations, while the checked-in supabase/migrations directory currently exposes only two SQL files; do not reset or rewrite migration history.
-3. Apply the migration once through the approved Supabase migration workflow.
+2. The live project reports 19 applied migrations while the checked-in directory contains only a subset. Do not reset, rewrite or fabricate historical records. Apply this single reviewed additive migration through the Supabase migration action, then verify its new history entry and schema.
+3. Confirm the project's Realtime `Allow public access` setting. RLS policies alone do not enforce private-only channels while public access is enabled. Do not change the global setting without assessing existing Notes/Profile channels and explicit approval; until disabled, do not claim Messaging Broadcast/Presence privacy is enforced.
 4. Verify all five tables, indexes, foreign keys, RLS policies, grants, RPC privileges, Realtime publication entries and Realtime channel policies.
 5. Run security and performance advisors, then test as two real authenticated users: direct conversation deduplication, cross-user isolation, idempotent send, receipt ownership, per-user deletion and sender-only global deletion.
 6. Confirm existing Notes, Profile Realtime, notification and Secure Vault workflows remain intact.
