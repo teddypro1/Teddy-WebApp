@@ -1,6 +1,6 @@
 # Teddy-WebApp — Build & Implementation History
 
-Last reconstructed: 2026-11-20. This file records the major implementation path, not every tiny commit. Commit references are shortened for readability; open the linked GitHub commit for the exact diff.
+Last reconstructed: 2026-11-24. This file records the major implementation path, not every tiny commit. Commit references are shortened for readability; open the linked GitHub commit for the exact diff.
 
 ## How to read status
 
@@ -454,3 +454,23 @@ Implemented in `NoteDetailScreen.kt`:
 - Implementation commit: `cfdc0cdcbfd186985d0d0b60c01c9bfbbaed11b8`.
 - User-confirmed Build success is not a cryptographic security audit or end-to-end test. The primitives are not yet wired into the app, local persistence, Supabase, or the Note action UI. Do not represent notes as encrypted or the Lock feature as functional yet.
 - No Supabase schema, migration, production database, or paid-plan changes.
+
+## Build 40 — Note actions: Pin, Delete-to-Trash and Share (user-confirmed successful)
+
+- **User-confirmed on 2026-11-24:** “Successfully Build Completed!” CodeAssist Build completed successfully, as explicitly reported by the user.
+- Connected the long-press Note Card action dialog:
+  - Pin / Unpin uses the existing pin-toggle, local save and synchronization path.
+  - Pinned cards show a compact custom Canvas pin glyph.
+  - Delete opens a confirmation dialog and then moves the note to Trash through the existing delete synchronization path and local save flow.
+  - Share launches Android's native `ACTION_SEND` text chooser with the note title and content.
+- Lock remains intentionally inactive. Selecting Lock shows that Secure Vault setup is not connected and that the note has not been encrypted.
+- Files changed:
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.kt`
+  - `app/src/main/kotlin/com.teddy.bpositive/MainActivity.kt`
+- Source commits:
+  - `1338e68d7f4446af57974b1f21449baffb6370e0` — Note action callbacks, delete confirmation, pinned-card indicator and custom pin glyph.
+  - `cb77c777dc95d8a181a6c7a563ef6e9a79a6581b` — Pin, delete and Android share action wiring.
+  - `162af7489945d26e94cd51eeb05092b053d56903` — Lock prerequisite messaging.
+  - `a89526142c6c6cefaddaee5cd8d88f0737b32a1b` — Explicit notice that notes are not encrypted because Vault is not connected.
+- No Supabase schema/migration, production database or paid-plan changes. Existing `public.notes.is_pinned` and `deleted_at` fields were reused; no database write was made.
+- This Build confirmation is not an exhaustive device regression test or a security audit. Secure Vault UI, persistence, recovery and end-to-end note encryption remain future work; do not describe Lock as functional.
