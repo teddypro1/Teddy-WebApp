@@ -164,7 +164,7 @@ fun MessagingChatScreen(
                 }
             }
             Box(
-                modifier = Modifier.fillMaxSize().padding(24.dp),
+                modifier = Modifier.weight(1f).fillMaxWidth().padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
