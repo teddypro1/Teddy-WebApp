@@ -859,3 +859,14 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - Commit: `a0a73eab627b2f23d55df9ca09e3359d89e684b4`.
 - Important: this codec is not yet connected to local note storage, sync queue, Supabase notes/conflict APIs, realtime, search or UI. Existing notes remain plaintext and Note Lock is not active. This Build must not be described as enabling note encryption.
 - CodeAssist Build and runtime tests pending user confirmation.
+
+## Build 47 — Versioned Encrypted Note Payload Codec (USER-CONFIRMED SUCCESSFUL)
+
+- User explicitly confirmed CodeAssist Build success on 2026-11-24.
+- Added `security/NoteEncryptionCodec.kt` as a versioned serialization boundary for encrypted note title/content fields.
+- Codec requires an unlocked Vault session for the matching user ID, obtains a defensive master-key copy, encrypts title and content independently with the existing AES-256-GCM field primitive (fresh nonce per field), and clears its key copy in `finally`.
+- Decode authenticates both fields and fails closed on unsupported format, malformed ciphertext, wrong key or tampering. JSON contains `format_version`, encrypted `title`, and encrypted `content`.
+- New file: `app/src/main/kotlin/com.teddy.bpositive/security/NoteEncryptionCodec.kt`.
+- Commit: `a0a73eab627b2f23d55df9ca09e3359d89e684b4`.
+- User-reported Build compilation success. No separate runtime encryption/decryption or tamper test report was supplied.
+- Limitations: codec is not connected to local note storage, pending sync, Supabase, realtime, conflict handling, search or UI. Existing notes remain plaintext; Note Lock is not active. No database change.
