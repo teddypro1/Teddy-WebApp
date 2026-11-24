@@ -1418,6 +1418,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
             } else if (selectedTab == "Settings" && showVaultScreen) {
                 SecureVaultScreen(
                     userId = activeSession?.userId.orEmpty(),
+                    session = activeSession ?: return@Scaffold,
                     contentPadding = padding,
                     onBack = { showVaultScreen = false }
                 )
