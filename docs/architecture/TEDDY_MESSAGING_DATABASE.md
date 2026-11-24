@@ -1,6 +1,6 @@
 # Teddy Messaging — Build 01 Database Architecture
 
-**Status:** Security-reviewed and committed in Git; production migration pending.  
+**Status:** Applied to Supabase; structural verification and transactional two-user smoke test passed. Full client/Realtime verification remains pending.  
 **Scope:** Additive database foundation for Phase 1 private text chat, with explicit extension points for later capabilities.
 
 ## 1. Existing-system compatibility
@@ -88,5 +88,15 @@ This migration is security-reviewed and committed for the user's approved applic
 4. Verify all five tables, indexes, foreign keys, RLS policies, grants, RPC privileges, Realtime publication entries and Realtime channel policies.
 5. Run security and performance advisors, then test as two real authenticated users: direct conversation deduplication, cross-user isolation, idempotent send, receipt ownership, per-user deletion and sender-only global deletion.
 6. Confirm existing Notes, Profile Realtime, notification and Secure Vault workflows remain intact.
+
+### Applied verification (2026-11-24)
+- Supabase migration history includes `20261124110532: build01_messaging_foundation`; the prior 19 entries remain unchanged (20 total).
+- All five public tables exist; RLS is enabled on all five; eight public Messaging policies and two Realtime channel policies exist.
+- All five tables are in `supabase_realtime`; existing `notes` and `profiles` publication entries remain.
+- The membership helper has the safe one-argument signature; the arbitrary-user signature is absent.
+- Authenticated table grants match intended SELECT/receipt/deletion operations; no `anon` grants were found.
+- A rollback-only SQL smoke test using two existing authenticated user identities passed: direct conversation creation, message send, recipient read, receipt creation, recipient Delete for Me isolation, sender visibility and sender-only Delete for Everyone tombstone. The transaction was rolled back; no test rows remain.
+- Health advisor returned no findings. Security advisor reported three expected warnings for intentionally authenticated SECURITY DEFINER RPC endpoints and one unrelated Auth leaked-password-protection setting. Performance advisor reported seven unindexed-FK INFO findings and unused-index INFO findings; review before optimization.
+- Realtime `Allow public access` dashboard setting could not be inspected with available tools. Private Broadcast/Presence enforcement remains unverified until the setting is checked and clients use `private: true`.
 
 No existing production rows are copied, transformed or deleted by this migration.
