@@ -104,14 +104,14 @@ class SupabaseRealtimeSubscription(
                                     .put("filter", "id=eq.${activeSession.userId}")
                             )
                     )
-                    .put("private", false)
+                    .put("private", true)
 
                 val joinPayload = JSONObject()
                     .put("config", config)
                     .put("access_token", activeSession.accessToken)
 
                 val join = JSONObject()
-                    .put("topic", "realtime:public:notes")
+                    .put("topic", "realtime:notes:user:${activeSession.userId}")
                     .put("event", "phx_join")
                     .put("payload", joinPayload)
                     .put("ref", "1")
