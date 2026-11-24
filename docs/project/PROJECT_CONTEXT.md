@@ -749,3 +749,30 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
   - `cd7f2fc68c0fd78be2a2da89b473311f1c539a1c` — Keep pushpin Canvas drawing non-composable.
 - No Supabase schema, migration, production database or paid-plan changes.
 - Secure Vault setup, persistence, recovery and end-to-end note encryption remain unimplemented; Lock remains inactive. Build success confirms compilation only, not a security audit or exhaustive device regression test.
+
+## Build 42 — Secure Vault setup and local envelope persistence (user-confirmed successful)
+
+- **User-confirmed on 2026-11-24:** “Successfully Build Completed!” CodeAssist Build completed successfully, as explicitly reported by the user.
+- Added Secure Vault setup and entry from app Settings:
+  - Master Password setup requires at least 12 characters and confirmation.
+  - Generates a Recovery Key and requires the user to enter it again before saving; the key is shown during setup for the user to copy/store.
+  - Existing Vault can be verified/unlocked with the Master Password from the screen.
+  - Temporary password character arrays and the setup-returned master-key byte array are cleared after use.
+- Added account-scoped local Vault envelope persistence in an app-private no-backup file. The serialized VaultEnvelope is encrypted at rest with Android Keystore AES-GCM; save uses a temporary file/rename strategy and reports storage errors without intentionally replacing the previous file on a failed write.
+- Files added/changed:
+  - `app/src/main/kotlin/com.teddy.bpositive/security/NotesVaultStorage.kt`
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/SecureVaultScreen.kt`
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/WorkspaceScreens.kt`
+  - `app/src/main/kotlin/com.teddy.bpositive/MainActivity.kt`
+- Source commits on `main`:
+  - `ebd3b6` — Initial account-scoped Vault storage.
+  - `651b43` — Secure Vault setup screen.
+  - `af57223b6c1d5986259eb280f3b3d5cc008aa90a` — Secure Vault Settings entry.
+  - `03d957e8bc3a53d481f11a832da255ff0859647f` — Secure Vault route/navigation.
+  - `63617766e7c06802db268613ec39bc7a585ab177` — Encrypted no-backup local file storage.
+  - `fc4e6a214bed8ba7006f94e9d413cab5cc67bcce` — Clear temporary password arrays.
+  - `2cb4e81e4c27f60767b81b2dd9c55ea6eb94217e` — Preserve existing vault file if save fails.
+  - `48c7a08ab99dafcb0a041142211ad0b93b6a9854` — Handle storage failure safely; latest implementation commit.
+- The user confirmed the CodeAssist Build completed successfully. This is not a cryptographic audit or proof of hardware-backed Keystore storage.
+- Recovery-Key unlock UI, multi-device envelope sync, password-change/recovery flows and Note Lock integration are not yet implemented. Existing notes are **not encrypted** by this milestone; the Note Lock action remains inactive. Do not claim end-to-end encryption or functional note locking.
+- No Supabase schema, migration, production database or paid-plan changes. The existing Supabase Free Plan remains the budget constraint.
