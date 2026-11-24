@@ -1169,12 +1169,12 @@ Design details that must be resolved before migration:
 - Delete for Everyone: authorize the sender's action, preserve a synchronized deleted-message placeholder/tombstone, and do not physically remove data in a way that breaks other participants' history.
 - Push: use existing server-side FCM infrastructure where compatible; suppress self-notifications and avoid leaking message body in notification payloads unless the product later explicitly chooses that behavior.
 
-### 18.6 Proposed implementation roadmap (15 Builds; planning only)
+### 18.6 Messaging implementation roadmap (15 Builds)
 
 **Phase A — Foundation**
 - Build 01: finalize and document the future-ready Messaging database contract, constraints, indexes, RLS and Realtime strategy; prepare migration for review before applying it.
 - Build 02: Messaging navigation, conversation-list and chat-screen UI foundation.
-- Build 03: username-based user search, safe public profile preview and start-chat entry point.
+- Build 03: username-based user search, safe public profile preview and start-chat entry point (source + Supabase RPC deployed; CodeAssist Build confirmation pending).
 
 **Phase B — Core private text chat**
 - Build 04: transaction-safe one-to-one conversation creation and membership.
@@ -1246,3 +1246,27 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
 - **User confirmation (2026-11-24):** The user completed the two-account isolation test and confirmed the expected result: Account B could not enter Account A's private channel, while Account B's own Notes and Profile continued to work normally. Record this as a user-confirmed cross-account isolation pass for the Notes/Profile private Realtime channel.
 - **Pending regression checks:** Notes CRUD and offline sync/conflict recovery; Profile refresh/edit; notifications; Secure Vault regression. Keep global Allow public access Enabled until these regression checks pass and the remaining private Realtime paths have been assessed.
 - **Do not disable global Allow public access yet.** The cross-account isolation test passed, but the remaining regression checks are still pending. Do not mark Messaging Build 01 fully complete before those checks.
+
+
+## 18.10 Messaging Build 03 — Username Search & User Discovery (SOURCE + DATABASE DEPLOYED; CODEASSIST BUILD NOT YET USER-CONFIRMED)
+
+- Live pre-change GitHub main HEAD: `c040e4bf3ac986beeb9fcc8fa53606b90fed239b`; Supabase project status: ACTIVE_HEALTHY.
+- Inspected live public.profiles schema: id, full_name, username, bio, avatar_url, created_at, updated_at. Existing owner-only SELECT RLS policy and case-insensitive unique username index were preserved.
+- Added authenticated RPC public.search_public_profiles(search_query, result_limit):
+  - Requires auth.uid(); unauthenticated calls are rejected.
+  - Requires at least two query characters; normalizes case and caps query length at 30.
+  - Uses literal substring matching via strpos, not user-controlled SQL wildcard patterns.
+  - Excludes the current user, returns at most 20 results, exact username matches first.
+  - Returns only profile preview fields: id, full_name, username, bio, avatar_url; no email or auth metadata.
+  - SECURITY DEFINER uses an empty search_path. EXECUTE revoked from PUBLIC, anon and authenticated before granting only to authenticated.
+- Applied migration 20261124125311_build03_username_search. Verified function definition and ACL: authenticated execute=true; anon/public execute=false. Existing profile RLS policies were not changed.
+- Added Android data/UserSearchApi.kt using the authenticated session and RPC endpoint, with one token-refresh retry.
+- Added MessagingUserSearchScreen: username input, result cards, profile preview dialog and Start Chat entry point. Connected it to Messages. Start Chat identifies the selected user and points to Build 04; conversation creation is not yet wired.
+- Source commits:
+  - e102af55eb40f137a1544485de3bbac2b2655a4d — authenticated username search API.
+  - 241e8e8ecb39bb6ce24085ce7b2230e1b3a7d3b9 — search and profile preview UI.
+  - 387cb10b7980af5ee8b13e070842ee5b9127790f — connect search to Messaging navigation.
+  - 4ea238d7f0112d07bb1e8a181acaf1554a7e3c37 — add applied migration file.
+- Supabase Health advisor returned no findings. Security advisor reports this authenticated SECURITY DEFINER RPC in the same expected warning category as existing Messaging RPCs, plus the pre-existing leaked-password-protection warning. Performance advisor still reports seven Messaging foreign-key index INFO findings and unused-index INFO findings.
+- No existing profile rows, username values, owner policies, Messaging rows, Realtime settings, billing or plan settings were changed.
+- Build status: source and database changes are committed/applied; CodeAssist Build and on-device username search remain pending user confirmation.
