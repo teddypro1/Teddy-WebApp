@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,12 +18,20 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.teddy.bpositive.data.UserSearchApi
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -121,6 +131,115 @@ fun MessagingHomeScreen(
                 }
             }
         }
+    }
+}
+
+
+@Composable
+fun MessagingUserSearchScreen(
+    contentPadding: androidx.compose.foundation.layout.PaddingValues,
+    profiles: List<UserSearchApi.PublicProfile>,
+    isSearching: Boolean,
+    status: String,
+    onBack: () -> Unit,
+    onSearch: (String) -> Unit,
+    onStartChat: (UserSearchApi.PublicProfile) -> Unit
+) {
+    var query by remember { mutableStateOf("") }
+    var selectedProfile by remember { mutableStateOf<UserSearchApi.PublicProfile?>(null) }
+
+    Column(
+        modifier = Modifier.fillMaxSize().padding(contentPadding)
+            .padding(horizontal = 18.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onBack) { Text("‹ Back") }
+            Text("Find people", fontSize = 23.sp, fontWeight = FontWeight.Bold)
+        }
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it.filter { ch -> ch.isLetterOrDigit() || ch == '_' || ch == '.' || ch == '@' }.take(31) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            label = { Text("Username") },
+            placeholder = { Text("Search by username") },
+            leadingIcon = { Text("@", fontSize = 20.sp) }
+        )
+        Button(
+            onClick = { onSearch(query) },
+            enabled = !isSearching && query.trim().removePrefix("@").length >= 2,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        ) { Text(if (isSearching) "Searching..." else "Search users") }
+
+        if (isSearching) {
+            Box(Modifier.fillMaxWidth().padding(18.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        if (status.isNotBlank()) {
+            Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall)
+        }
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(profiles, key = { it.id }) { profile ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    onClick = { selectedProfile = profile }
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(14.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            Modifier.size(46.dp).background(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape
+                            ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(profile.fullName.take(1).uppercase(), fontWeight = FontWeight.Bold)
+                        }
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text(profile.fullName, fontWeight = FontWeight.SemiBold)
+                            Text("@${profile.username}", color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.bodySmall)
+                            if (profile.bio.isNotBlank()) {
+                                Text(profile.bio, maxLines = 2,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    selectedProfile?.let { profile ->
+        AlertDialog(
+            onDismissRequest = { selectedProfile = null },
+            title = { Text(profile.fullName) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("@${profile.username}", color = MaterialTheme.colorScheme.primary)
+                    Text(profile.bio.ifBlank { "No bio added." })
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    selectedProfile = null
+                    onStartChat(profile)
+                }) { Text("Start chat") }
+            },
+            dismissButton = {
+                TextButton(onClick = { selectedProfile = null }) { Text("Close") }
+            }
+        )
     }
 }
 
