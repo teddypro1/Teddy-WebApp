@@ -11,6 +11,16 @@ import org.json.JSONObject
 object NoteEncryptionCodec {
 
     private const val FORMAT_VERSION = 1
+    const val CLOUD_ENVELOPE_PREFIX = "teddy-note-encrypted-v1:"
+
+    fun toCloudContent(encryptedPayload: String): String {
+        require(encryptedPayload.isNotBlank())
+        return CLOUD_ENVELOPE_PREFIX + encryptedPayload
+    }
+
+    fun extractCloudPayload(content: String): String? =
+        content.takeIf { it.startsWith(CLOUD_ENVELOPE_PREFIX) }
+            ?.removePrefix(CLOUD_ENVELOPE_PREFIX)?.takeIf { it.isNotBlank() }
 
     data class PlainNote(
         val title: String,

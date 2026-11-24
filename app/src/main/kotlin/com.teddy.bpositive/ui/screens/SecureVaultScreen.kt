@@ -242,7 +242,7 @@ fun SecureVaultScreen(
                                     unlocked.fill(0)
                                 }
                                 recoveryUnlockInput = ""
-                                status = "Vault unlocked for this app session. Note Lock integration is not enabled yet."
+                                status = "Vault unlocked for this app session. Locked notes can now be opened."
                             } catch (_: Exception) {
                                 recoveryUnlockInput = ""
                                 status = "Recovery Key verification failed. Check the key and try again."
@@ -280,7 +280,7 @@ fun SecureVaultScreen(
                                     unlocked.fill(0)
                                 }
                                 masterPassword = ""
-                                status = "Vault unlocked for this app session. Note Lock integration is not enabled yet."
+                                status = "Vault unlocked for this app session. Locked notes can now be opened."
                             } catch (_: Exception) {
                                 masterPassword = ""
                                 status = "Password verification failed."

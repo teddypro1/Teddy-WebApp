@@ -1023,3 +1023,14 @@ These three closely related milestones are intentionally grouped into one source
   - `app/src/main/kotlin/com.teddy.bpositive/data/EncryptedNoteSyncQueue.kt`
 - No Supabase migration, production database mutation, paid-plan change, active Notes storage cutover or active sync-queue cutover.
 - CodeAssist compilation and on-device verification are pending user confirmation.
+
+
+## 15. Build 60 — Per-note Secure Vault Lock/Unlock integration (USER BUILD PENDING)
+
+- Connects the Note Card Action Dialog to the existing Vault master key and AES-GCM full-note codec.
+- Locked notes are saved locally as encrypted full-note payloads; plaintext title/content and note metadata are not written into the local note snapshot.
+- Cloud sync uses existing `notes.title` and `notes.content` text fields with the versioned `teddy-note-encrypted-v1:` ciphertext envelope. No schema migration or bulk rewrite is needed.
+- Cloud hydration recognizes encrypted envelopes and displays a masked placeholder.
+- Editing and pinning protected notes refresh the encrypted payload before persistence and sync.
+- Protected note content is masked in Compose state when the activity enters the background.
+- CodeAssist compilation and device-level verification remain pending user confirmation.

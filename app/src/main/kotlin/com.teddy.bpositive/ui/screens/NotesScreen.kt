@@ -281,9 +281,9 @@ fun NotesScreen(
                             onTogglePin(note)
                         }
                         NoteActionRow(
-                            "Lock note",
-                            "Vault setup is required before encryption",
-                            "lock"
+                            if (note.isMasked) "Unlock note" else "Lock note",
+                            if (note.isMasked) "Open with Secure Vault" else "Encrypt or temporarily hide this note",
+                            if (note.isMasked) "unlock" else "lock"
                         ) {
                             actionNote = null
                             onLockNote(note)

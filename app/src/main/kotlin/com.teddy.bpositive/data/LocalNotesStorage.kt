@@ -25,16 +25,19 @@ object LocalNotesStorage {
             val jsonArray = JSONArray()
 
             notes.forEach { note ->
-                val jsonObject = JSONObject().apply {
+                val item = JSONObject().apply {
                     put("id", note.id)
-                    put("title", note.title)
-                    put("content", note.content)
-                    put("isPinned", note.isPinned)
-                    put("createdAt", note.createdAt)
-                    put("updatedAt", note.updatedAt)
-                    put("colorHex", note.colorHex)
+                    if (note.isLocked) {
+                        put("isLocked", true)
+                        put("encryptedPayload", note.encryptedPayload ?: error("Locked note payload missing."))
+                    } else {
+                        put("isLocked", false)
+                        put("title", note.title); put("content", note.content)
+                        put("isPinned", note.isPinned); put("createdAt", note.createdAt)
+                        put("updatedAt", note.updatedAt); put("colorHex", note.colorHex)
+                    }
                 }
-                jsonArray.put(jsonObject)
+                jsonArray.put(item)
             }
 
             context.getSharedPreferences("teddy_notes", Context.MODE_PRIVATE)
@@ -61,19 +64,25 @@ object LocalNotesStorage {
             val jsonArray = JSONArray(savedData)
 
             buildList {
-                for (index in 0 until jsonArray.length()) {
-                    val jsonObject = jsonArray.getJSONObject(index)
-                    add(
-                        Note(
-                            id = jsonObject.optLong("id"),
-                            title = jsonObject.optString("title"),
-                            content = jsonObject.optString("content"),
-                            isPinned = jsonObject.optBoolean("isPinned", false),
-                            createdAt = jsonObject.optLong("createdAt"),
-                            updatedAt = jsonObject.optLong("updatedAt"),
-                            colorHex = jsonObject.optString("colorHex", "#FFFFFF")
-                        )
-                    )
+                for (i in 0 until jsonArray.length()) {
+                    val item = jsonArray.getJSONObject(i)
+                    val id = item.optLong("id")
+                    if (item.optBoolean("isLocked", false)) {
+                        val payload = item.optString("encryptedPayload")
+                        if (payload.isBlank()) error("Locked note payload missing.")
+                        val visible = if (com.teddy.bpositive.security.VaultSessionManager.isUnlocked(userId)) {
+                            runCatching {
+                                com.teddy.bpositive.security.NoteEncryptionCodec.decodeNote(userId, payload)
+                                    .copy(id=id, isLocked=true, encryptedPayload=payload, isMasked=false)
+                            }.getOrNull()
+                        } else null
+                        add(visible ?: Note(id, "Locked note", "Unlock Secure Vault to view this note.", false, 0L, 0L,
+                            isLocked=true, encryptedPayload=payload, isMasked=true))
+                    } else add(Note(
+                        id=id, title=item.optString("title"), content=item.optString("content"),
+                        isPinned=item.optBoolean("isPinned", false), createdAt=item.optLong("createdAt"),
+                        updatedAt=item.optLong("updatedAt"), colorHex=item.optString("colorHex", "#FFFFFF")
+                    ))
                 }
             }
         } catch (_: Exception) {

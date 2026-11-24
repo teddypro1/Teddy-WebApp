@@ -8,5 +8,8 @@ data class Note(
     val isPinned: Boolean,
     val createdAt: Long,
     val updatedAt: Long,
-    val colorHex: String = "#FFFFFF"
+    val colorHex: String = "#FFFFFF",
+    val isLocked: Boolean = false,
+    val encryptedPayload: String? = null,
+    val isMasked: Boolean = false
 )
