@@ -981,7 +981,7 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - Device/runtime migration checks remain unreported; do not claim the atomic-write failure paths or on-device migration were runtime-tested.
 
 
-## Builds 55–57 — Read-only Encrypted Migration Audit (single grouped commit; CodeAssist Build pending)
+## Builds 55–57 — Read-only Encrypted Migration Audit (USER-CONFIRMED CODEASSIST BUILD SUCCESS)
 
 These three closely related milestones are intentionally grouped into one source/documentation commit and one CodeAssist Build to reduce repeated build cycles.
 
@@ -1001,4 +1001,25 @@ These three closely related milestones are intentionally grouped into one source
   - `app/src/main/kotlin/com.teddy.bpositive/data/EncryptedNoteSyncQueue.kt`
   - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/SecureVaultScreen.kt`
 - No Supabase migration, production database mutation, paid-plan change, active Notes storage cutover or active sync-queue cutover.
-- CodeAssist compilation and on-device audit results are pending user confirmation. The audits must be run from Secure Vault after unlocking before their runtime outcomes can be marked verified.
+- **User confirmation (2026-11-24):** The user explicitly reported “Successfully Build Completed!” after pulling this grouped commit. This confirms CodeAssist compilation for Builds 55–57.
+- On-device audit execution and its actual result remain unreported; do not claim the local-note or queue comparison passed at runtime.
+
+
+## Builds 58–59 — Background Audit Execution & Strict Queue Validation (single grouped commit; CodeAssist Build pending)
+
+### Build 58 — Run encrypted migration audits off the UI thread
+- Moved the Secure Vault's read-only local-note and encrypted-queue audit work to `Dispatchers.IO` using the Compose coroutine scope.
+- Preserves progress feedback and reports unexpected audit execution errors; the coroutine restores the loading state in `finally`.
+- This prevents snapshot authentication/decryption and full-list comparisons from blocking Compose UI rendering during the audit.
+- Audit remains read-only and requires the matching Vault to be unlocked.
+
+### Build 59 — Strict encrypted queue snapshot validation
+- Requires the encrypted queue snapshot root and each record to contain exactly the supported fields.
+- Rejects duplicate local note IDs and duplicate client IDs.
+- Requires a supported non-null UPSERT/DELETE operation, valid IDs, nonblank client IDs, valid optional cloud IDs/timestamps, and authenticated encrypted fields.
+- The stricter validation is used by both staged-record loading and migration comparison; no existing queue data is rewritten by this change.
+- Files changed:
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/SecureVaultScreen.kt`
+  - `app/src/main/kotlin/com.teddy.bpositive/data/EncryptedNoteSyncQueue.kt`
+- No Supabase migration, production database mutation, paid-plan change, active Notes storage cutover or active sync-queue cutover.
+- CodeAssist compilation and on-device verification are pending user confirmation.

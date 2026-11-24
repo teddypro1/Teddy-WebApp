@@ -21,6 +21,9 @@ import com.teddy.bpositive.data.SupabaseVaultApi
 import com.teddy.bpositive.security.NotesEncryption
 import com.teddy.bpositive.security.NotesVaultStorage
 import com.teddy.bpositive.security.VaultSessionManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SecureVaultScreen(
@@ -31,6 +34,7 @@ fun SecureVaultScreen(
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    val auditScope = rememberCoroutineScope()
     var envelope by remember(userId) { mutableStateOf<NotesEncryption.VaultEnvelope?>(null) }
     var storageMessage by remember(userId) { mutableStateOf("Checking this account's Vault...") }
     var page by remember(userId) { mutableStateOf("loading") }
@@ -377,36 +381,45 @@ fun SecureVaultScreen(
                             }
                             isAuditingMigration = true
                             auditMessage = "Checking encrypted snapshots..."
-                            val notesResult = try {
-                                when (val result = EncryptedLocalNotesStorage.inspectMigration(context, userId)) {
-                                    is EncryptedLocalNotesStorage.MigrationAuditResult.MatchesLegacy ->
-                                        "Local notes: verified and match (${result.noteCount} notes)."
-                                    is EncryptedLocalNotesStorage.MigrationAuditResult.LegacySourceEmpty ->
-                                        "Local notes: legacy source is empty; encrypted copy is intact (${result.encryptedNoteCount} notes), but source comparison is unavailable."
-                                    is EncryptedLocalNotesStorage.MigrationAuditResult.Mismatch ->
-                                        "Local notes: mismatch detected (legacy ${result.legacyNoteCount}, encrypted ${result.encryptedNoteCount})."
-                                    EncryptedLocalNotesStorage.MigrationAuditResult.NoEncryptedSnapshot ->
-                                        "Local notes: no encrypted snapshot found."
+                            auditScope.launch {
+                                try {
+                                    auditMessage = withContext(Dispatchers.IO) {
+                                        val notesResult = try {
+                                            when (val result = EncryptedLocalNotesStorage.inspectMigration(context, userId)) {
+                                                is EncryptedLocalNotesStorage.MigrationAuditResult.MatchesLegacy ->
+                                                    "Local notes: verified and match (${result.noteCount} notes)."
+                                                is EncryptedLocalNotesStorage.MigrationAuditResult.LegacySourceEmpty ->
+                                                    "Local notes: legacy source is empty; encrypted copy is intact (${result.encryptedNoteCount} notes), but source comparison is unavailable."
+                                                is EncryptedLocalNotesStorage.MigrationAuditResult.Mismatch ->
+                                                    "Local notes: mismatch detected (legacy ${result.legacyNoteCount}, encrypted ${result.encryptedNoteCount})."
+                                                EncryptedLocalNotesStorage.MigrationAuditResult.NoEncryptedSnapshot ->
+                                                    "Local notes: no encrypted snapshot found."
+                                            }
+                                        } catch (error: Exception) {
+                                            "Local notes: verification failed (${error.message ?: "unknown error"})."
+                                        }
+                                        val queueResult = try {
+                                            when (val result = EncryptedNoteSyncQueue.inspectMigration(context, userId)) {
+                                                is EncryptedNoteSyncQueue.MigrationAuditResult.MatchesLegacy ->
+                                                    "Offline queue: verified and match (${result.recordCount} records)."
+                                                is EncryptedNoteSyncQueue.MigrationAuditResult.LegacyQueueEmpty ->
+                                                    "Offline queue: legacy queue is empty; encrypted copy is intact (${result.encryptedRecordCount} records), but source comparison is unavailable."
+                                                is EncryptedNoteSyncQueue.MigrationAuditResult.Mismatch ->
+                                                    "Offline queue: mismatch detected (legacy ${result.legacyRecordCount}, encrypted ${result.encryptedRecordCount})."
+                                                EncryptedNoteSyncQueue.MigrationAuditResult.NoEncryptedSnapshot ->
+                                                    "Offline queue: no encrypted snapshot found."
+                                            }
+                                        } catch (error: Exception) {
+                                            "Offline queue: verification failed (${error.message ?: "unknown error"})."
+                                        }
+                                        "$notesResult\n$queueResult"
+                                    }
+                                } catch (error: Exception) {
+                                    auditMessage = "Migration verification could not finish: ${error.message ?: "unknown error"}."
+                                } finally {
+                                    isAuditingMigration = false
                                 }
-                            } catch (error: Exception) {
-                                "Local notes: verification failed (${error.message ?: "unknown error"})."
                             }
-                            val queueResult = try {
-                                when (val result = EncryptedNoteSyncQueue.inspectMigration(context, userId)) {
-                                    is EncryptedNoteSyncQueue.MigrationAuditResult.MatchesLegacy ->
-                                        "Offline queue: verified and match (${result.recordCount} records)."
-                                    is EncryptedNoteSyncQueue.MigrationAuditResult.LegacyQueueEmpty ->
-                                        "Offline queue: legacy queue is empty; encrypted copy is intact (${result.encryptedRecordCount} records), but source comparison is unavailable."
-                                    is EncryptedNoteSyncQueue.MigrationAuditResult.Mismatch ->
-                                        "Offline queue: mismatch detected (legacy ${result.legacyRecordCount}, encrypted ${result.encryptedRecordCount})."
-                                    EncryptedNoteSyncQueue.MigrationAuditResult.NoEncryptedSnapshot ->
-                                        "Offline queue: no encrypted snapshot found."
-                                }
-                            } catch (error: Exception) {
-                                "Offline queue: verification failed (${error.message ?: "unknown error"})."
-                            }
-                            auditMessage = "$notesResult\n$queueResult"
-                            isAuditingMigration = false
                         },
                         enabled = !isAuditingMigration,
                         modifier = Modifier.fillMaxWidth()

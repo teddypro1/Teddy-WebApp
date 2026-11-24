@@ -205,36 +205,59 @@ object EncryptedNoteSyncQueue {
     }
 
     private fun verifySnapshot(userId: String, snapshot: JSONObject) {
-        require(snapshot.optInt("format_version") == FORMAT_VERSION) {
-            "Unsupported encrypted sync queue version."
+        require(snapshot.length() == 2 &&
+            snapshot.has("format_version") &&
+            snapshot.has("records") &&
+            snapshot.getInt("format_version") == FORMAT_VERSION) {
+            "Encrypted sync queue structure or version is invalid."
         }
-        val records = snapshot.optJSONArray("records")
-            ?: throw IllegalArgumentException("Encrypted sync queue records are missing.")
+        val records = snapshot.getJSONArray("records")
+        val localNoteIds = HashSet<Long>()
+        val clientIds = HashSet<String>()
 
         for (index in 0 until records.length()) {
             val item = records.getJSONObject(index)
-            require(item.has("local_note_id") && item.has("client_id") &&
-                item.has("operation") && item.has("encrypted_fields") &&
-                item.has("is_pinned") && item.has("cloud_note_id") &&
+            require(item.length() == 7 &&
+                item.has("local_note_id") &&
+                item.has("client_id") &&
+                item.has("operation") &&
+                item.has("encrypted_fields") &&
+                item.has("is_pinned") &&
+                item.has("cloud_note_id") &&
                 item.has("cloud_updated_at")) {
-                "Encrypted sync queue metadata is incomplete."
+                "Encrypted sync queue metadata is incomplete or contains unexpected fields."
             }
-            require(item.getLong("local_note_id") > 0L) {
-                "Encrypted sync queue local note ID is invalid."
+
+            val localNoteId = item.getLong("local_note_id")
+            require(localNoteId > 0L && localNoteIds.add(localNoteId)) {
+                "Encrypted sync queue local note ID is invalid or duplicated."
             }
-            require(item.getString("client_id").isNotBlank()) {
-                "Encrypted sync queue client ID is invalid."
+
+            val clientId = item.getString("client_id")
+            require(clientId.isNotBlank() && clientIds.add(clientId)) {
+                "Encrypted sync queue client ID is invalid or duplicated."
             }
-            if (!item.isNull("operation")) {
-                NoteSyncStore.Operation.valueOf(item.getString("operation"))
+
+            require(!item.isNull("operation")) {
+                "Encrypted sync queue operation is missing."
             }
+            val operation = NoteSyncStore.Operation.valueOf(item.getString("operation"))
+            require(operation == NoteSyncStore.Operation.UPSERT ||
+                operation == NoteSyncStore.Operation.DELETE) {
+                "Encrypted sync queue operation is unsupported."
+            }
+
             item.getBoolean("is_pinned")
             if (!item.isNull("cloud_note_id")) {
                 require(item.getLong("cloud_note_id") > 0L) {
                     "Encrypted sync queue cloud note ID is invalid."
                 }
             }
-            if (!item.isNull("cloud_updated_at")) item.getString("cloud_updated_at")
+            if (!item.isNull("cloud_updated_at")) {
+                require(item.getString("cloud_updated_at").isNotBlank()) {
+                    "Encrypted sync queue cloud timestamp is invalid."
+                }
+            }
 
             NoteEncryptionCodec.decode(userId, item.getString("encrypted_fields"))
         }
