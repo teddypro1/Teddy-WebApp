@@ -48,6 +48,7 @@ import com.teddy.bpositive.ui.screens.SettingsScreen
 import com.teddy.bpositive.ui.screens.SecureVaultScreen
 import com.teddy.bpositive.ui.screens.AdminPanelScreen
 import com.teddy.bpositive.ui.screens.HomeScreen
+import com.teddy.bpositive.ui.screens.MessagingHomeScreen
 import com.teddy.bpositive.ui.screens.NotesScreen
 import com.teddy.bpositive.ui.screens.NoteDetailScreen
 import com.teddy.bpositive.ui.screens.NotificationInboxScreen
@@ -1505,6 +1506,13 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                 HomeScreen(
                     contentPadding = padding,
                     onOpenNotes = { showNotesFeature = true }
+                )
+            } else if (selectedTab == "Messages") {
+                MessagingHomeScreen(
+                    contentPadding = padding,
+                    onFindPeople = {
+                        Toast.makeText(context, "Username search is coming in the next build.", Toast.LENGTH_SHORT).show()
+                    }
                 )
             } else if (selectedTab == "Trash") {
                 TrashScreen(
