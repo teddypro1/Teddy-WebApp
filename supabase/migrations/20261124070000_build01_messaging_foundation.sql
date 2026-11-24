@@ -1,7 +1,7 @@
 -- Teddy Messaging — Build 01
 -- Additive future-ready private messaging database foundation.
 -- Does not alter Notes, profiles, device_tokens, notifications or Vault data.
--- Prepared for review; do not apply until explicitly approved.
+-- Security-reviewed additive migration for the approved Build 01 scope.
 
 begin;
 
@@ -133,9 +133,10 @@ create table public.message_deletions (
 create index message_deletions_user_idx
     on public.message_deletions (user_id, message_id);
 
+-- Derive identity exclusively from the verified JWT; callers cannot probe
+-- membership for arbitrary user UUIDs.
 create or replace function messaging_private.is_conversation_member(
-    p_conversation_id uuid,
-    p_user_id uuid
+    p_conversation_id uuid
 )
 returns boolean
 language sql
@@ -147,14 +148,14 @@ as $function$
         select 1
         from public.conversation_members cm
         where cm.conversation_id = p_conversation_id
-          and cm.user_id = p_user_id
+          and cm.user_id = (select auth.uid())
           and cm.membership_state = 'active'
     );
 $function$;
 
-revoke all on function messaging_private.is_conversation_member(uuid, uuid)
+revoke all on function messaging_private.is_conversation_member(uuid)
     from public, anon;
-grant execute on function messaging_private.is_conversation_member(uuid, uuid)
+grant execute on function messaging_private.is_conversation_member(uuid)
     to authenticated;
 
 alter table public.conversations enable row level security;
@@ -167,21 +168,21 @@ create policy messaging_conversations_member_select
     on public.conversations
     for select to authenticated
     using (
-        messaging_private.is_conversation_member(id, (select auth.uid()))
+        messaging_private.is_conversation_member(id)
     );
 
 create policy messaging_members_member_select
     on public.conversation_members
     for select to authenticated
     using (
-        messaging_private.is_conversation_member(conversation_id, (select auth.uid()))
+        messaging_private.is_conversation_member(conversation_id)
     );
 
 create policy messaging_messages_member_select
     on public.messages
     for select to authenticated
     using (
-        messaging_private.is_conversation_member(conversation_id, (select auth.uid()))
+        messaging_private.is_conversation_member(conversation_id)
         and not exists (
             select 1
             from public.message_deletions md
@@ -194,7 +195,7 @@ create policy messaging_receipts_member_select
     on public.message_receipts
     for select to authenticated
     using (
-        messaging_private.is_conversation_member(conversation_id, (select auth.uid()))
+        messaging_private.is_conversation_member(conversation_id)
     );
 
 create policy messaging_receipts_recipient_insert
@@ -202,7 +203,7 @@ create policy messaging_receipts_recipient_insert
     for insert to authenticated
     with check (
         user_id = (select auth.uid())
-        and messaging_private.is_conversation_member(conversation_id, (select auth.uid()))
+        and messaging_private.is_conversation_member(conversation_id)
         and exists (
             select 1
             from public.messages m
@@ -217,7 +218,7 @@ create policy messaging_receipts_recipient_update
     for update to authenticated
     using (
         user_id = (select auth.uid())
-        and messaging_private.is_conversation_member(conversation_id, (select auth.uid()))
+        and messaging_private.is_conversation_member(conversation_id)
         and exists (
             select 1
             from public.messages m
@@ -228,7 +229,7 @@ create policy messaging_receipts_recipient_update
     )
     with check (
         user_id = (select auth.uid())
-        and messaging_private.is_conversation_member(conversation_id, (select auth.uid()))
+        and messaging_private.is_conversation_member(conversation_id)
         and exists (
             select 1
             from public.messages m
@@ -248,7 +249,7 @@ create policy messaging_deletions_own_insert
     for insert to authenticated
     with check (
         user_id = (select auth.uid())
-        and messaging_private.is_conversation_member(conversation_id, (select auth.uid()))
+        and messaging_private.is_conversation_member(conversation_id)
     );
 
 grant select on public.conversations to authenticated;
@@ -353,7 +354,7 @@ begin
     if char_length(v_body) < 1 or char_length(v_body) > 10000 then
         raise exception 'Message must contain 1 to 10000 characters' using errcode = '22023';
     end if;
-    if not messaging_private.is_conversation_member(p_conversation_id, v_user_id) then
+    if not messaging_private.is_conversation_member(p_conversation_id) then
         raise exception 'Active conversation membership required' using errcode = '42501';
     end if;
 
@@ -441,8 +442,7 @@ create policy messaging_private_channel_receive
             when (select realtime.topic()) ~
                 '^messaging:conversation:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
             then messaging_private.is_conversation_member(
-                split_part((select realtime.topic()), ':', 3)::uuid,
-                (select auth.uid())
+                split_part((select realtime.topic()), ':', 3)::uuid
             )
             else false
         end
@@ -457,8 +457,7 @@ create policy messaging_private_channel_send
             when (select realtime.topic()) ~
                 '^messaging:conversation:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
             then messaging_private.is_conversation_member(
-                split_part((select realtime.topic()), ':', 3)::uuid,
-                (select auth.uid())
+                split_part((select realtime.topic()), ':', 3)::uuid
             )
             else false
         end
