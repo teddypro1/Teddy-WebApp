@@ -53,7 +53,12 @@ fun SecureVaultScreen(
             is NotesVaultStorage.LoadResult.Found -> {
                 envelope = local.envelope
                 page = "unlock"
-                storageMessage = "Vault is saved on this device. Account sync can be checked below."
+                storageMessage = "Vault is saved on this device. Checking account sync automatically..."
+                isSyncing = true
+                SupabaseVaultApi.syncEnvelope(session, local.envelope) { result ->
+                    isSyncing = false
+                    storageMessage = result.message
+                }
             }
             NotesVaultStorage.LoadResult.Missing -> {
                 storageMessage = "Checking whether this account already has a synced Vault..."
@@ -289,14 +294,11 @@ fun SecureVaultScreen(
 
                     HorizontalDivider()
                     Text("Account Sync", fontWeight = FontWeight.SemiBold)
-                    Text("Send this encrypted Vault envelope to your account, or confirm that the same Vault is already synced. A different account envelope is never overwritten.")
-                    Button(
-                        onClick = { syncCurrentVault() },
-                        enabled = !isSyncing,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        if (isSyncing) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                        else Text("Sync Vault to Account")
+                    if (isSyncing) {
+                        LinearProgressIndicator(Modifier.fillMaxWidth())
+                        Text("Checking and syncing this Vault with your account automatically...")
+                    } else {
+                        Text("Account sync is automatic. The app checks the account whenever Secure Vault opens and sends the encrypted envelope if it is not already synced. A different account Vault is never overwritten.")
                     }
                 }
             }
