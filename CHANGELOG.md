@@ -96,3 +96,5 @@ See [Build History](docs/history/BUILD_HISTORY_01.md), [Supabase History](docs/h
 - Commits: `c252370c0138591ae45f6c4a98673b0b50d3b5f9`, `2020243b2cc292a1a6a5279e0fbd3a80214cf334`, `a27c2a2a8e3ae105ae55c495532a3c050b7b01ac`, `fea2949e1b9158ba7c985895607ab21cdb7ede84`.
 - Reminder/export/share panels remain placeholders; lock is session-only; delete continues through the Notes-list Trash workflow.
 - No Supabase/database changes. CodeAssist Build and device verification pending user confirmation.
+
+- **Messaging Build 03 — Username Search & User Discovery:** Added authenticated Supabase RPC `search_public_profiles` with a minimal public profile preview, caller exclusion, 2-character minimum, literal case-insensitive username matching and a 20-result cap. Android now includes username search, result cards and profile preview. Start Chat is a placeholder for Build 04. Supabase migration `20261124125311_build03_username_search` is applied; original profile owner RLS remains unchanged. CodeAssist Build and device search test are pending user confirmation.
