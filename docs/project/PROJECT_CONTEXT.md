@@ -790,6 +790,6 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - Implementation commits:
   - `f9c83d5a5c67c0a232553c024c82ae4cac498903` — Clear temporary Recovery Key character array after derivation.
   - `5e27be90bd23cff2247662f7067894d9448a9cb1` — Add Recovery Key unlock mode and retain Master Password fallback.
-- Build success confirms compilation as reported by the user. Separate device-level positive/negative Recovery Key verification tests have not yet been reported; do not claim those tests passed.
+- **Follow-up user report (2026-11-24):** The user confirmed that Recovery Key Unlock is working. A separate wrong-key rejection test has not been explicitly reported.
 - Scope limitations remain: existing notes are not encrypted; Note Lock is not integrated; multi-device Vault-envelope sync and password-change/recovery workflows remain pending. Recovery Key unlock verifies access to the existing Vault master key but does not itself encrypt notes.
 - No Supabase schema, migration, production database or paid-plan changes.
