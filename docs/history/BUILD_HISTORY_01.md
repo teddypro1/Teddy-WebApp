@@ -602,7 +602,7 @@ Implemented in `NoteDetailScreen.kt`:
 - Commit: `b1188192b3f43078d5d84e1d1d758755a06a22f2`.
 - CodeAssist Build and device migration tests pending user confirmation.
 
-## Build 50 — Encrypted Offline Sync Queue Migration Preparation (CodeAssist Build pending)
+## Build 50 — Encrypted Offline Sync Queue Migration Preparation (USER-CONFIRMED BUILD SUCCESS)
 
 - Added `data/EncryptedNoteSyncQueue.kt`, an account-scoped encrypted snapshot for pending note sync records. Note title/content are encrypted through `NoteEncryptionCodec`; operation, local/client IDs, pin state and cloud metadata remain queue metadata.
 - Added `stageLegacyMigration()`: requires the matching user's Vault to be unlocked, copies pending legacy queue records, decrypts and compares each title/content and key metadata against the original, persists the encrypted snapshot, then reads it back and authenticates it again.
@@ -612,4 +612,5 @@ Implemented in `NoteDetailScreen.kt`:
 - Files added/changed: `app/src/main/kotlin/com.teddy.bpositive/data/EncryptedNoteSyncQueue.kt`, `app/src/main/kotlin/com.teddy.bpositive/ui/screens/SecureVaultScreen.kt`.
 - Implementation commits: `6a533217663e4c8698e3dfa7b435dcc19e7f0b16` (encrypted queue migration class), `c6dce0f91ac66dd744b6adbdfd94d66c595b88e9` (Vault UI action), `db6a4e124b8f19f3563519d1764b94108976baef` (strict comparison against legacy records).
 - No Supabase migration, production database mutation or paid-plan change.
-- CodeAssist Build and runtime migration verification are pending user confirmation. Do not describe this Build as successful or the active sync queue as encrypted until the user confirms Build and a later cutover is implemented.
+- **User confirmation (2026-11-24):** “Successfully Build Completed!” CodeAssist Build completed successfully, as explicitly reported by the user. Runtime migration execution/count was not reported.
+- The active sync queue is still plaintext; this milestone only prepares a separate encrypted snapshot. Do not describe active sync as encrypted until a later cutover is implemented.
