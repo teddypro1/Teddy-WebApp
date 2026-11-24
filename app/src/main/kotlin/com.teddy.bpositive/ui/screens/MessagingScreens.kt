@@ -245,80 +245,171 @@ fun MessagingUserSearchScreen(
 
 @Composable
 fun MessagingChatScreen(
+    context: android.content.Context,
+    session: com.teddy.bpositive.data.SupabaseSessionManager.Session,
+    conversationId: String,
     displayName: String,
     username: String,
-    onBack: () -> Unit,
-    onSendMessage: (String) -> Unit
+    onBack: () -> Unit
 ) {
-    var messageText = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    var messageText by remember { mutableStateOf("") }
+    var messages by remember { mutableStateOf<List<com.teddy.bpositive.data.MessagingRepository.Message>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var isSending by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf("") }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+
+    fun refreshMessages() {
+        com.teddy.bpositive.data.MessagingRepository.loadMessages(session, conversationId) { result ->
+            if (result.success) {
+                messages = result.messages
+                status = result.message
+            } else status = result.message
+            isLoading = false
+        }
+    }
+
+    androidx.compose.runtime.LaunchedEffect(conversationId) {
+        isLoading = true
+        refreshMessages()
+    }
+
+    androidx.compose.runtime.DisposableEffect(conversationId, session.accessToken) {
+        val subscription = com.teddy.bpositive.data.MessagingRealtimeSubscription(
+            session = session,
+            conversationId = conversationId,
+            onMessagesChanged = { refreshMessages() }
+        )
+        subscription.start()
+        onDispose { subscription.stop() }
+    }
+
+    androidx.compose.runtime.LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
+    }
+
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Surface(color = MaterialTheme.colorScheme.surface) {
+        Column(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Button(
-                        onClick = onBack,
-                        colors = ButtonDefaults.textButtonColors()
-                    ) { Text("‹") }
+                    TextButton(onClick = onBack) { Text("‹ Back", fontSize = 16.sp) }
                     Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape),
+                        modifier = Modifier.size(42.dp).background(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape
+                        ),
                         contentAlignment = Alignment.Center
-                    ) {
-                        Text(displayName.take(1).uppercase(), fontWeight = FontWeight.Bold)
-                    }
+                    ) { Text(displayName.take(1).uppercase(), fontWeight = FontWeight.Bold) }
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(displayName, fontWeight = FontWeight.SemiBold)
                         Text("@$username", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
-            Box(
-                modifier = Modifier.weight(1f).fillMaxWidth().padding(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "Your conversation will appear here.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
+
+            if (isLoading && messages.isEmpty()) {
+                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (messages.isEmpty()) {
+                Box(Modifier.weight(1f).fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        if (status.isNotBlank()) status else "No messages yet. Say hello!",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                    state = listState,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(messages, key = { it.id }) { message ->
+                        val mine = message.senderId == session.userId
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.84f)
+                                    .background(
+                                        if (mine) MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)
+                                        else MaterialTheme.colorScheme.surface,
+                                        RoundedCornerShape(
+                                            topStart = 16.dp, topEnd = 16.dp,
+                                            bottomStart = if (mine) 16.dp else 4.dp,
+                                            bottomEnd = if (mine) 4.dp else 16.dp
+                                        )
+                                    )
+                                    .padding(horizontal = 13.dp, vertical = 9.dp)
+                            ) {
+                                Text(message.body, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp)
+                                Text(
+                                    message.createdAt.replace("T", " ").take(16),
+                                    modifier = Modifier.align(Alignment.End).padding(top = 4.dp),
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            if (status.isNotBlank() && messages.isNotEmpty() && status != "No messages yet. Send the first message.") {
+                Text(status, modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 2.dp),
+                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
             }
         }
+
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(12.dp),
+            modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
-                value = messageText.value,
-                onValueChange = { messageText.value = it },
+                value = messageText,
+                onValueChange = { if (it.length <= 10000) messageText = it },
                 modifier = Modifier.weight(1f),
                 placeholder = { Text("Write a message") },
                 shape = RoundedCornerShape(24.dp),
-                maxLines = 4
+                maxLines = 4,
+                enabled = !isSending
             )
             Button(
                 onClick = {
-                    val text = messageText.value.trim()
-                    if (text.isNotEmpty()) {
-                        onSendMessage(text)
-                        messageText.value = ""
+                    val body = messageText.trim()
+                    if (body.isNotEmpty() && !isSending) {
+                        isSending = true
+                        status = ""
+                        com.teddy.bpositive.data.MessagingRepository.sendMessage(
+                            session, conversationId, body
+                        ) { result ->
+                            isSending = false
+                            if (result.success) {
+                                messageText = ""
+                                refreshMessages()
+                            } else status = result.message
+                        }
                     }
                 },
-                shape = CircleShape
-            ) { Text("➤") }
+                enabled = messageText.isNotBlank() && !isSending,
+                shape = CircleShape,
+                modifier = Modifier.size(52.dp)
+            ) {
+                if (isSending) CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp), strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                ) else Text("➤", fontSize = 20.sp)
+            }
         }
     }
 }
