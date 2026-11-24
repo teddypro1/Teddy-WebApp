@@ -23,6 +23,7 @@ import com.teddy.bpositive.data.NoteSyncRepository
 import com.teddy.bpositive.data.SupabaseNotesApi
 import com.teddy.bpositive.data.SupabaseRealtimeSubscription
 import com.teddy.bpositive.data.SupabaseProfilesApi
+import com.teddy.bpositive.data.UserSearchApi
 import com.teddy.bpositive.model.Note
 import com.teddy.bpositive.security.NoteEncryptionCodec
 import com.teddy.bpositive.security.VaultSessionManager
@@ -49,6 +50,7 @@ import com.teddy.bpositive.ui.screens.SecureVaultScreen
 import com.teddy.bpositive.ui.screens.AdminPanelScreen
 import com.teddy.bpositive.ui.screens.HomeScreen
 import com.teddy.bpositive.ui.screens.MessagingHomeScreen
+import com.teddy.bpositive.ui.screens.MessagingUserSearchScreen
 import com.teddy.bpositive.ui.screens.NotesScreen
 import com.teddy.bpositive.ui.screens.NoteDetailScreen
 import com.teddy.bpositive.ui.screens.NotificationInboxScreen
@@ -374,6 +376,9 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     val deletedNotes = remember(userId) { mutableStateListOf<SupabaseNotesApi.CloudNote>() }
     val conflictCopies = remember(userId) { mutableStateListOf<SupabaseNotesApi.ConflictCopy>() }
     var currentProfile by remember(userId) { mutableStateOf<SupabaseProfilesApi.Profile?>(null) }
+    var userSearchResults by remember(userId) { mutableStateOf<List<UserSearchApi.PublicProfile>>(emptyList()) }
+    var isSearchingUsers by remember { mutableStateOf(false) }
+    var userSearchStatus by remember { mutableStateOf("") }
     var showProfileDialog by rememberSaveable { mutableStateOf(false) }
     var profileFullName by remember(userId) { mutableStateOf("") }
     var profileUsername by remember(userId) { mutableStateOf("") }
@@ -781,6 +786,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var showTrash by rememberSaveable { mutableStateOf(false) }
     var showConflicts by rememberSaveable { mutableStateOf(false) }
     var selectedTab by rememberSaveable { mutableStateOf("Home") }
+    var showUserSearch by rememberSaveable { mutableStateOf(false) }
     var showVaultScreen by rememberSaveable { mutableStateOf(false) }
     var pendingVaultNoteAction by remember { mutableStateOf<Pair<Long, Boolean>?>(null) }
     LaunchedEffect(hasVerifiedAdminAccess) {
@@ -1507,11 +1513,43 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     contentPadding = padding,
                     onOpenNotes = { showNotesFeature = true }
                 )
+            } else if (selectedTab == "Messages" && showUserSearch) {
+                MessagingUserSearchScreen(
+                    contentPadding = padding,
+                    profiles = userSearchResults,
+                    isSearching = isSearchingUsers,
+                    status = userSearchStatus,
+                    onBack = {
+                        showUserSearch = false
+                        userSearchResults = emptyList()
+                        userSearchStatus = ""
+                    },
+                    onSearch = { query ->
+                        val session = activeSession ?: return@MessagingUserSearchScreen
+                        isSearchingUsers = true
+                        userSearchStatus = "Searching Supabase profiles..."
+                        UserSearchApi.search(context, session, query) { result ->
+                            if (activeSession?.userId != session.userId) return@search
+                            isSearchingUsers = false
+                            userSearchResults = if (result.success) result.profiles else emptyList()
+                            userSearchStatus = result.message
+                        }
+                    },
+                    onStartChat = { profile ->
+                        Toast.makeText(
+                            context,
+                            "Selected @${profile.username}. Conversation creation is in Build 04.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                )
             } else if (selectedTab == "Messages") {
                 MessagingHomeScreen(
                     contentPadding = padding,
                     onFindPeople = {
-                        Toast.makeText(context, "Username search is coming in the next build.", Toast.LENGTH_SHORT).show()
+                        userSearchResults = emptyList()
+                        userSearchStatus = ""
+                        showUserSearch = true
                     }
                 )
             } else if (selectedTab == "Trash") {
@@ -1740,6 +1778,9 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         showTrash = false
                         showConflicts = false
                         selectedTab = "Home"
+                        showUserSearch = false
+                        userSearchResults = emptyList()
+                        userSearchStatus = ""
                         showVaultScreen = false
                         isAdmin = false
                         adminVerifiedUserId = null
