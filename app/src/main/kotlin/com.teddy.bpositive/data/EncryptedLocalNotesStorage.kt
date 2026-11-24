@@ -28,6 +28,13 @@ object EncryptedLocalNotesStorage {
         object NoLegacyNotes : MigrationResult()
     }
 
+    sealed class MigrationAuditResult {
+        data class MatchesLegacy(val noteCount: Int) : MigrationAuditResult()
+        data class LegacySourceEmpty(val encryptedNoteCount: Int) : MigrationAuditResult()
+        data class Mismatch(val legacyNoteCount: Int, val encryptedNoteCount: Int) : MigrationAuditResult()
+        object NoEncryptedSnapshot : MigrationAuditResult()
+    }
+
     /**
      * Writes a version-2 encrypted snapshot. The complete Note object,
      * including title, content and metadata, is encrypted as one authenticated payload.
@@ -169,6 +176,27 @@ object EncryptedLocalNotesStorage {
         } else {
             MigrationResult.Refreshed(legacy.size)
         }
+    }
+
+    /**
+     * Performs a read-only integrity and source-comparison audit of the staged
+     * encrypted snapshot. It never writes, refreshes or deletes either copy.
+     */
+    @Synchronized
+    fun inspectMigration(context: Context, userId: String): MigrationAuditResult {
+        require(userId.isNotBlank()) { "Account ID is missing." }
+        check(com.teddy.bpositive.security.VaultSessionManager.isUnlocked(userId)) {
+            "Unlock Secure Vault before auditing encrypted local notes."
+        }
+        val legacy = LocalNotesStorage.loadNotes(context, userId)
+        val stored = preferences(context).getString(storageKey(userId), null)
+            ?: return MigrationAuditResult.NoEncryptedSnapshot
+        val document = JSONObject(stored)
+        verifySnapshot(userId, document)
+        val encrypted = loadNotesFromDocument(userId, document)
+        if (legacy.isEmpty()) return MigrationAuditResult.LegacySourceEmpty(encrypted.size)
+        return if (encrypted == legacy) MigrationAuditResult.MatchesLegacy(legacy.size)
+        else MigrationAuditResult.Mismatch(legacy.size, encrypted.size)
     }
 
     @Synchronized

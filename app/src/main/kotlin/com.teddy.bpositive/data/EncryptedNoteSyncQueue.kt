@@ -24,6 +24,13 @@ object EncryptedNoteSyncQueue {
         val alreadyPresent: Boolean
     )
 
+    sealed class MigrationAuditResult {
+        data class MatchesLegacy(val recordCount: Int) : MigrationAuditResult()
+        data class LegacyQueueEmpty(val encryptedRecordCount: Int) : MigrationAuditResult()
+        data class Mismatch(val legacyRecordCount: Int, val encryptedRecordCount: Int) : MigrationAuditResult()
+        object NoEncryptedSnapshot : MigrationAuditResult()
+    }
+
     /**
      * Copies the current user's pending legacy records into an encrypted snapshot.
      * Existing snapshots are compared with the complete current queue and refreshed
@@ -92,6 +99,27 @@ object EncryptedNoteSyncQueue {
             copiedCount = encryptedRecords.length(),
             alreadyPresent = false
         )
+    }
+
+    /**
+     * Performs a read-only integrity and source-comparison audit of the staged
+     * encrypted queue. It never writes, refreshes or deletes either copy.
+     */
+    @Synchronized
+    fun inspectMigration(context: Context, userId: String): MigrationAuditResult {
+        require(userId.isNotBlank()) { "Account ID is missing." }
+        check(VaultSessionManager.isUnlocked(userId)) {
+            "Unlock Secure Vault before auditing the encrypted sync queue."
+        }
+        val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val snapshot = readRoot(preferences).optJSONObject(userId)
+            ?: return MigrationAuditResult.NoEncryptedSnapshot
+        verifySnapshot(userId, snapshot)
+        val legacy = NoteSyncStore.getPendingChanges(context, userId)
+        val encrypted = loadStagedRecords(context, userId)
+        if (legacy.isEmpty()) return MigrationAuditResult.LegacyQueueEmpty(encrypted.size)
+        return if (encrypted == legacy) MigrationAuditResult.MatchesLegacy(legacy.size)
+        else MigrationAuditResult.Mismatch(legacy.size, encrypted.size)
     }
 
     /** Returns decrypted staged records only while the matching Vault is unlocked. */

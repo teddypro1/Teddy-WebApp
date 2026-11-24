@@ -48,6 +48,8 @@ fun SecureVaultScreen(
     var migrationMessage by remember(userId) { mutableStateOf("") }
     var isMigratingQueue by remember(userId) { mutableStateOf(false) }
     var queueMigrationMessage by remember(userId) { mutableStateOf("") }
+    var isAuditingMigration by remember(userId) { mutableStateOf(false) }
+    var auditMessage by remember(userId) { mutableStateOf("") }
 
     LaunchedEffect(userId, cloudRetryCount) {
         if (session.userId != userId || userId.isBlank()) {
@@ -359,6 +361,61 @@ fun SecureVaultScreen(
                     }
                     if (queueMigrationMessage.isNotBlank()) {
                         Text(queueMigrationMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+
+                    HorizontalDivider()
+                    Text("Encrypted Migration Verification", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Run a read-only integrity check of both encrypted copies against their current legacy sources. This check does not modify either copy.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Button(
+                        onClick = {
+                            if (!VaultSessionManager.isUnlocked(userId)) {
+                                auditMessage = "Unlock the Vault first."
+                                return@Button
+                            }
+                            isAuditingMigration = true
+                            auditMessage = "Checking encrypted snapshots..."
+                            val notesResult = try {
+                                when (val result = EncryptedLocalNotesStorage.inspectMigration(context, userId)) {
+                                    is EncryptedLocalNotesStorage.MigrationAuditResult.MatchesLegacy ->
+                                        "Local notes: verified and match (${result.noteCount} notes)."
+                                    is EncryptedLocalNotesStorage.MigrationAuditResult.LegacySourceEmpty ->
+                                        "Local notes: legacy source is empty; encrypted copy is intact (${result.encryptedNoteCount} notes), but source comparison is unavailable."
+                                    is EncryptedLocalNotesStorage.MigrationAuditResult.Mismatch ->
+                                        "Local notes: mismatch detected (legacy ${result.legacyNoteCount}, encrypted ${result.encryptedNoteCount})."
+                                    EncryptedLocalNotesStorage.MigrationAuditResult.NoEncryptedSnapshot ->
+                                        "Local notes: no encrypted snapshot found."
+                                }
+                            } catch (error: Exception) {
+                                "Local notes: verification failed (${error.message ?: "unknown error"})."
+                            }
+                            val queueResult = try {
+                                when (val result = EncryptedNoteSyncQueue.inspectMigration(context, userId)) {
+                                    is EncryptedNoteSyncQueue.MigrationAuditResult.MatchesLegacy ->
+                                        "Offline queue: verified and match (${result.recordCount} records)."
+                                    is EncryptedNoteSyncQueue.MigrationAuditResult.LegacyQueueEmpty ->
+                                        "Offline queue: legacy queue is empty; encrypted copy is intact (${result.encryptedRecordCount} records), but source comparison is unavailable."
+                                    is EncryptedNoteSyncQueue.MigrationAuditResult.Mismatch ->
+                                        "Offline queue: mismatch detected (legacy ${result.legacyRecordCount}, encrypted ${result.encryptedRecordCount})."
+                                    EncryptedNoteSyncQueue.MigrationAuditResult.NoEncryptedSnapshot ->
+                                        "Offline queue: no encrypted snapshot found."
+                                }
+                            } catch (error: Exception) {
+                                "Offline queue: verification failed (${error.message ?: "unknown error"})."
+                            }
+                            auditMessage = "$notesResult\n$queueResult"
+                            isAuditingMigration = false
+                        },
+                        enabled = !isAuditingMigration,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (isAuditingMigration) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                        else Text("Verify Encrypted Copies")
+                    }
+                    if (auditMessage.isNotBlank()) {
+                        Text(auditMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
                     HorizontalDivider()
