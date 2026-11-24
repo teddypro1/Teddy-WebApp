@@ -1200,20 +1200,14 @@ Design details that must be resolved before migration:
 
 Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but each logical change-set must be reviewed and user-confirmed before being marked complete. Do not report a CodeAssist Build successful until the user confirms it.
 
-### 18.7 Build 01 — Messaging database foundation (PREPARED IN GIT; PRODUCTION MIGRATION PENDING)
+### 18.7 Build 01 — Messaging database foundation (SECURITY-REVIEWED; PRODUCTION MIGRATION PENDING)
 
-- Build 01 design and migration artifact have been prepared after re-verifying the current GitHub `main` HEAD, canonical Master Documentation, live Supabase project, schema, indexes, policies, functions, Realtime publication and migration history.
-- Added five additive tables: `conversations`, `conversation_members`, `messages`, `message_receipts`, and `message_deletions`.
-- Added a non-API helper schema `messaging_private`, membership-check helper, strict RLS policies, least-privilege grants, authenticated RPCs for direct conversation creation, idempotent text send and sender-only global deletion, and member-authorized private Realtime Broadcast/Presence policies.
-- Direct conversations use a canonical UUID pair and database uniqueness; membership is represented independently so future groups are not structurally blocked.
-- Durable rows are added to the existing `supabase_realtime` publication without removing Notes/Profile publication entries. No Realtime dashboard-wide public-access setting was changed.
-- Existing `profiles` and `device_tokens` contracts are reused as future integration points; neither table is modified.
-- Files in the single Build 01 commit:
-  - `supabase/migrations/20261124070000_build01_messaging_foundation.sql`
-  - `docs/architecture/TEDDY_MESSAGING_DATABASE.md`
-  - `docs/project/PROJECT_CONTEXT.md`
-- **Important migration-history discrepancy:** live Supabase reports 19 applied migrations, but the checked-in `supabase/migrations` directory currently contains only two SQL files. This must be reconciled carefully; do not reset, rewrite or fake migration history.
-- **Production status:** migration SQL is committed for review only. It has NOT been applied. No Messaging tables, policies, functions or publication entries have been created in the live database. No existing production data was changed.
-- **Verification status:** schema design and SQL artifact are prepared, but production SQL execution, RLS two-user tests, Realtime channel tests and advisor checks remain pending approval/application.
-- No Android source code was changed, so no CodeAssist Build has been requested or claimed.
-- **Next action:** review the exact committed SQL and resolve the repository/live migration-history mismatch. Apply the migration only after the user explicitly approves this exact SQL; then run database advisors and two-account security/integration tests before marking Build 01 fully complete.
+- Build 01 migration and architecture have been re-reviewed after user approval. A security issue in the original helper function was corrected before production application.
+- The helper `messaging_private.is_conversation_member(conversation_id)` derives caller identity exclusively from `auth.uid()`; it no longer accepts an arbitrary user UUID. This prevents authenticated clients from probing membership for other users.
+- The five-table additive schema, least-privilege grants, RLS policies, RPC contracts and Realtime publication additions remain otherwise unchanged.
+- Migration history mismatch remains: live Supabase reports 19 applied migrations while the repository contains only a subset. No history reset, repair or fabrication is authorized or planned.
+- Supabase Realtime documentation confirms RLS policies on `realtime.messages` do not enforce private-only channels while project-wide `Allow public access` is enabled. Inspect separately; do not change it without assessing existing Notes/Profile channels and explicit approval. Messaging Broadcast/Presence privacy is not verified until this is resolved and clients use `private: true`.
+- Pre-application live verification: all five Messaging tables absent; helper schema absent; no Messaging Realtime policies; publication currently contains `notes` and `profiles`.
+- No production schema/data change has yet been made. The user explicitly approved applying Build 01 subject to the security correction and safe migration workflow.
+- No Android source was changed; no CodeAssist Build is involved in Build 01.
+
