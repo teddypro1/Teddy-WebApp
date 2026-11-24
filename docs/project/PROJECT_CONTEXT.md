@@ -1,6 +1,6 @@
 # Teddy-WebApp — Project Context & Progress Log
 
-সর্বশেষ হালনাগাদ: ২০২৬-১১-২৩  
+সর্বশেষ হালনাগাদ: ২০২৬-১১-২৪
 Repository: https://github.com/teddypro1/Teddy-WebApp  
 এই নথি AI development assistant-এর জন্য canonical project handoff। কোনো কাজ শুরুর আগে এই নথি পড়বে এবং live GitHub/Supabase state যাচাই করবে। নথির কোনো তথ্য পুরোনো হতে পারে; live state সর্বদা অগ্রাধিকার পাবে।
 
@@ -716,3 +716,23 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - Implementation commit: `cfdc0cdcbfd186985d0d0b60c01c9bfbbaed11b8`.
 - User-confirmed Build success is not a cryptographic security audit or end-to-end test. The primitives are not yet wired into the app, local persistence, Supabase, or the Note action UI. Do not represent notes as encrypted or the Lock feature as functional yet.
 - No Supabase schema, migration, production database, or paid-plan changes.
+
+## Build 40 — Note actions: Pin, Delete-to-Trash and Share (user-confirmed successful)
+
+- **User-confirmed on 2026-11-24:** “Successfully Build Completed!” The user confirmed that the CodeAssist Build for this change-set completed successfully.
+- Connected the Note Card long-press action dialog to real note actions:
+  - Pin / Unpin calls the existing pin-toggle and save/synchronization flow.
+  - Pinned Note Cards display a compact custom-drawn pin indicator; no additional icon dependency was introduced.
+  - Delete asks for confirmation (“Move note to Trash?”), then uses the existing note-delete synchronization path, removes the note from the active local list and saves the change.
+  - Share opens Android's native text-sharing chooser with the note title and content.
+- The Lock option is deliberately **not active yet**. Selecting it displays a message that Secure Vault setup is not connected and explicitly states that the note has not been encrypted. Do not claim note encryption or functional locking.
+- Source files:
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.kt`
+  - `app/src/main/kotlin/com.teddy.bpositive/MainActivity.kt`
+- Source commits on `main`:
+  - `1338e68d7f4446af57974b1f21449baffb6370e0` — Wire action dialog callbacks, delete confirmation and pinned-card indicator.
+  - `cb77c777dc95d8a181a6c7a563ef6e9a79a6581b` — Connect pin/delete/share to the app's existing state, sync and Android share flows.
+  - `162af7489945d26e94cd51eeb05092b053d56903` — Clarify that Vault setup is required before note locking.
+  - `a89526142c6c6cefaddaee5cd8d88f0737b32a1b` — Show an explicit inactive-vault notice when Lock is selected.
+- No Supabase schema, migration, production database, or paid-plan changes. Live Supabase inspection before this change confirmed the existing `public.notes.is_pinned` and `deleted_at` columns and RLS remained in place; no database write was needed.
+- Build confirmation establishes successful CodeAssist compilation/build as reported by the user. It does not establish exhaustive device regression testing or encryption security. The earlier cryptography primitives remain groundwork only; Secure Vault persistence, setup/unlock/recovery UI, note encryption integration and sync strategy are still pending.
