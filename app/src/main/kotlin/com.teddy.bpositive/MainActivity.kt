@@ -25,6 +25,7 @@ import com.teddy.bpositive.data.SupabaseRealtimeSubscription
 import com.teddy.bpositive.data.SupabaseProfilesApi
 import com.teddy.bpositive.model.Note
 import com.teddy.bpositive.security.NoteEncryptionCodec
+import com.teddy.bpositive.security.VaultSessionManager
 import com.teddy.bpositive.data.LocalNotesStorage.loadNotes
 import com.teddy.bpositive.data.LocalNotesStorage.saveNotes
 import com.teddy.bpositive.utils.parseCloudTimestampMillis
