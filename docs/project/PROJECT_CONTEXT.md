@@ -1329,3 +1329,14 @@ Verification after source changes:
 - Live source check confirms MessagingRepository.kt now exists on main.
 - Supabase project remains `ACTIVE_HEALTHY`; no SQL, migration, RLS, Realtime policy, public-channel setting, billing or production data changes were made.
 - CodeAssist compilation and two-account runtime message send/receive are pending user confirmation. Do not mark this Amendments Build successful until the user confirms the CodeAssist build. After build, request a brief two-account test: send from account A to B and reply from B to A.
+
+
+### Amendments follow-up — Scaffold inset correction (2026-11-24)
+
+User-provided screenshot after the first Amendments Build showed the empty-state message but the conversation header and composer were obscured. Root cause: `MessagingChatScreen` did not consume the Scaffold `PaddingValues`, so its top conversation header and bottom composer were laid out behind the persistent workspace top bar and bottom navigation.
+
+Correction committed:
+- `347d58dcbc77baf2da840de054a7b6258fe0097c`: added `contentPadding` to `MessagingChatScreen` and applied it to the root layout.
+- `33388a30953b189d3c6987058448a0f32af414c4`: passed the Scaffold `padding` from MainActivity into the chat screen.
+
+This is a UI layout correction only. Supabase was not changed. CodeAssist Build and visual confirmation that the conversation header, message input and send button are now visible remain pending user confirmation.
