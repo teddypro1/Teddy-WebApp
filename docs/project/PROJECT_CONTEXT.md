@@ -870,3 +870,14 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - Commit: `a0a73eab627b2f23d55df9ca09e3359d89e684b4`.
 - User-reported Build compilation success. No separate runtime encryption/decryption or tamper test report was supplied.
 - Limitations: codec is not connected to local note storage, pending sync, Supabase, realtime, conflict handling, search or UI. Existing notes remain plaintext; Note Lock is not active. No database change.
+
+## Build 48 — Encrypted Local Notes Storage Migration Foundation (CodeAssist Build pending)
+
+- Added `data/EncryptedLocalNotesStorage.kt` as an account-scoped encrypted snapshot store, separate from the currently active plaintext `LocalNotesStorage`.
+- Uses `NoteEncryptionCodec` to encrypt each note title/content independently. Note ID, pin state, timestamps and color remain metadata in the local JSON snapshot; do not claim all note metadata is encrypted.
+- Includes `stageLegacyMigration()`: copies the existing plaintext note cache into the encrypted snapshot, reads it back and checks full Note equality before reporting staged. It deliberately does not delete or overwrite the original plaintext cache.
+- Includes read/write and encrypted-snapshot existence APIs. Decryption requires the matching account's unlocked Vault session.
+- New file: `app/src/main/kotlin/com.teddy.bpositive/data/EncryptedLocalNotesStorage.kt`.
+- Commit: `b017c8af3d52d1bb0e8713ce8826a361b85c10e7`.
+- Important: this is a migration foundation only and is not yet connected to the active Notes UI, normal local save/load, pending sync queue, Supabase, realtime or conflict handling. Active notes remain in the existing plaintext cache and cloud table. The plaintext source is intentionally preserved.
+- No Supabase schema/migration or paid-plan changes. CodeAssist Build and runtime migration tests pending user confirmation.
