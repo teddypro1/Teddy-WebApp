@@ -55,6 +55,7 @@ fun SettingsScreen(
     accountEmail: String,
     isAdmin: Boolean,
     onOpenAdminPanel: () -> Unit,
+    onOpenVault: () -> Unit,
     onDarkModeChange: (Boolean) -> Unit,
     onSignOut: () -> Unit,
     onSendTestNotification: () -> Unit,
@@ -77,6 +78,16 @@ fun SettingsScreen(
     ) {
         Text("Settings", fontSize = 26.sp, fontWeight = FontWeight.Bold)
         Text("Customize your Teddy WebApp experience.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Secure Vault", fontWeight = FontWeight.SemiBold)
+                Text("Configure a Master Password and Recovery Key. Existing notes are not encrypted in this stage.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                OutlinedButton(onClick = onOpenVault, modifier = Modifier.fillMaxWidth()) {
+                    Text("Open Secure Vault")
+                }
+            }
+        }
         Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
             Row(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween) {
