@@ -550,3 +550,14 @@ Implemented in `NoteDetailScreen.kt`:
 - User confirmed Build success and earlier verified that the same account's Vault becomes available on the second device after Account Sync. Automatic invocation is now included; do not claim exhaustive offline/race/device testing beyond what the user reported.
 - No new database migration or production schema change. The existing Build 44 table and RLS remain in use.
 - Limitations remain: only the encrypted Vault envelope syncs, not notes; different remote envelopes are never overwritten; no password-change/replacement/delete workflow or continuous background synchronization.
+
+## Build 46 — In-memory Vault Unlock Session Foundation (USER-CONFIRMED SUCCESSFUL)
+
+- User explicitly confirmed CodeAssist Build success on 2026-11-24.
+- Added `security/VaultSessionManager.kt`: holds a defensive copy of the unlocked 256-bit Vault master key in process memory only, scopes it to one user ID, exposes defensive copies for consumers, and zeroes the held key on lock/replacement.
+- Master Password and Recovery Key unlock flows now store the unwrapped key in this in-memory session manager and clear the temporary returned byte array.
+- `MainActivity.onStop()` clears the in-memory Vault key when the app leaves the foreground; sign-out clears it explicitly.
+- Files: `security/VaultSessionManager.kt` (new), `ui/screens/SecureVaultScreen.kt`, `MainActivity.kt`.
+- Commits: `14cfaf952dfff9c04c53c4a63838186dc25fc773`, `929784b47c6115d54080f1c6b776ce1dfdab0b4c`, `9cca657531fd6cfc3d05c3a1a999704190542e10`, `6e33afa529d71984a50c19c6a3d417e3b2cc91a8`.
+- User-reported Build compilation success. No separate on-device lifecycle/key-memory test report was supplied.
+- Limitations: Note Lock is not wired. Note title/content remain plaintext in local storage, pending sync metadata and Supabase. No note encryption, unlock UI, timed auto-lock or database change in Build 46.
