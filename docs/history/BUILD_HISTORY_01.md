@@ -474,3 +474,14 @@ Implemented in `NoteDetailScreen.kt`:
   - `a89526142c6c6cefaddaee5cd8d88f0737b32a1b` — Explicit notice that notes are not encrypted because Vault is not connected.
 - No Supabase schema/migration, production database or paid-plan changes. Existing `public.notes.is_pinned` and `deleted_at` fields were reused; no database write was made.
 - This Build confirmation is not an exhaustive device regression test or a security audit. Secure Vault UI, persistence, recovery and end-to-end note encryption remain future work; do not describe Lock as functional.
+
+
+## Build 41 — Pinned Note Card indicator and tap-to-unpin (user-confirmed successful)
+
+- **User-confirmed on 2026-11-24:** CodeAssist Build completed successfully.
+- Replaced the pinned Note Card's bookmark-like marker with a custom Canvas pushpin glyph; no new dependency.
+- Tapping the pinned indicator now unpins the note through the existing toggle callback. The dialog's Unpin action remains available as an alternative.
+- File: `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.kt`.
+- Source commits: `20990cab635c128a19516288978d21e5edf04438`, `cd7f2fc68c0fd78be2a2da89b473311f1c539a1c`.
+- No Supabase/database/schema or paid-plan changes.
+- Secure Vault and end-to-end note encryption are not implemented; Lock remains inactive. Build success is not a security audit or exhaustive regression test.
