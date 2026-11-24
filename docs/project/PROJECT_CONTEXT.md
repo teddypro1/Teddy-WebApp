@@ -1212,4 +1212,16 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
 - Realtime project-wide `Allow public access` setting could not be inspected with available tools. Private Broadcast/Presence enforcement is not verified. Do not change this global setting without assessing Notes/Profile channels and explicit approval; Messaging clients must use `private: true`.
 - Full separate-session Android client tests, Realtime channel authorization tests, and Notes/Profile/notification/Vault regression tests remain pending. Build 01 is database-applied, but the overall Messaging foundation is not marked fully complete until these gates pass.
 - No Android source code changed; no CodeAssist Build has been run or claimed.
+## 18.8 Realtime Compatibility Build — Notes/Profile private channel migration (SOURCE COMMITTED; CODEASSIST BUILD AND DEVICE TEST PENDING)
 
+- User confirmed the Supabase Dashboard setting **Realtime → Allow public access to channels** is currently Enabled. It has deliberately not been toggled because the existing Android Notes/Profile Realtime client previously joined one shared public topic.
+- Live GitHub main before this change was 40575b4a69fb55cd79f349de1b6c495858240a9c. Supabase project was ACTIVE_HEALTHY; Build 01's five Messaging tables and migration remained present.
+- Added additive migration supabase/migrations/20261124130000_build_realtime_private_notes_channel.sql. Applied successfully to Supabase as migration 20261124112553: build_realtime_private_notes_channel.
+- The migration adds one SELECT-only policy, realtime.messages.notes_private_user_channel_receive, allowing authenticated channel authorization only when realtime.topic() = 'notes:user:' || auth.uid() and the extension is Broadcast/Presence. It adds no INSERT permission. Existing public.notes and public.profiles table RLS policies are unchanged; Postgres Changes row delivery continues to be governed by those table policies.
+- Updated app/src/main/kotlin/com.teddy.bpositive/data/SupabaseRealtimeSubscription.kt: channel config now sets private = true; topic changed from realtime:public:notes to realtime:notes:user:<current-user-id>. Notes and Profiles remain subscribed together in the same user-scoped private channel.
+- Source commit: 599785722b470b39c84e4c4800873b93bb798737.
+- Migration-file commit: 8daaabc9516aed30538b92a236a975a28a7c6377.
+- Architecture documentation commit: 615816ee4e896ff59675b81986ac0bbf6f665451.
+- Live policy verification confirms the new policy exists alongside the two existing Messaging policies. Migration history shows version 20261124112553. No existing Notes/Profile policies, publication entries, application data, or global Realtime settings were changed.
+- **Pending:** CodeAssist Build; on-device authenticated Notes/Profile Realtime test; cross-account channel isolation test; Notes CRUD/offline sync/conflict/Profile/notification/Secure Vault regression tests.
+- **Do not disable global Allow public access yet.** Only after the user confirms these client tests pass should the global setting change be considered. Do not mark this Build or Messaging Build 01 fully complete before those tests.
