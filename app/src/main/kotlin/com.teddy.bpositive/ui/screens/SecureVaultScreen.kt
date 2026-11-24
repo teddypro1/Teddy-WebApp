@@ -16,6 +16,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.teddy.bpositive.data.SupabaseSessionManager
 import com.teddy.bpositive.data.EncryptedLocalNotesStorage
+import com.teddy.bpositive.data.EncryptedNoteSyncQueue
 import com.teddy.bpositive.data.SupabaseVaultApi
 import com.teddy.bpositive.security.NotesEncryption
 import com.teddy.bpositive.security.NotesVaultStorage
@@ -45,6 +46,8 @@ fun SecureVaultScreen(
     var cloudRetryCount by remember(userId) { mutableIntStateOf(0) }
     var isMigratingNotes by remember(userId) { mutableStateOf(false) }
     var migrationMessage by remember(userId) { mutableStateOf("") }
+    var isMigratingQueue by remember(userId) { mutableStateOf(false) }
+    var queueMigrationMessage by remember(userId) { mutableStateOf("") }
 
     LaunchedEffect(userId, cloudRetryCount) {
         if (session.userId != userId || userId.isBlank()) {
@@ -320,6 +323,40 @@ fun SecureVaultScreen(
                     }
                     if (migrationMessage.isNotBlank()) {
                         Text(migrationMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+
+                    HorizontalDivider()
+                    Text("Offline Sync Queue Encryption", fontWeight = FontWeight.SemiBold)
+                    Text("Prepare an encrypted copy of pending offline sync operations. The existing queue remains untouched until all sync paths can be switched safely.")
+                    Button(
+                        onClick = {
+                            if (!VaultSessionManager.isUnlocked(userId)) {
+                                queueMigrationMessage = "Unlock the Vault with your Master Password or Recovery Key first."
+                                return@Button
+                            }
+                            isMigratingQueue = true
+                            queueMigrationMessage = "Encrypting and verifying pending sync records..."
+                            try {
+                                val result = EncryptedNoteSyncQueue.stageLegacyMigration(context, userId)
+                                queueMigrationMessage = if (result.alreadyPresent) {
+                                    "Encrypted queue already exists and was verified (${result.copiedCount} records)."
+                                } else {
+                                    "Verified encrypted copy created for ${result.copiedCount} pending records. Original queue was preserved."
+                                }
+                            } catch (error: Exception) {
+                                queueMigrationMessage = "Queue migration stopped safely: ${error.message ?: "Unknown error"}. Original queue was preserved."
+                            } finally {
+                                isMigratingQueue = false
+                            }
+                        },
+                        enabled = !isMigratingQueue,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (isMigratingQueue) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                        else Text("Prepare Encrypted Offline Queue")
+                    }
+                    if (queueMigrationMessage.isNotBlank()) {
+                        Text(queueMigrationMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
                     HorizontalDivider()
