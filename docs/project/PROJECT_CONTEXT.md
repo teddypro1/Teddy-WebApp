@@ -1212,7 +1212,7 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
 - Realtime project-wide `Allow public access` setting could not be inspected with available tools. Private Broadcast/Presence enforcement is not verified. Do not change this global setting without assessing Notes/Profile channels and explicit approval; Messaging clients must use `private: true`.
 - Full separate-session Android client tests, Realtime channel authorization tests, and Notes/Profile/notification/Vault regression tests remain pending. Build 01 is database-applied, but the overall Messaging foundation is not marked fully complete until these gates pass.
 - No Android source code changed; no CodeAssist Build has been run or claimed.
-## 18.9 Messaging Build 02 — Navigation and UI foundation (SOURCE COMMITTED; CODEASSIST BUILD NOT YET USER-CONFIRMED)
+## 18.9 Messaging Build 02 — Navigation and UI foundation (USER-CONFIRMED BUILD SUCCESSFUL)
 
 - Added a dedicated **Chats** destination to the existing bottom navigation. The destination is named `Messages` internally to keep routing explicit.
 - Added `app/src/main/kotlin/com.teddy.bpositive/ui/screens/MessagingScreens.kt` with:
@@ -1227,7 +1227,7 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
   - `d80f0fd51e46d8fe5718ddad6635b80d8229e7df` — add Chats navigation item.
   - `6a92639453ffc126bb27bb4ca5961df8c574c22f` — adjust chat screen content sizing.
 - No Supabase schema, data, policies, Realtime settings, Edge Functions, billing or plan changes were made.
-- **Build status:** Source is committed to `main`; the user must pull and run the CodeAssist Build. Do not mark Build 02 successful until the user confirms.
+- **Build status:** **User confirmed CodeAssist Build completed successfully on 2026-11-24.**
 - **Verification approach:** The remaining Notes/Profile/notification/Vault regression checks are deferred to the consolidated integration/hardening pass rather than being used to block forward progress on this UI-only Build. The earlier two-account Notes/Profile private-channel isolation test remains user-confirmed as passed. Keep global Realtime **Allow public access to channels** Enabled until the relevant private-channel migration and regression coverage is complete.
 
 ## 18.8 Realtime Compatibility Build — Notes/Profile private channel migration (BUILD AND BASIC DEVICE REALTIME TEST CONFIRMED; CROSS-ACCOUNT/REGRESSION TESTS PENDING)
@@ -1267,6 +1267,8 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
   - 241e8e8ecb39bb6ce24085ce7b2230e1b3a7d3b9 — search and profile preview UI.
   - 387cb10b7980af5ee8b13e070842ee5b9127790f — connect search to Messaging navigation.
   - 4ea238d7f0112d07bb1e8a181acaf1554a7e3c37 — add applied migration file.
+  - ab5b709b58caf6901651608bd0534e8e9cfee109 — Messaging database architecture documentation.
+  - 5115783279e8c2eb852a7125e268465c8f8765e0 — changelog update.
 - Supabase Health advisor returned no findings. Security advisor reports this authenticated SECURITY DEFINER RPC in the same expected warning category as existing Messaging RPCs, plus the pre-existing leaked-password-protection warning. Performance advisor still reports seven Messaging foreign-key index INFO findings and unused-index INFO findings.
 - No existing profile rows, username values, owner policies, Messaging rows, Realtime settings, billing or plan settings were changed.
 - Build status: source and database changes are committed/applied; CodeAssist Build and on-device username search remain pending user confirmation.
