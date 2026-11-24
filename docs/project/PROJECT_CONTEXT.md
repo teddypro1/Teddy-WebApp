@@ -1200,9 +1200,20 @@ Design details that must be resolved before migration:
 
 Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but each logical change-set must be reviewed and user-confirmed before being marked complete. Do not report a CodeAssist Build successful until the user confirms it.
 
-### 18.7 Current status and next action
+### 18.7 Build 01 — Messaging database foundation (PREPARED IN GIT; PRODUCTION MIGRATION PENDING)
 
-- Product requirements and the 15-Build roadmap are captured as planning baseline.
-- No Messaging Android source code, database migration, table, RLS policy, Realtime publication, Edge Function or push workflow has been created.
-- No production database changes were made during this documentation update.
-- Next action when the user authorizes Build 01: re-check current `main` HEAD and canonical documentation, inspect relevant live source files, current profiles policies/indexes/functions, migration files and Supabase Realtime configuration; then produce the complete additive migration and security design for review. Do not apply any production migration until the user explicitly approves the exact database change.
+- Build 01 design and migration artifact have been prepared after re-verifying the current GitHub `main` HEAD, canonical Master Documentation, live Supabase project, schema, indexes, policies, functions, Realtime publication and migration history.
+- Added five additive tables: `conversations`, `conversation_members`, `messages`, `message_receipts`, and `message_deletions`.
+- Added a non-API helper schema `messaging_private`, membership-check helper, strict RLS policies, least-privilege grants, authenticated RPCs for direct conversation creation, idempotent text send and sender-only global deletion, and member-authorized private Realtime Broadcast/Presence policies.
+- Direct conversations use a canonical UUID pair and database uniqueness; membership is represented independently so future groups are not structurally blocked.
+- Durable rows are added to the existing `supabase_realtime` publication without removing Notes/Profile publication entries. No Realtime dashboard-wide public-access setting was changed.
+- Existing `profiles` and `device_tokens` contracts are reused as future integration points; neither table is modified.
+- Files in the single Build 01 commit:
+  - `supabase/migrations/20261124070000_build01_messaging_foundation.sql`
+  - `docs/architecture/TEDDY_MESSAGING_DATABASE.md`
+  - `docs/project/PROJECT_CONTEXT.md`
+- **Important migration-history discrepancy:** live Supabase reports 19 applied migrations, but the checked-in `supabase/migrations` directory currently contains only two SQL files. This must be reconciled carefully; do not reset, rewrite or fake migration history.
+- **Production status:** migration SQL is committed for review only. It has NOT been applied. No Messaging tables, policies, functions or publication entries have been created in the live database. No existing production data was changed.
+- **Verification status:** schema design and SQL artifact are prepared, but production SQL execution, RLS two-user tests, Realtime channel tests and advisor checks remain pending approval/application.
+- No Android source code was changed, so no CodeAssist Build has been requested or claimed.
+- **Next action:** review the exact committed SQL and resolve the repository/live migration-history mismatch. Apply the migration only after the user explicitly approves this exact SQL; then run database advisors and two-account security/integration tests before marking Build 01 fully complete.
