@@ -561,3 +561,14 @@ Implemented in `NoteDetailScreen.kt`:
 - Commits: `14cfaf952dfff9c04c53c4a63838186dc25fc773`, `929784b47c6115d54080f1c6b776ce1dfdab0b4c`, `9cca657531fd6cfc3d05c3a1a999704190542e10`, `6e33afa529d71984a50c19c6a3d417e3b2cc91a8`.
 - User-reported Build compilation success. No separate on-device lifecycle/key-memory test report was supplied.
 - Limitations: Note Lock is not wired. Note title/content remain plaintext in local storage, pending sync metadata and Supabase. No note encryption, unlock UI, timed auto-lock or database change in Build 46.
+
+## Build 47 — Versioned Encrypted Note Payload Codec (USER-CONFIRMED SUCCESSFUL)
+
+- User explicitly confirmed CodeAssist Build success on 2026-11-24.
+- Added `security/NoteEncryptionCodec.kt` as a versioned serialization boundary for encrypted note title/content fields.
+- Codec requires an unlocked Vault session for the matching user ID, obtains a defensive master-key copy, encrypts title and content independently with the existing AES-256-GCM field primitive (fresh nonce per field), and clears its key copy in `finally`.
+- Decode authenticates both fields and fails closed on unsupported format, malformed ciphertext, wrong key or tampering. JSON contains `format_version`, encrypted `title`, and encrypted `content`.
+- New file: `app/src/main/kotlin/com.teddy.bpositive/security/NoteEncryptionCodec.kt`.
+- Commit: `a0a73eab627b2f23d55df9ca09e3359d89e684b4`.
+- User-reported Build compilation success. No separate runtime encryption/decryption or tamper test report was supplied.
+- Limitations: codec is not connected to local note storage, pending sync, Supabase, realtime, conflict handling, search or UI. Existing notes remain plaintext; Note Lock is not active. No database change.
