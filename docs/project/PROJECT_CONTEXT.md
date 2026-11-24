@@ -923,3 +923,13 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - No Supabase migration, production database mutation or paid-plan change.
 - User explicitly confirmed CodeAssist Build success on 2026-11-24. Runtime encrypted-queue migration execution/count has not yet been reported.
 - The active sync queue is still plaintext; this milestone only prepares a separate encrypted snapshot. Do not describe active sync as encrypted until a later cutover is implemented.
+
+## Build 51 — Encrypted Offline Queue Migration Integrity Hardening (CodeAssist Build pending)
+
+- Hardened `EncryptedNoteSyncQueue.stageLegacyMigration()` so an existing encrypted snapshot is compared against the complete current legacy pending queue. If queue records have changed, the encrypted snapshot is refreshed instead of incorrectly reporting it as already present.
+- Equality verification now covers decrypted title/content, local note ID, client ID, operation, pin state, cloud note ID and cloud updated timestamp, both before persistence and after reading the snapshot back.
+- Snapshot validation now rejects missing/invalid metadata, unsupported operation values, invalid IDs, and unauthenticated or malformed encrypted fields. `loadStagedRecords()` validates the snapshot before decoding records.
+- The legacy plaintext queue remains active and unchanged; the encrypted queue remains a staged migration copy. No active queue cutover, local note-storage cutover, Supabase schema change, production DB mutation or paid-plan change.
+- File changed: `app/src/main/kotlin/com.teddy.bpositive/data/EncryptedNoteSyncQueue.kt`.
+- Implementation commit: `c741818ab6c1551586cbe0b0f651c62c0fe1a8a8`.
+- CodeAssist Build and runtime migration verification pending user confirmation.
