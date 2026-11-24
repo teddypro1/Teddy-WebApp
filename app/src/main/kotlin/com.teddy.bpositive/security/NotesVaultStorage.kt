@@ -4,6 +4,7 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import java.io.File
 import org.json.JSONObject
 import java.security.KeyStore
 import java.security.MessageDigest
@@ -14,7 +15,6 @@ import javax.crypto.spec.GCMParameterSpec
 
 /** Stores only the serialized VaultEnvelope, never passwords or unwrapped master keys. */
 object NotesVaultStorage {
-    private const val PREFS = "teddy_vault_storage"
     private const val KEYSTORE = "AndroidKeyStore"
     private const val TRANSFORMATION = "AES/GCM/NoPadding"
     private const val TAG_BITS = 128
@@ -35,16 +35,26 @@ object NotesVaultStorage {
             .put("nonce", Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
             .put("ciphertext", Base64.encodeToString(ciphertext, Base64.NO_WRAP))
             .toString()
-        return context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putString(storageKey(userId), record).commit()
+        val directory = File(context.applicationContext.noBackupFilesDir, "vault").apply { mkdirs() }
+        val destination = File(directory, storageKey(userId) + ".bin")
+        val temporary = File(directory, storageKey(userId) + ".tmp")
+        temporary.writeText(record, Charsets.UTF_8)
+        if (destination.exists() && !destination.delete()) {
+            temporary.delete()
+            return false
+        }
+        val moved = temporary.renameTo(destination)
+        if (!moved) temporary.delete()
+        return moved
     }
 
     @Synchronized
     fun load(context: Context, userId: String): LoadResult {
         if (userId.isBlank()) return LoadResult.Error("Account ID is missing.")
         return try {
-            val record = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getString(storageKey(userId), null) ?: return LoadResult.Missing
+            val file = File(File(context.applicationContext.noBackupFilesDir, "vault"), storageKey(userId) + ".bin")
+            if (!file.exists()) return LoadResult.Missing
+            val record = file.readText(Charsets.UTF_8)
             val json = JSONObject(record)
             val nonce = Base64.decode(json.getString("nonce"), Base64.NO_WRAP)
             val ciphertext = Base64.decode(json.getString("ciphertext"), Base64.NO_WRAP)
@@ -64,7 +74,7 @@ object NotesVaultStorage {
         return "TeddyNotesVault_" + suffix
     }
 
-    private fun storageKey(userId: String): String = "vault_" + aliasFor(userId)
+    private fun storageKey(userId: String): String = aliasFor(userId)
 
     private fun getOrCreateKey(alias: String): SecretKey {
         val keyStore = KeyStore.getInstance(KEYSTORE).apply { load(null) }
