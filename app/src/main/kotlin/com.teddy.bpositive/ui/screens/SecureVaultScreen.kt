@@ -91,7 +91,12 @@ fun SecureVaultScreen(
                         if (masterPassword.length < 12) status = "Password must contain at least 12 characters."
                         else if (masterPassword != confirmPassword) status = "Passwords do not match."
                         else try {
-                            val setup = NotesEncryption.createVault(masterPassword.toCharArray())
+                            val passwordChars = masterPassword.toCharArray()
+                            val setup = try {
+                                NotesEncryption.createVault(passwordChars)
+                            } finally {
+                                passwordChars.fill(0.toChar())
+                            }
                             setup.masterKey.fill(0)
                             envelope = setup.envelope
                             recoveryKeyToConfirm = setup.recoveryKey
@@ -155,10 +160,15 @@ fun SecureVaultScreen(
                     )
                     Button(onClick = {
                         try {
-                            val unlocked = NotesEncryption.unlockWithPassword(
-                                envelope ?: throw IllegalStateException("Vault envelope is unavailable."),
-                                masterPassword.toCharArray()
-                            )
+                            val passwordChars = masterPassword.toCharArray()
+                            val unlocked = try {
+                                NotesEncryption.unlockWithPassword(
+                                    envelope ?: throw IllegalStateException("Vault envelope is unavailable."),
+                                    passwordChars
+                                )
+                            } finally {
+                                passwordChars.fill(0.toChar())
+                            }
                             unlocked.fill(0)
                             masterPassword = ""
                             status = "Password verified. Temporary key cleared from memory. Note Lock is not enabled."
