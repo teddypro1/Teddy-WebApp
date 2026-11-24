@@ -614,3 +614,13 @@ Implemented in `NoteDetailScreen.kt`:
 - No Supabase migration, production database mutation or paid-plan change.
 - **User confirmation (2026-11-24):** “Successfully Build Completed!” CodeAssist Build completed successfully, as explicitly reported by the user. Runtime migration execution/count was not reported.
 - The active sync queue is still plaintext; this milestone only prepares a separate encrypted snapshot. Do not describe active sync as encrypted until a later cutover is implemented.
+
+## Build 51 — Encrypted Offline Queue Migration Integrity Hardening (CodeAssist Build pending)
+
+- Hardened the staged encrypted queue migration so an existing snapshot is compared against the complete current legacy queue and refreshed when the legacy queue has changed.
+- Verification compares decrypted title/content, local note ID, client ID, operation, pin state, cloud note ID and cloud updated timestamp before persistence and after read-back.
+- Added strict snapshot metadata/type validation and authenticate/decode validation before loading staged records.
+- The legacy plaintext queue remains the active queue; no queue cutover or note encryption activation is included. No Supabase schema/production database or paid-plan changes.
+- File: `app/src/main/kotlin/com.teddy.bpositive/data/EncryptedNoteSyncQueue.kt`.
+- Commit: `c741818ab6c1551586cbe0b0f651c62c0fe1a8a8`.
+- CodeAssist Build and runtime migration verification pending user confirmation.
