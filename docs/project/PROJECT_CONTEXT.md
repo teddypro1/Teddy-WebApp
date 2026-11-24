@@ -824,3 +824,17 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - Build 45 CodeAssist Build completed successfully (user-confirmed 2026-11-24).
 - User reports automatic Vault account sync works. The live Supabase `public.vault_envelopes` table was read-only checked after the two-device test and contained one row.
 - Latest source HEAD before documentation update: `d425d700919e644b8d9444994982d6895aa32511`.
+
+## Build 46 — In-memory Vault Unlock Session Foundation (CodeAssist Build pending)
+
+- Source implementation is committed to `main`; the user has not yet built or confirmed this Build.
+- Added `security/VaultSessionManager.kt`, which holds a defensive copy of the unlocked 256-bit Vault master key in process memory only, associates it with one user ID, exposes defensive key copies to future consumers, and zeroes the held key on lock/replacement.
+- Secure Vault Master Password and Recovery Key verification now place the successfully unwrapped key into the in-memory session manager, then zero the temporary returned byte array. No key is persisted by this manager.
+- `MainActivity.onStop()` clears the in-memory Vault key when the app leaves the foreground; sign-out also clears it explicitly.
+- Files changed/added:
+  - `app/src/main/kotlin/com.teddy.bpositive/security/VaultSessionManager.kt` (new)
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/SecureVaultScreen.kt`
+  - `app/src/main/kotlin/com.teddy.bpositive/MainActivity.kt`
+- Commits: `14cfaf952dfff9c04c53c4a63838186dc25fc773`, `929784b47c6115d54080f1c6b776ce1dfdab0b4c`, `9cca657531fd6cfc3d05c3a1a999704190542e10`, `6e33afa529d71984a50c19c6a3d417e3b2cc91a8`.
+- Current implementation is groundwork only: Note Lock is not yet wired; note fields remain plaintext in local storage, pending sync metadata and Supabase. No note encryption, note unlock UI, auto-lock timer, or database change is included in this Build.
+- CodeAssist Build and device verification are pending user confirmation. Do not mark Build 46 successful until the user reports it.
