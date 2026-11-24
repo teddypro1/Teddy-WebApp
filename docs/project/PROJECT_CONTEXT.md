@@ -736,3 +736,16 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
   - `a89526142c6c6cefaddaee5cd8d88f0737b32a1b` — Show an explicit inactive-vault notice when Lock is selected.
 - No Supabase schema, migration, production database, or paid-plan changes. Live Supabase inspection before this change confirmed the existing `public.notes.is_pinned` and `deleted_at` columns and RLS remained in place; no database write was needed.
 - Build confirmation establishes successful CodeAssist compilation/build as reported by the user. It does not establish exhaustive device regression testing or encryption security. The earlier cryptography primitives remain groundwork only; Secure Vault persistence, setup/unlock/recovery UI, note encryption integration and sync strategy are still pending.
+
+
+## Build 41 — Pinned Note Card indicator and tap-to-unpin (user-confirmed successful)
+
+- **User-confirmed on 2026-11-24:** “Successfully Build Completed!” CodeAssist Build completed successfully, as explicitly reported by the user.
+- Refined the pinned-note indicator to a custom Canvas pushpin glyph (replacing the previous bookmark-style appearance). No external icon dependency was added.
+- The pinned indicator on a Note Card is now clickable; tapping it invokes the existing pin-toggle callback and unpins the note. The Note action dialog's Unpin option remains available as a second way to unpin.
+- File changed: `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.kt`.
+- Source commits:
+  - `20990cab635c128a19516288978d21e5edf04438` — Refine pinned-note icon and tap-to-unpin.
+  - `cd7f2fc68c0fd78be2a2da89b473311f1c539a1c` — Keep pushpin Canvas drawing non-composable.
+- No Supabase schema, migration, production database or paid-plan changes.
+- Secure Vault setup, persistence, recovery and end-to-end note encryption remain unimplemented; Lock remains inactive. Build success confirms compilation only, not a security audit or exhaustive device regression test.
