@@ -1291,7 +1291,7 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
   - `752ba36d71bfdcd288efb9f6bacf189f14f009ec` — connect username discovery to private conversations.
 - **Build status:** User confirmed CodeAssist Build completed successfully on 2026-11-24. Device-level conversation creation/opening remains to be verified separately.
 
-## 18.12 Messaging Build 05 + Build 06 — Text Composer, Sending, History Load and Realtime Receive (ONE COMBINED COMMIT; CODEASSIST BUILD PENDING)
+## 18.12 Messaging Build 05 + Build 06 — Text Composer, Sending, History Load and Realtime Receive (ONE COMBINED COMMIT; USER-CONFIRMED BUILD SUCCESSFUL)
 
 - User confirmed Build 04 completed successfully and explicitly requested Build 05 and Build 06 to be delivered together in a single Git commit.
 - Live pre-change GitHub main HEAD: `3bcd5c77ea3228f2f7e9b578351d2b77fb2ea405`; latest Build 04 source and canonical project context were fetched before editing.
@@ -1310,4 +1310,4 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
 - Updated `MessagingScreens.kt`: message bubbles aligned by sender, timestamps, loading/empty states, manual refresh, text input up to 10,000 characters and sending progress.
 - Updated `MainActivity.kt`: loads message history when a conversation opens, starts/stops the scoped Realtime subscription, sends through the RPC and refreshes history after success. Session/conversation guards discard stale callbacks.
 - Offline durable outbox/retry is deliberately deferred to Build 13. Delivered/Read receipts, typing, presence and push notifications remain later builds.
-- **Build status:** Source changes are being delivered in one Git commit. CodeAssist Build and two-account send/receive verification remain pending user confirmation. Do not mark successful until user confirms.
+- **Build status (2026-11-24): USER-CONFIRMED CODEASSIST BUILD SUCCESSFUL.** The user explicitly confirmed that the combined Build 05 + Build 06 completed successfully in CodeAssist. This confirms compilation/build in the user's environment only; it does not by itself prove two-account message send/receive, Realtime authorization/event delivery, or delivery receipts. Two-account runtime send/receive verification remains pending.
