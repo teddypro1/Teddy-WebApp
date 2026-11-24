@@ -965,3 +965,16 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - No Supabase migration, production database mutation or paid-plan change.
 - **User confirmation (2026-11-24):** The user explicitly reported “Successfully Build Completed!” This confirms the CodeAssist Build compiled successfully.
 - Runtime migration execution, encrypted snapshot version-2 contents, version-1 upgrade behavior and repeated-run idempotency were not separately reported or verified; do not claim those runtime tests passed.
+
+
+## Build 54 — Encrypted Local Snapshot Atomic Write & Integrity Hardening (CodeAssist Build pending)
+
+- Hardened `EncryptedLocalNotesStorage.saveNotes()` so a new encrypted snapshot is first written to a temporary per-account preference key, read back, authenticated, decrypted and compared with the complete input Note list before it replaces the last known-good snapshot.
+- The final promotion writes the verified snapshot and removes the temporary key in one SharedPreferences commit. If staging or verification fails, the temporary key is cleaned up and the existing canonical snapshot is not intentionally replaced.
+- Added pre-write validation for positive note IDs, nonblank colors and duplicate IDs.
+- Strengthened snapshot validation for both format version 2 and legacy version 1: exact document/entry structure, authenticated payload decoding, valid note identity/color and duplicate-ID rejection.
+- This remains encrypted snapshot storage/migration hardening only. The active Notes UI/storage, sync queue, Supabase notes, realtime and conflict flows are not switched to encrypted storage.
+- File changed: `app/src/main/kotlin/com.teddy.bpositive/data/EncryptedLocalNotesStorage.kt`.
+- Implementation commit: `5b5bfc620a1663db061bc172044680e246434a06`.
+- No Supabase migration, production database mutation or paid-plan change.
+- CodeAssist Build and device/runtime migration checks are pending user confirmation. Do not mark Build 54 successful until the user confirms.
