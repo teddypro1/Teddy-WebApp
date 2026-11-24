@@ -1416,12 +1416,14 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     }
                 )
             } else if (selectedTab == "Settings" && showVaultScreen) {
-                SecureVaultScreen(
-                    userId = activeSession?.userId.orEmpty(),
-                    session = activeSession ?: return@Scaffold,
-                    contentPadding = padding,
-                    onBack = { showVaultScreen = false }
-                )
+                activeSession?.let { vaultSession ->
+                    SecureVaultScreen(
+                        userId = vaultSession.userId.orEmpty(),
+                        session = vaultSession,
+                        contentPadding = padding,
+                        onBack = { showVaultScreen = false }
+                    )
+                } ?: Text("Please sign in again to open Secure Vault.")
             } else if (selectedTab == "Settings") {
                 SettingsScreen(
                     darkMode = darkMode,
