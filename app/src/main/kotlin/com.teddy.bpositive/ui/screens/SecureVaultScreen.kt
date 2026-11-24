@@ -18,6 +18,7 @@ import com.teddy.bpositive.data.SupabaseSessionManager
 import com.teddy.bpositive.data.SupabaseVaultApi
 import com.teddy.bpositive.security.NotesEncryption
 import com.teddy.bpositive.security.NotesVaultStorage
+import com.teddy.bpositive.security.VaultSessionManager
 
 @Composable
 fun SecureVaultScreen(
@@ -223,9 +224,13 @@ fun SecureVaultScreen(
                                     envelope ?: throw IllegalStateException("Vault envelope is unavailable."),
                                     recoveryUnlockInput
                                 )
-                                unlocked.fill(0)
+                                try {
+                                    VaultSessionManager.unlock(userId, unlocked)
+                                } finally {
+                                    unlocked.fill(0)
+                                }
                                 recoveryUnlockInput = ""
-                                status = "Recovery Key verified. Temporary key cleared from memory. Note Lock is not enabled."
+                                status = "Vault unlocked for this app session. Note Lock integration is not enabled yet."
                             } catch (_: Exception) {
                                 recoveryUnlockInput = ""
                                 status = "Recovery Key verification failed. Check the key and try again."
@@ -257,9 +262,13 @@ fun SecureVaultScreen(
                                 } finally {
                                     passwordChars.fill(0.toChar())
                                 }
-                                unlocked.fill(0)
+                                try {
+                                    VaultSessionManager.unlock(userId, unlocked)
+                                } finally {
+                                    unlocked.fill(0)
+                                }
                                 masterPassword = ""
-                                status = "Password verified. Temporary key cleared from memory. Note Lock is not enabled."
+                                status = "Vault unlocked for this app session. Note Lock integration is not enabled yet."
                             } catch (_: Exception) {
                                 masterPassword = ""
                                 status = "Password verification failed."
