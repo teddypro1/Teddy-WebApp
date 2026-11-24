@@ -33,6 +33,8 @@ fun SecureVaultScreen(
     var recoveryKey by remember { mutableStateOf("") }
     var recoveryConfirmation by remember { mutableStateOf("") }
     var recoveryKeyToConfirm by remember { mutableStateOf("") }
+    var recoveryUnlockInput by remember { mutableStateOf("") }
+    var useRecoveryKey by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("") }
 
     LaunchedEffect(userId) {
@@ -151,32 +153,72 @@ fun SecureVaultScreen(
             "unlock" -> Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Vault configured", fontWeight = FontWeight.SemiBold)
-                    Text("Verify the Master Password to check that it can unlock the wrapped key.")
-                    OutlinedTextField(
-                        value = masterPassword, onValueChange = { masterPassword = it },
-                        modifier = Modifier.fillMaxWidth(), label = { Text("Master Password") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), singleLine = true
-                    )
-                    Button(onClick = {
-                        try {
-                            val passwordChars = masterPassword.toCharArray()
-                            val unlocked = try {
-                                NotesEncryption.unlockWithPassword(
+                    if (useRecoveryKey) {
+                        Text("Enter the Recovery Key you saved during Vault setup.")
+                        OutlinedTextField(
+                            value = recoveryUnlockInput,
+                            onValueChange = { recoveryUnlockInput = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Recovery Key") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            singleLine = true
+                        )
+                        Button(onClick = {
+                            try {
+                                val unlocked = NotesEncryption.unlockWithRecoveryKey(
                                     envelope ?: throw IllegalStateException("Vault envelope is unavailable."),
-                                    passwordChars
+                                    recoveryUnlockInput
                                 )
-                            } finally {
-                                passwordChars.fill(0.toChar())
+                                unlocked.fill(0)
+                                recoveryUnlockInput = ""
+                                status = "Recovery Key verified. Temporary key cleared from memory. Note Lock is not enabled."
+                            } catch (_: Exception) {
+                                recoveryUnlockInput = ""
+                                status = "Recovery Key verification failed. Check the key and try again."
                             }
-                            unlocked.fill(0)
-                            masterPassword = ""
-                            status = "Password verified. Temporary key cleared from memory. Note Lock is not enabled."
-                        } catch (_: Exception) {
-                            masterPassword = ""
-                            status = "Password verification failed."
+                        }, modifier = Modifier.fillMaxWidth()) { Text("Unlock with Recovery Key") }
+                        TextButton(onClick = {
+                            useRecoveryKey = false
+                            recoveryUnlockInput = ""
+                            status = ""
+                        }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Use Master Password instead")
                         }
-                    }, modifier = Modifier.fillMaxWidth()) { Text("Verify Password") }
+                    } else {
+                        Text("Verify the Master Password to check that it can unlock the wrapped key.")
+                        OutlinedTextField(
+                            value = masterPassword, onValueChange = { masterPassword = it },
+                            modifier = Modifier.fillMaxWidth(), label = { Text("Master Password") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), singleLine = true
+                        )
+                        Button(onClick = {
+                            try {
+                                val passwordChars = masterPassword.toCharArray()
+                                val unlocked = try {
+                                    NotesEncryption.unlockWithPassword(
+                                        envelope ?: throw IllegalStateException("Vault envelope is unavailable."),
+                                        passwordChars
+                                    )
+                                } finally {
+                                    passwordChars.fill(0.toChar())
+                                }
+                                unlocked.fill(0)
+                                masterPassword = ""
+                                status = "Password verified. Temporary key cleared from memory. Note Lock is not enabled."
+                            } catch (_: Exception) {
+                                masterPassword = ""
+                                status = "Password verification failed."
+                            }
+                        }, modifier = Modifier.fillMaxWidth()) { Text("Verify Password") }
+                        TextButton(onClick = {
+                            useRecoveryKey = true
+                            masterPassword = ""
+                            status = ""
+                        }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Use Recovery Key instead")
+                        }
+                    }
                 }
             }
             "error" -> {
