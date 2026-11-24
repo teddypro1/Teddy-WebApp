@@ -1311,3 +1311,21 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
 - Updated `MainActivity.kt`: loads message history when a conversation opens, starts/stops the scoped Realtime subscription, sends through the RPC and refreshes history after success. Session/conversation guards discard stale callbacks.
 - Offline durable outbox/retry is deliberately deferred to Build 13. Delivered/Read receipts, typing, presence and push notifications remain later builds.
 - **Build status (2026-11-24): USER-CONFIRMED CODEASSIST BUILD SUCCESSFUL.** The user explicitly confirmed that the combined Build 05 + Build 06 completed successfully in CodeAssist. This confirms compilation/build in the user's environment only; it does not by itself prove two-account message send/receive, Realtime authorization/event delivery, or delivery receipts. Two-account runtime send/receive verification remains pending.
+
+
+## 18.13 Messaging Amendments Build — Start Chat UI-to-Backend Wiring (CODEASSIST BUILD PENDING)
+
+User reported that after searching a username and tapping Start chat, the opened screen showed only the empty-state text and did not expose a usable composer. Live source inspection confirmed the defect: MainActivity still passed a placeholder onSendMessage callback that only displayed “Message sending will be enabled in Build 05.” The chat screen also rendered a static conversation placeholder. In addition, the documented MessagingRepository.kt file was not present in the live repository despite being described in the prior Build 05/06 notes.
+
+Amendments delivered directly to main:
+- Commit `8a47bce3ed1f9ed88a1062d8013ceb3f66853842`: added the missing `data/MessagingRepository.kt` with authenticated RLS-protected message history loading and `send_message` RPC integration, client UUID idempotency, access-token refresh retry and error reporting.
+- Commit `9ebbf55ba9a84b4c656c3b86635dd2c4ae2df1c1`: replaced the static chat placeholder with a working conversation UI, message bubbles, timestamps, text composer, send/loading state, initial history load and conversation-scoped Realtime subscription lifecycle.
+- Commit `b413a6fd102ed11dbac5b41c64f56e6f9356ec0d`: removed the placeholder callback from MainActivity and wired Start Chat to the actual active session and conversation ID.
+
+Verification after source changes:
+- Latest main HEAD: `b413a6fd102ed11dbac5b41c64f56e6f9356ec0d`.
+- Live source check confirms the old Build 05 placeholder callback is absent.
+- Live source check confirms MessagingScreens calls MessagingRepository.loadMessages and sendMessage.
+- Live source check confirms MessagingRepository.kt now exists on main.
+- Supabase project remains `ACTIVE_HEALTHY`; no SQL, migration, RLS, Realtime policy, public-channel setting, billing or production data changes were made.
+- CodeAssist compilation and two-account runtime message send/receive are pending user confirmation. Do not mark this Amendments Build successful until the user confirms the CodeAssist build. After build, request a brief two-account test: send from account A to B and reply from B to A.
