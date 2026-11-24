@@ -28,20 +28,25 @@ object NotesVaultStorage {
     @Synchronized
     fun save(context: Context, userId: String, envelope: NotesEncryption.VaultEnvelope): Boolean {
         require(userId.isNotBlank()) { "Account ID is missing." }
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey(aliasFor(userId)))
-        val ciphertext = cipher.doFinal(envelope.toJson().toByteArray(Charsets.UTF_8))
-        val record = JSONObject()
-            .put("nonce", Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
-            .put("ciphertext", Base64.encodeToString(ciphertext, Base64.NO_WRAP))
-            .toString()
-        val directory = File(context.applicationContext.noBackupFilesDir, "vault").apply { mkdirs() }
-        val destination = File(directory, storageKey(userId) + ".bin")
-        val temporary = File(directory, storageKey(userId) + ".tmp")
-        temporary.writeText(record, Charsets.UTF_8)
-        val moved = temporary.renameTo(destination)
-        if (!moved) temporary.delete()
-        return moved
+        return try {
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey(aliasFor(userId)))
+            val plaintext = envelope.toJson().toByteArray(Charsets.UTF_8)
+            val ciphertext = try { cipher.doFinal(plaintext) } finally { plaintext.fill(0) }
+            val record = JSONObject()
+                .put("nonce", Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
+                .put("ciphertext", Base64.encodeToString(ciphertext, Base64.NO_WRAP))
+                .toString()
+            val directory = File(context.applicationContext.noBackupFilesDir, "vault").apply { mkdirs() }
+            val destination = File(directory, storageKey(userId) + ".bin")
+            val temporary = File(directory, storageKey(userId) + ".tmp")
+            temporary.writeText(record, Charsets.UTF_8)
+            val moved = temporary.renameTo(destination)
+            if (!moved) temporary.delete()
+            moved
+        } catch (_: Exception) {
+            false
+        }
     }
 
     @Synchronized
