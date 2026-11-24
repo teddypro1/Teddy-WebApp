@@ -901,7 +901,7 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - User-reported Build compilation success only; no migration runtime result reported. The class is not yet connected to active Notes UI/save/load/sync. Active local and cloud notes remain plaintext. No Supabase migration or paid-plan change.
 
 
-## Build 49 — Secure Vault Local Notes Migration Action (CodeAssist Build pending)
+## Build 49 — Secure Vault Local Notes Migration Action (USER-CONFIRMED SUCCESSFUL)
 
 - Added an explicit action to the Secure Vault Unlock screen: `Prepare Encrypted Local Copy`.
 - The action requires the matching account's Vault to be unlocked in `VaultSessionManager`, then invokes `EncryptedLocalNotesStorage.stageLegacyMigration()` for the current user.
@@ -909,9 +909,9 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - Original plaintext local notes are not deleted or overwritten. This Build does not cut over the active Notes UI or change the Supabase notes table; cloud notes remain plaintext.
 - File changed: `app/src/main/kotlin/com.teddy.bpositive/ui/screens/SecureVaultScreen.kt`.
 - Commit: `b1188192b3f43078d5d84e1d1d758755a06a22f2`.
-- CodeAssist Build and device migration tests pending user confirmation.
+- User confirmed successful CodeAssist Build and reported that 10 notes were staged in the encrypted local copy. Original plaintext notes remain preserved.
 
-## Build 50 — Encrypted Offline Sync Queue Migration Preparation (CodeAssist Build pending)
+## Build 50 — Encrypted Offline Sync Queue Migration Preparation (USER-CONFIRMED BUILD SUCCESS)
 
 - Added `data/EncryptedNoteSyncQueue.kt`, an account-scoped encrypted snapshot for pending note sync records. Note title/content are encrypted through `NoteEncryptionCodec`; operation, local/client IDs, pin state and cloud metadata remain queue metadata.
 - Added `stageLegacyMigration()`: requires the matching user's Vault to be unlocked, copies pending legacy queue records, decrypts and compares each title/content and key metadata against the original, persists the encrypted snapshot, then reads it back and authenticates it again.
@@ -921,4 +921,5 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - Files added/changed: `app/src/main/kotlin/com.teddy.bpositive/data/EncryptedNoteSyncQueue.kt`, `app/src/main/kotlin/com.teddy.bpositive/ui/screens/SecureVaultScreen.kt`.
 - Implementation commits: `6a533217663e4c8698e3dfa7b435dcc19e7f0b16` (encrypted queue migration class), `c6dce0f91ac66dd744b6adbdfd94d66c595b88e9` (Vault UI action), `db6a4e124b8f19f3563519d1764b94108976baef` (strict comparison against legacy records).
 - No Supabase migration, production database mutation or paid-plan change.
-- CodeAssist Build and runtime migration verification are pending user confirmation. Do not describe this Build as successful or the active sync queue as encrypted until the user confirms Build and a later cutover is implemented.
+- User explicitly confirmed CodeAssist Build success on 2026-11-24. Runtime encrypted-queue migration execution/count has not yet been reported.
+- The active sync queue is still plaintext; this milestone only prepares a separate encrypted snapshot. Do not describe active sync as encrypted until a later cutover is implemented.
