@@ -793,3 +793,34 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - **Follow-up user report (2026-11-24):** The user confirmed that Recovery Key Unlock is working. A separate wrong-key rejection test has not been explicitly reported.
 - Scope limitations remain: existing notes are not encrypted; Note Lock is not integrated; multi-device Vault-envelope sync and password-change/recovery workflows remain pending. Recovery Key unlock verifies access to the existing Vault master key but does not itself encrypt notes.
 - No Supabase schema, migration, production database or paid-plan changes.
+
+## Build 44 — Secure Vault Account Envelope Sync (user-confirmed successful Build)
+
+- User confirmed CodeAssist Build success on 2026-11-24. The user subsequently confirmed that pressing the Account Sync action made the Vault available to the same account on another device.
+- Added account-scoped `public.vault_envelopes` storage and client API to synchronize only the encrypted Vault envelope. The Master Password, Recovery Key and unwrapped master key are not uploaded.
+- New device behavior: when no local Vault exists, the app checks the signed-in account; if an envelope exists, it restores it into local Android-Keystore-protected storage. If the account check fails, setup is blocked rather than risking creation of a second independent Vault.
+- Existing local Vault behavior in this milestone required the user to press the Account Sync button once. A different remote envelope is never overwritten; duplicate/simultaneous first-sync attempts are checked without upsert/overwrite.
+- Production Supabase migration applied (additive table only): `backend/supabase/migrations/20261124044324_build44_secure_vault_envelopes.sql`. Table has a user_id primary key referencing auth.users, JSONB envelope, timestamps, RLS, owner-only authenticated SELECT/INSERT, and no client UPDATE/DELETE grant or policy. Live checks verified authenticated SELECT/INSERT, no UPDATE, no anon SELECT, RLS enabled. No paid plan change.
+- Files added/changed: `data/SupabaseVaultApi.kt`, `ui/screens/SecureVaultScreen.kt`, `MainActivity.kt`, and the migration above.
+- Source commits: `8a03c471b9a76d41c87a957bebca02a16b665560` (migration), `e31639f9bc9014ddc32f899026093b921f4a1239` (API), `5929680d6b5c2141cac856226cfed078526fca1a` (screen), `f4f44fc252fd285700af1d89a387736004364475` and `f63b971c0a9312de5717da4600296504f8a6714e` (session wiring/guard).
+- User confirmed successful CodeAssist Build and successful account sync on a second device. This is functional user-reported verification, not a cryptographic audit or exhaustive multi-device/network test.
+- Limitations: only the Vault envelope syncs; notes themselves are not encrypted or synchronized by this feature. No remote envelope replacement, password-change synchronization, Vault deletion workflow or continuous background sync. The user initially had to trigger sync manually; Build 45 removes that requirement.
+
+## Build 45 — Automatic Secure Vault Account Sync (user-confirmed successful Build)
+
+- User confirmed CodeAssist Build success on 2026-11-24 and reported that the automatic sync change works.
+- When a local Vault is found on Secure Vault screen entry, the app now automatically calls the safe check-before-create sync flow. If the same envelope already exists remotely, it reports already synced; if no envelope exists, it creates the account row; if a different envelope exists, it refuses to overwrite it.
+- Removed the manual `Sync Vault to Account` button and its unused callback. The screen now displays automatic sync status/progress text.
+- When no local Vault exists, the existing account-first restore/check behavior remains unchanged.
+- File changed: `app/src/main/kotlin/com.teddy.bpositive/ui/screens/SecureVaultScreen.kt`.
+- Commits: `b8f60cec15a2faacd70d2cb8b4e64d8684a7294f` (automatic sync on local Vault discovery), `d425d700919e644b8d9444994982d6895aa32511` (remove manual sync action).
+- User confirmed Build success and earlier verified that the same account's Vault becomes available on the second device after Account Sync. Automatic invocation is now included; do not claim exhaustive offline/race/device testing beyond what the user reported.
+- No new database migration or production schema change. The existing Build 44 table and RLS remain in use.
+- Limitations remain: only the encrypted Vault envelope syncs, not notes; different remote envelopes are never overwritten; no password-change/replacement/delete workflow or continuous background synchronization.
+
+
+## Latest user-confirmed state
+
+- Build 45 CodeAssist Build completed successfully (user-confirmed 2026-11-24).
+- User reports automatic Vault account sync works. The live Supabase `public.vault_envelopes` table was read-only checked after the two-device test and contained one row.
+- Latest source HEAD before documentation update: `d425d700919e644b8d9444994982d6895aa32511`.
