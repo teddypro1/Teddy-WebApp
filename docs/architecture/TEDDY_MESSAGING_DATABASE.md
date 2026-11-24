@@ -70,7 +70,8 @@ No anon table grants are introduced. The migration explicitly grants required au
 - Durable message/history state remains in PostgreSQL. Postgres Changes are a notification/refresh mechanism, not the sole source of truth.
 - Typing and Online/Presence are ephemeral Realtime Broadcast/Presence events on messaging:conversation:<uuid> private channels; they are not written into message history.
 - realtime.messages policies authorize authenticated members for Broadcast/Presence on a correctly formatted conversation topic.
-- Messaging clients must join channels with private = true. The project's global Allow public access dashboard setting is intentionally not changed in this migration because it may affect existing Notes/Profile Realtime channels; assess that setting separately before changing it.
+- Messaging clients must join channels with `private = true`. The project's global `Allow public access` setting remains enabled pending compatibility verification of the existing Notes/Profile client.
+- Realtime Compatibility Build adds a separate user-scoped private topic for the existing Notes/Profile Postgres Changes subscription (`notes:user:<auth.uid()>`). Its `realtime.messages` SELECT policy permits authenticated channel authorization only when the topic matches the caller's own UUID. It grants no Broadcast/Presence INSERT permission. The existing `notes` and `profiles` table RLS policies continue to control which Postgres Change rows the client can receive.
 
 ## 6. Important implementation boundaries
 
@@ -81,13 +82,13 @@ No anon table grants are introduced. The migration explicitly grants required au
 
 ## 7. Deployment and verification gate
 
-This migration is security-reviewed and committed for the user's approved application. It has not yet been applied to Supabase. Before production application:
-1. Review the exact SQL and confirm the migration.
-2. The live project reports 19 applied migrations while the checked-in directory contains only a subset. Do not reset, rewrite or fabricate historical records. Apply this single reviewed additive migration through the Supabase migration action, then verify its new history entry and schema.
-3. Confirm the project's Realtime `Allow public access` setting. RLS policies alone do not enforce private-only channels while public access is enabled. Do not change the global setting without assessing existing Notes/Profile channels and explicit approval; until disabled, do not claim Messaging Broadcast/Presence privacy is enforced.
-4. Verify all five tables, indexes, foreign keys, RLS policies, grants, RPC privileges, Realtime publication entries and Realtime channel policies.
-5. Run security and performance advisors, then test as two real authenticated users: direct conversation deduplication, cross-user isolation, idempotent send, receipt ownership, per-user deletion and sender-only global deletion.
-6. Confirm existing Notes, Profile Realtime, notification and Secure Vault workflows remain intact.
+Build 01's database migration is applied. The Realtime Compatibility migration is also applied additively; the Android client source has been updated to join the Notes/Profile topic as a private channel. Remaining gates:
+1. Verify the new migration history entry and exact policy definition.
+2. Build the Android app and test Notes/Profile refresh with a real authenticated account while `Allow public access` is still enabled.
+3. Test that a second authenticated account cannot join the first user's Notes/Profile private topic.
+4. Regression-test notes CRUD, offline sync, conflict recovery, Profile refresh, notifications and Secure Vault.
+5. Only after those tests pass, assess and explicitly authorize disabling global `Allow public access`; then re-test all private Realtime paths.
+6. Run the full two-user Messaging tests before declaring Build 01 fully complete.
 
 ### Applied verification (2026-11-24)
 - Supabase migration history includes `20261124110532: build01_messaging_foundation`; the prior 19 entries remain unchanged (20 total).
