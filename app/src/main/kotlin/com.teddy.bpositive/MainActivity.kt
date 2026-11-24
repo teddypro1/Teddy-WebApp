@@ -24,6 +24,7 @@ import com.teddy.bpositive.data.SupabaseNotesApi
 import com.teddy.bpositive.data.SupabaseRealtimeSubscription
 import com.teddy.bpositive.data.SupabaseProfilesApi
 import com.teddy.bpositive.data.UserSearchApi
+import com.teddy.bpositive.data.DirectConversationApi
 import com.teddy.bpositive.model.Note
 import com.teddy.bpositive.security.NoteEncryptionCodec
 import com.teddy.bpositive.security.VaultSessionManager
@@ -51,6 +52,7 @@ import com.teddy.bpositive.ui.screens.AdminPanelScreen
 import com.teddy.bpositive.ui.screens.HomeScreen
 import com.teddy.bpositive.ui.screens.MessagingHomeScreen
 import com.teddy.bpositive.ui.screens.MessagingUserSearchScreen
+import com.teddy.bpositive.ui.screens.MessagingChatScreen
 import com.teddy.bpositive.ui.screens.NotesScreen
 import com.teddy.bpositive.ui.screens.NoteDetailScreen
 import com.teddy.bpositive.ui.screens.NotificationInboxScreen
@@ -787,6 +789,10 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var showConflicts by rememberSaveable { mutableStateOf(false) }
     var selectedTab by rememberSaveable { mutableStateOf("Home") }
     var showUserSearch by rememberSaveable { mutableStateOf(false) }
+    var showChatScreen by rememberSaveable { mutableStateOf(false) }
+    var isCreatingConversation by remember { mutableStateOf(false) }
+    var activeConversationId by rememberSaveable { mutableStateOf<String?>(null) }
+    var activeChatProfile by remember { mutableStateOf<UserSearchApi.PublicProfile?>(null) }
     var showVaultScreen by rememberSaveable { mutableStateOf(false) }
     var pendingVaultNoteAction by remember { mutableStateOf<Pair<Long, Boolean>?>(null) }
     LaunchedEffect(hasVerifiedAdminAccess) {
@@ -1513,6 +1519,19 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     contentPadding = padding,
                     onOpenNotes = { showNotesFeature = true }
                 )
+            } else if (selectedTab == "Messages" && showChatScreen && activeChatProfile != null) {
+                MessagingChatScreen(
+                    displayName = activeChatProfile?.fullName.orEmpty(),
+                    username = activeChatProfile?.username.orEmpty(),
+                    onBack = {
+                        showChatScreen = false
+                        activeConversationId = null
+                        activeChatProfile = null
+                    },
+                    onSendMessage = {
+                        Toast.makeText(context, "Message sending will be enabled in Build 05.", Toast.LENGTH_SHORT).show()
+                    }
+                )
             } else if (selectedTab == "Messages" && showUserSearch) {
                 MessagingUserSearchScreen(
                     contentPadding = padding,
@@ -1536,11 +1555,24 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         }
                     },
                     onStartChat = { profile ->
-                        Toast.makeText(
-                            context,
-                            "Selected @${profile.username}. Conversation creation is in Build 04.",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        val session = activeSession
+                        if (session == null || isCreatingConversation) return@MessagingUserSearchScreen
+                        isCreatingConversation = true
+                        userSearchStatus = "Creating private conversation..."
+                        DirectConversationApi.createOrGet(session, profile.id) { result ->
+                            if (activeSession?.userId != session.userId) return@createOrGet
+                            isCreatingConversation = false
+                            if (result.success && !result.conversationId.isNullOrBlank()) {
+                                activeConversationId = result.conversationId
+                                activeChatProfile = profile
+                                showUserSearch = false
+                                showChatScreen = true
+                                userSearchStatus = ""
+                            } else {
+                                userSearchStatus = result.message
+                                Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
+                            }
+                        }
                     }
                 )
             } else if (selectedTab == "Messages") {
@@ -1779,6 +1811,10 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         showConflicts = false
                         selectedTab = "Home"
                         showUserSearch = false
+                        showChatScreen = false
+                        activeConversationId = null
+                        activeChatProfile = null
+                        isCreatingConversation = false
                         userSearchResults = emptyList()
                         userSearchStatus = ""
                         showVaultScreen = false
