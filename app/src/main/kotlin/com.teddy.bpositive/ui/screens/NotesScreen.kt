@@ -697,7 +697,7 @@ private fun NoteActionGlyph(
                         center = headCenter
                     )
                     drawCircle(
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = tint.copy(alpha = 0.34f),
                         radius = size.width * 0.075f,
                         center = Offset(headCenter.x - size.width * 0.045f, headCenter.y - size.height * 0.045f)
                     )
