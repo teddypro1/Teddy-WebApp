@@ -1248,7 +1248,7 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
 - **Do not disable global Allow public access yet.** The cross-account isolation test passed, but the remaining regression checks are still pending. Do not mark Messaging Build 01 fully complete before those checks.
 
 
-## 18.10 Messaging Build 03 — Username Search & User Discovery (SOURCE + DATABASE DEPLOYED; CODEASSIST BUILD NOT YET USER-CONFIRMED)
+## 18.10 Messaging Build 03 — Username Search & User Discovery (USER-CONFIRMED BUILD SUCCESSFUL)
 
 - Live pre-change GitHub main HEAD: `c040e4bf3ac986beeb9fcc8fa53606b90fed239b`; Supabase project status: ACTIVE_HEALTHY.
 - Inspected live public.profiles schema: id, full_name, username, bio, avatar_url, created_at, updated_at. Existing owner-only SELECT RLS policy and case-insensitive unique username index were preserved.
@@ -1271,4 +1271,22 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
   - 5115783279e8c2eb852a7125e268465c8f8765e0 — changelog update.
 - Supabase Health advisor returned no findings. Security advisor reports this authenticated SECURITY DEFINER RPC in the same expected warning category as existing Messaging RPCs, plus the pre-existing leaked-password-protection warning. Performance advisor still reports seven Messaging foreign-key index INFO findings and unused-index INFO findings.
 - No existing profile rows, username values, owner policies, Messaging rows, Realtime settings, billing or plan settings were changed.
-- Build status: source and database changes are committed/applied; CodeAssist Build and on-device username search remain pending user confirmation.
+- **Build status:** User confirmed CodeAssist Build completed successfully on 2026-11-24. Username-search on-device functional verification is not separately recorded; do not infer it from compilation success.
+
+## 18.11 Messaging Build 04 — One-to-One Private Conversation (SOURCE PUSHED; CODEASSIST BUILD PENDING)
+
+- User confirmed Messaging Build 03's CodeAssist Build completed successfully on 2026-11-24. This is a build confirmation only; it does not independently certify all username-search runtime cases.
+- Verified live GitHub main before Build 04: HEAD `23fbc2ad992295f094d542da7f6b78104ff01856`; canonical project context and Messaging source were read before edits.
+- Verified Supabase project `axklmzuepqcbxsbxvtdn` is `ACTIVE_HEALTHY`; migrations include Build 01, the private Notes/Profile Realtime migration and Build 03 username search.
+- Inspected live `public.create_direct_conversation(p_other_user_id uuid)` definition:
+  - Derives caller only from `auth.uid()`; rejects unauthenticated calls, null/self target and non-existent target users.
+  - Canonicalizes the user pair and uses the existing partial unique index `conversations_direct_pair_unique`, preventing duplicate direct conversations.
+  - Inserts/reactivates both memberships in the same database transaction and returns the existing or newly created conversation UUID.
+  - Verified EXECUTE: authenticated=true, anon=false, PUBLIC=false.
+- No database migration was needed. Build 01 already provides the required RPC, membership table, uniqueness constraint and RLS model. No production rows, schema, policies, Realtime settings, billing or plan settings were changed.
+- Added `app/src/main/kotlin/com.teddy.bpositive/data/DirectConversationApi.kt`: authenticated RPC call with access-token refresh retry and response/error handling.
+- Updated `MainActivity.kt`: selecting **Start chat** now calls the RPC; on success it opens the existing one-to-one Chat screen with the selected user's name and username. Returning from Chat goes back to Messages. The composer remains a UI shell; actual message sending is Build 05.
+- Source commits:
+  - `b398a1067b68836a9ee7217a6c34aebb0e3742ed` — add direct conversation creation API.
+  - `752ba36d71bfdcd288efb9f6bacf189f14f009ec` — connect username discovery to private conversations.
+- **Build status:** GitHub source is pushed. CodeAssist Build and device-level conversation creation/opening test are pending user confirmation. Do not mark successful until the user confirms.
