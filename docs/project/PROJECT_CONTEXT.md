@@ -959,8 +959,8 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
   - `app/src/main/kotlin/com.teddy.bpositive/security/NoteEncryptionCodec.kt`
   - `app/src/main/kotlin/com.teddy.bpositive/data/EncryptedLocalNotesStorage.kt`
 - Implementation commits:
-  - `3fde3d500663ea184d67278a79d239fef4a5324b`
-  - `602b9b5301a11f72ef53bb885e9f3b03378c2240`
-  - A follow-up documentation-comment correction is included in the storage file.
+  - `3fde3d500663ea184d67278a79d239fef4a5324b` — full-note encryption codec.
+  - `602b9b5301a11f72ef53bb885e9f3b03378c2240` — version-2 encrypted local snapshot and version-1 compatibility.
+  - `712099641e95c605c1a9caacdce4f8f6c44978d1` — clarify full-note encryption behavior in the storage documentation comment.
 - No Supabase migration, production database mutation or paid-plan change.
 - CodeAssist Build and device/runtime migration checks are pending user confirmation. Do not mark Build 53 successful until the user confirms.
