@@ -73,6 +73,21 @@ object EncryptedNoteSyncQueue {
             .put("records", encryptedRecords)
 
         verifySnapshot(userId, snapshot)
+        legacyRecords.forEachIndexed { index, original ->
+            val encryptedRecord = encryptedRecords.getJSONObject(index)
+            val decoded = NoteEncryptionCodec.decode(
+                userId,
+                encryptedRecord.getString("encrypted_fields")
+            )
+            require(
+                decoded.title == original.title &&
+                    decoded.content == original.content &&
+                    encryptedRecord.getLong("local_note_id") == original.localNoteId &&
+                    encryptedRecord.getString("client_id") == original.clientId &&
+                    encryptedRecord.optString("operation") == (original.operation?.name ?: "null") &&
+                    encryptedRecord.optBoolean("is_pinned", false) == original.isPinned
+            ) { "Encrypted sync queue verification did not match the original record." }
+        }
 
         val updatedRoot = readRoot(preferences)
         updatedRoot.put(userId, snapshot)
