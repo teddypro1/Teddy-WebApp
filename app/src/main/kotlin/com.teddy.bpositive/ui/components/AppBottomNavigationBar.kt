@@ -27,6 +27,7 @@ fun AppBottomNavigationBar(
             Triple("Home", "⌂", "Home"),
             Triple("Trash", "▤", "Trash"),
             Triple("Inbox", "♢", "Inbox"),
+            Triple("Messages", "✉", "Chats"),
             Triple("Profile", "●", "Profile"),
             Triple("Settings", "⚙", "Settings")
         ) + if (showAdmin) listOf(Triple("Admin", "✦", "Admin")) else emptyList())
