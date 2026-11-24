@@ -101,3 +101,17 @@ Build 01's database migration is applied. The Realtime Compatibility migration i
 - Realtime `Allow public access` dashboard setting could not be inspected with available tools. Private Broadcast/Presence enforcement remains unverified until the setting is checked and clients use `private: true`.
 
 No existing production rows are copied, transformed or deleted by this migration.
+
+
+## Build 03 — Username discovery
+
+The profile table remains owner-readable through its original RLS policy. Username discovery is provided by the narrowly scoped authenticated RPC `public.search_public_profiles(search_query, result_limit)`, rather than broadening direct profile-table SELECT access.
+
+The RPC:
+- Requires `auth.uid()` and excludes the caller's own profile.
+- Searches only non-empty usernames using case-insensitive literal substring matching.
+- Requires at least two characters, caps query length at 30 and result count at 20.
+- Returns only `id`, `full_name`, `username`, `bio` and `avatar_url`; email and Auth metadata are never returned.
+- Uses `SECURITY DEFINER` with an empty search path and fully qualified table references. Execution is revoked from PUBLIC and anon and granted only to authenticated.
+
+The Android client calls the RPC with the active Supabase access token. Build 03 includes username search results and a public profile preview. The Start Chat action is a handoff point only; actual direct conversation creation belongs to Build 04.
