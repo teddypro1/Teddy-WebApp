@@ -1064,7 +1064,7 @@ These three milestones are grouped into one source commit so the user pulls once
 - **User confirmation (2026-11-24):** The user reported successful CodeAssist Build after the follow-up import-only correction commit `e0437bb46ae9ee386bf641ad41e5d9f37c007fe5`. This confirms compilation of Builds 61–63 plus the correction. Device-level Lock/Unlock, background masking, Trash restore, conflict restore and cloud round-trip tests remain unreported.
 
 
-## 17. Build 64 — Final Secure Vault account-session isolation (CodeAssist Build pending)
+## 17. Build 64 — Final Secure Vault account-session isolation (USER-CONFIRMED CODEASSIST BUILD SUCCESS)
 
 This is the final planned implementation build for the current per-note Secure Vault task.
 
@@ -1074,5 +1074,5 @@ This is the final planned implementation build for the current per-note Secure V
 - Existing app-background key clearing remains unchanged.
 - File changed: `app/src/main/kotlin/com.teddy.bpositive/MainActivity.kt`.
 - No Supabase migration, production database mutation, destructive operation or paid-plan change.
-- **CodeAssist compilation and account-switch runtime verification are pending user confirmation.** Test: unlock account A's Vault, switch/sign out, sign in as account B, and confirm account A's Vault key is not treated as unlocked; verify no pending note action or editor plaintext carries over.
+- **User confirmation (2026-11-24):** The user explicitly reported successful CodeAssist Build. This confirms compilation only. Account-switch runtime verification remains pending: unlock account A's Vault, switch/sign out, sign in as account B, and confirm account A's Vault key is not treated as unlocked; verify no pending note action or editor plaintext carries over.
 - This closes the planned Build 60–64 implementation sequence. Do not label the overall task fully verified until the user confirms Build 64 compilation and the relevant device checks.
