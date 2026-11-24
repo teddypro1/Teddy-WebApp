@@ -90,6 +90,12 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     private var suppressInitialSyncSuccessToast = false
 
+    override fun onStop() {
+        // Never keep an unlocked Vault master key in memory while the app is backgrounded.
+        com.teddy.bpositive.security.VaultSessionManager.lock()
+        super.onStop()
+    }
+
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (!isGranted) {
