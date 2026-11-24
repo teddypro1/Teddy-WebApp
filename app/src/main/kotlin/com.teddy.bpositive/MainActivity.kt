@@ -1479,6 +1479,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         }
                     },
                     onSignOut = {
+                        com.teddy.bpositive.security.VaultSessionManager.lock()
                         deletedNotes.clear()
                         conflictCopies.clear()
                         notes.clear()
