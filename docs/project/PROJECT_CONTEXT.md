@@ -1273,7 +1273,7 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
 - No existing profile rows, username values, owner policies, Messaging rows, Realtime settings, billing or plan settings were changed.
 - **Build status:** User confirmed CodeAssist Build completed successfully on 2026-11-24. Username-search on-device functional verification is not separately recorded; do not infer it from compilation success.
 
-## 18.11 Messaging Build 04 — One-to-One Private Conversation (SOURCE PUSHED; CODEASSIST BUILD PENDING)
+## 18.11 Messaging Build 04 — One-to-One Private Conversation (USER-CONFIRMED BUILD SUCCESSFUL)
 
 - User confirmed Messaging Build 03's CodeAssist Build completed successfully on 2026-11-24. This is a build confirmation only; it does not independently certify all username-search runtime cases.
 - Verified live GitHub main before Build 04: HEAD `23fbc2ad992295f094d542da7f6b78104ff01856`; canonical project context and Messaging source were read before edits.
@@ -1289,4 +1289,25 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
 - Source commits:
   - `b398a1067b68836a9ee7217a6c34aebb0e3742ed` — add direct conversation creation API.
   - `752ba36d71bfdcd288efb9f6bacf189f14f009ec` — connect username discovery to private conversations.
-- **Build status:** GitHub source is pushed. CodeAssist Build and device-level conversation creation/opening test are pending user confirmation. Do not mark successful until the user confirms.
+- **Build status:** User confirmed CodeAssist Build completed successfully on 2026-11-24. Device-level conversation creation/opening remains to be verified separately.
+
+## 18.12 Messaging Build 05 + Build 06 — Text Composer, Sending, History Load and Realtime Receive (ONE COMBINED COMMIT; CODEASSIST BUILD PENDING)
+
+- User confirmed Build 04 completed successfully and explicitly requested Build 05 and Build 06 to be delivered together in a single Git commit.
+- Live pre-change GitHub main HEAD: `3bcd5c77ea3228f2f7e9b578351d2b77fb2ea405`; latest Build 04 source and canonical project context were fetched before editing.
+- Live Supabase project `axklmzuepqcbxsbxvtdn` remains `ACTIVE_HEALTHY`; current migration history includes Build 01 messaging foundation, private Notes/Profile channel migration and Build 03 username search.
+- Reused the existing authenticated `public.send_message(p_conversation_id uuid, p_client_message_id uuid, p_body text)` RPC. Live definition verified: caller identity from `auth.uid()`, active conversation membership required, body length 1–10,000, sender/client UUID idempotency, creates recipient receipt row and advances conversation last-message timestamp. No database schema migration or production data change required.
+- Existing `messages` table has RLS-enabled member-only SELECT policy, excluding messages hidden by the requesting user's Delete-for-Me tombstone. The table is already included in `supabase_realtime`.
+- Supabase Realtime changelog reviewed. No relevant current breaking change prevents this implementation. Reused Build 01's existing private-channel authorization policies: the client joins `realtime:messaging:conversation:<conversation-uuid>` with `private=true`; the database authorization policy verifies active conversation membership. Message row visibility also relies on the existing messages-table RLS policy. No global Realtime setting or database policy was changed.
+- Added `data/MessagingRepository.kt`:
+  - Authenticated REST read of the latest 100 messages in ascending order, protected by existing table RLS.
+  - Authenticated `send_message` RPC call with a fresh client UUID for idempotency.
+  - Access-token refresh retry and network/API error reporting.
+- Added `data/MessagingRealtimeSubscription.kt`:
+  - Conversation-filtered Postgres Changes INSERT listener on `public.messages`.
+  - Heartbeat, reconnect backoff, session refresh handling and stop-on-screen-exit lifecycle.
+  - Realtime events trigger an RLS-protected REST refresh rather than trusting event payload as authoritative message content.
+- Updated `MessagingScreens.kt`: message bubbles aligned by sender, timestamps, loading/empty states, manual refresh, text input up to 10,000 characters and sending progress.
+- Updated `MainActivity.kt`: loads message history when a conversation opens, starts/stops the scoped Realtime subscription, sends through the RPC and refreshes history after success. Session/conversation guards discard stale callbacks.
+- Offline durable outbox/retry is deliberately deferred to Build 13. Delivered/Read receipts, typing, presence and push notifications remain later builds.
+- **Build status:** Source changes are being delivered in one Git commit. CodeAssist Build and two-account send/receive verification remain pending user confirmation. Do not mark successful until user confirms.
