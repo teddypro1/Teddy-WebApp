@@ -39,10 +39,6 @@ object NotesVaultStorage {
         val destination = File(directory, storageKey(userId) + ".bin")
         val temporary = File(directory, storageKey(userId) + ".tmp")
         temporary.writeText(record, Charsets.UTF_8)
-        if (destination.exists() && !destination.delete()) {
-            temporary.delete()
-            return false
-        }
         val moved = temporary.renameTo(destination)
         if (!moved) temporary.delete()
         return moved
