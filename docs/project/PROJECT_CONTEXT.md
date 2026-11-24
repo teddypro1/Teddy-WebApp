@@ -934,18 +934,33 @@ No Supabase schema/migration, production database, paid plan, or app-wide Settin
 - Implementation commit: `c741818ab6c1551586cbe0b0f651c62c0fe1a8a8`.
 - **User confirmation (2026-11-24):** “Successfully Build Completed!” CodeAssist Build completed successfully. Runtime migration execution/count was not separately reported.
 
-## Build 52 — Encrypted Local Notes Migration Integrity Hardening (CodeAssist Build pending)
+## Build 52 — Encrypted Local Notes Migration Integrity Hardening (USER-CONFIRMED SUCCESSFUL)
 
 - Updated `EncryptedLocalNotesStorage.stageLegacyMigration()` to compare an existing encrypted snapshot against the complete current plaintext note cache, including title, content, ID, pin state, timestamps and color.
-- If the source notes changed, the encrypted snapshot is refreshed and read back for full Note equality verification. The UI now distinguishes a newly staged copy from a refreshed copy.
+- If the source notes changed, the encrypted snapshot is refreshed and read back for full Note equality verification. The UI distinguishes a newly staged copy from a refreshed copy.
 - Added strict snapshot format, required-field, metadata-type, ID and color validation plus authenticated encrypted-field decoding before a snapshot is loaded or accepted as matching.
-- If the plaintext source is empty but an encrypted snapshot already exists, the existing snapshot is retained rather than replaced with an empty copy. Corrupt/unreadable existing snapshots stop safely; the plaintext source is not modified.
+- If the plaintext source is empty but an encrypted snapshot already exists, the existing snapshot is retained rather than replaced with an empty copy. The plaintext source is not modified.
 - Original plaintext notes remain preserved. This is still a staged migration only: active Notes UI/storage, sync queue, Supabase notes, realtime and conflict flows have not been switched to encrypted storage.
 - Files changed:
   - `app/src/main/kotlin/com.teddy.bpositive/data/EncryptedLocalNotesStorage.kt`
   - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/SecureVaultScreen.kt`
-- Implementation commits:
-  - `6ff3797f74c06381c9270b96eadd7a625386d436`
-  - `042390c568159a0875f1a01ccc35f308cb88a6ce`
+- Implementation commits: `6ff3797f74c06381c9270b96eadd7a625386d436`, `042390c568159a0875f1a01ccc35f308cb88a6ce`.
+- **User confirmation (2026-11-24):** After updating CodeAssist to 3.48.2, the user reported “Successfully Build Completed!” This confirms the CodeAssist Build completed; encrypted migration runtime checks were not separately reported.
 - No Supabase migration, production database mutation or paid-plan change.
-- CodeAssist Build and device/runtime migration checks are pending user confirmation. Do not mark Build 52 successful until the user confirms.
+
+## Build 53 — Complete Local Note Snapshot Encryption (CodeAssist Build pending)
+
+- Extended `NoteEncryptionCodec` with full-`Note` encode/decode operations. The complete note object—including ID, title, content, pin state, creation/update timestamps and color—is serialized into one AES-256-GCM authenticated encrypted payload.
+- Updated `EncryptedLocalNotesStorage` to write snapshot format version 2. Each stored note entry now contains only the encrypted full-note payload; note metadata is no longer exposed as plaintext in the staged encrypted snapshot.
+- Kept format-version-1 snapshot reading and validation for backward compatibility. When the plaintext legacy cache is available, running the migration refreshes a valid version-1 snapshot into version 2 and verifies the full decoded `Note` list after persistence.
+- Existing encrypted snapshots are authenticated before replacement. If the legacy plaintext cache is empty, an existing valid snapshot is preserved rather than overwritten.
+- The plaintext legacy cache remains unchanged. This is still migration preparation only: active Notes UI/storage, pending sync queue, Supabase notes, realtime and conflict flows are not switched to encrypted storage.
+- Files changed:
+  - `app/src/main/kotlin/com.teddy.bpositive/security/NoteEncryptionCodec.kt`
+  - `app/src/main/kotlin/com.teddy.bpositive/data/EncryptedLocalNotesStorage.kt`
+- Implementation commits:
+  - `3fde3d500663ea184d67278a79d239fef4a5324b`
+  - `602b9b5301a11f72ef53bb885e9f3b03378c2240`
+  - A follow-up documentation-comment correction is included in the storage file.
+- No Supabase migration, production database mutation or paid-plan change.
+- CodeAssist Build and device/runtime migration checks are pending user confirmation. Do not mark Build 53 successful until the user confirms.
