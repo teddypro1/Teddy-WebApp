@@ -1076,3 +1076,133 @@ This is the final planned implementation build for the current per-note Secure V
 - No Supabase migration, production database mutation, destructive operation or paid-plan change.
 - **User confirmation (2026-11-24):** The user explicitly confirmed that all work is functioning, including the final Secure Vault/account-session behavior. Runtime verification is considered user-confirmed.
 - **Final status (2026-11-24):** Builds 60–64 are CodeAssist-build-confirmed and the user has confirmed that all work functions correctly. The planned per-note Secure Vault implementation and verification task is complete.
+
+
+## 18. Teddy Messaging — Phase 1: Private Text Chat (PLANNING BASELINE; NOT IMPLEMENTED)
+
+### 18.1 User-approved product scope
+
+The user has approved planning for a new first-class Messaging capability in Teddy-WebApp. Initial release scope:
+- One-to-one private text conversations only; group chat is not part of Phase 1.
+- Discover registered users through username search.
+- Any registered user may start a conversation with another registered user; no message-request/approval gate.
+- Message states: Sent, Delivered and Read.
+- Online status, Last Seen and live Typing Indicator.
+- Delete for Me and Delete for Everyone.
+- Push notifications when the recipient app is backgrounded or closed.
+- Offline messages remain Pending locally and are sent automatically after connectivity returns.
+- Message history is retained indefinitely unless a user deletes it.
+- Initial transport/storage security is Supabase Auth + strict Row Level Security (RLS), not end-to-end encryption (E2EE). E2EE is a separately planned future capability.
+- Visual direction: original, premium Teddy-WebApp messaging UI informed by WhatsApp/Telegram usability, without copying either product.
+
+### 18.2 Mandatory architecture direction — future-ready foundation
+
+**User's explicit requirement (2026-11-24): design the foundational architecture with future expansion in mind, so later features do not require rebuilding or damaging the core architecture.** Treat this as a standing acceptance criterion for every Messaging Build and future design decision.
+
+Apply these rules:
+1. Establish stable domain boundaries and clear separation between UI, domain/use-case logic, repositories/data sources, local persistence, network/realtime transport and notification delivery.
+2. Model conversations and participants independently of the current one-to-one UI. Phase 1 exposes only direct conversations, but the data model must not make group conversations, multiple participants, roles or future conversation types structurally impossible.
+3. Use stable UUID identities, explicit constraints, foreign keys, idempotency keys and deterministic message ordering. Never rely on client timestamps or UI-only validation for integrity.
+4. Prefer additive, forward-compatible database migrations. Do not rename/drop/reinterpret existing production columns or tables to accommodate Messaging. Do not rewrite Notes, Secure Vault or notification data.
+5. Version externally persisted payloads and local queue records where format evolution is possible. Define compatibility and migration behavior before changing a persisted format.
+6. Keep ephemeral realtime signals (typing/presence) separate from durable message history. Presence/typing transport must be replaceable without changing the message domain model.
+7. Keep delivery receipts, read state, per-user deletion and global deletion semantics explicit and independently extensible. Avoid encoding multiple meanings in one status field.
+8. Keep push delivery server-side through Edge Functions/FCM; never put service credentials in the Android client. Reuse the existing device-token infrastructure only after checking its actual contracts.
+9. Keep local outbox/retry behavior durable, account-scoped and idempotent. Account switching/sign-out must not leak queued plaintext or send one user's pending messages under another account.
+10. Apply strict RLS and database constraints as the security boundary. Client-side checks are UX only. Verify every policy against the intended participant-level access model.
+11. Plan indexes, cursor pagination and retention semantics from the first schema version. History has no automatic TTL under the approved product scope.
+12. Design for future media attachments, voice/video calls, group conversations, message reactions/replies/forwarding, multi-device sessions and E2EE as possible later capabilities, but do not prematurely implement them in Phase 1. Use extensible metadata/attachment boundaries only where justified; avoid speculative columns or complex abstractions without a concrete use.
+13. Every Build must preserve existing Notes, Secure Vault, authentication, profile, notification and update workflows. Include regression checks appropriate to touched shared components.
+14. Before each implementation Build, inspect the live source and schema. The plan is a design baseline, not permission to assume the existing repository matches it.
+
+### 18.3 Verified current Supabase baseline (2026-11-24; read-only inspection)
+
+Project: `axklmzuepqcbxsbxvtdn`, region `ap-northeast-1`, status `ACTIVE_HEALTHY`, PostgreSQL `17.11.0.019`.
+
+Current public tables observed:
+- `notes`
+- `note_conflicts`
+- `profiles`
+- `device_tokens`
+- `admin_users`
+- `notification_history`
+- `user_notifications`
+- `user_topic_subscriptions`
+- `notification_delivery_attempts`
+- `vault_envelopes`
+
+RLS was reported enabled for each table in the live table listing. Existing `profiles` fields include `id`, `full_name`, `username`, `bio`, `avatar_url`, `created_at`, `updated_at`; the live listing showed five profile rows and a case-insensitive unique username index is recorded in the existing project context. Username search must use only approved public profile fields and must not expose email, auth metadata or private account data.
+
+Latest migration observed at this inspection: `20261124044324_build44_secure_vault_envelopes`. No Messaging table, migration or feature was observed in this public-table inventory. This was a read-only inspection; no Supabase schema, data, policy, function, billing or plan changes were made.
+
+### 18.4 Proposed domain and data model (design proposal; not yet migrated)
+
+The following is the starting design to validate against the live schema and Supabase documentation before Build 01. It is not yet a final SQL contract.
+
+- `conversations`: conversation identity, type and lifecycle timestamps. Direct conversations need a database-enforced canonical participant-pair identity so two clients cannot create duplicate one-to-one threads. The design should leave a safe path for future group conversations.
+- `conversation_members`: participant membership, membership role/state and per-user read/delivery cursor metadata. Unique membership constraint on conversation + user.
+- `messages`: durable message identity, conversation, sender, text body, server timestamps, client-generated idempotency key, edit/delete metadata and future-compatible message kind/version fields. Add deterministic cursor-pagination indexes.
+- `message_receipts`: per-recipient delivered/read timestamps, uniquely keyed by message + recipient. Do not confuse FCM acceptance with message delivery.
+- `message_deletions`: per-user Delete for Me tombstones, independent of global Delete for Everyone.
+- `user_push_tokens`: **do not create by default**; inspect and reuse the existing `device_tokens` installation-scoped registry if it meets messaging notification requirements. Extend it only through a safe additive migration if necessary.
+
+Design details that must be resolved before migration:
+- A robust canonical direct-pair uniqueness strategy and transaction-safe conversation creation.
+- Whether membership cursors are sufficient for efficient Delivered/Read progression or individual receipt rows are required for every recipient/message; the selected semantics must remain exact.
+- Sender-only authorization and recipient visibility for Delete for Everyone, with a durable tombstone/placeholder so message ordering and synchronization remain stable.
+- Safe profile search query/index and minimum public fields.
+- Exact RLS policies for conversation membership, message reads/inserts/updates, receipts and deletion records; no broad authenticated-only policies.
+- Realtime publication/channel authorization and lifecycle cleanup.
+- Local database/outbox structure and client-message deduplication.
+- Push event design, Edge Function authorization and FCM payload privacy.
+- Migration rollback/recovery strategy that does not require destructive production changes.
+
+### 18.5 Realtime and message semantics
+
+- Sent: server confirms the message row was committed.
+- Delivered: recipient device receives and durably acknowledges the message; merely publishing a Realtime event or receiving FCM acceptance is not sufficient.
+- Read: recipient opens the conversation and advances the read state for eligible messages.
+- Typing: ephemeral Realtime Broadcast with throttling/debounce and expiry; do not persist every keystroke.
+- Online/Last Seen: Realtime Presence plus app lifecycle/connectivity handling; persist only the minimum Last Seen data required by product behavior.
+- Offline send: persist an account-scoped local outbox item with a stable client-generated idempotency key; retry on reconnect and after process restart; reconcile server acknowledgement without duplicate messages.
+- Delete for Me: create a per-user tombstone; other participants retain their message.
+- Delete for Everyone: authorize the sender's action, preserve a synchronized deleted-message placeholder/tombstone, and do not physically remove data in a way that breaks other participants' history.
+- Push: use existing server-side FCM infrastructure where compatible; suppress self-notifications and avoid leaking message body in notification payloads unless the product later explicitly chooses that behavior.
+
+### 18.6 Proposed implementation roadmap (15 Builds; planning only)
+
+**Phase A — Foundation**
+- Build 01: finalize and document the future-ready Messaging database contract, constraints, indexes, RLS and Realtime strategy; prepare migration for review before applying it.
+- Build 02: Messaging navigation, conversation-list and chat-screen UI foundation.
+- Build 03: username-based user search, safe public profile preview and start-chat entry point.
+
+**Phase B — Core private text chat**
+- Build 04: transaction-safe one-to-one conversation creation and membership.
+- Build 05: text composer, message bubble UI, timestamps, keyboard and scroll behavior.
+- Build 06: durable message sending/receiving, Realtime updates, optimistic UI, deduplication and network error handling.
+
+**Phase C — Delivery and presence**
+- Build 07: Sent/Delivered/Read receipts.
+- Build 08: Online status and Last Seen.
+- Build 09: Typing Indicator.
+
+**Phase D — History and controls**
+- Build 10: conversation list ordering, previews and unread counts.
+- Build 11: indefinite message history with cursor pagination and date grouping.
+- Build 12: Delete for Me and Delete for Everyone.
+
+**Phase E — Reliability and notifications**
+- Build 13: durable offline outbox and automatic retry.
+- Build 14: background/closed-app push notifications using FCM and Edge Functions.
+
+**Phase F — Hardening**
+- Build 15: RLS/security audit, multi-account isolation, realtime lifecycle, offline/online regression, large-history performance and final documentation.
+
+Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but each logical change-set must be reviewed and user-confirmed before being marked complete. Do not report a CodeAssist Build successful until the user confirms it.
+
+### 18.7 Current status and next action
+
+- Product requirements and the 15-Build roadmap are captured as planning baseline.
+- No Messaging Android source code, database migration, table, RLS policy, Realtime publication, Edge Function or push workflow has been created.
+- No production database changes were made during this documentation update.
+- Next action when the user authorizes Build 01: re-check current `main` HEAD and canonical documentation, inspect relevant live source files, current profiles policies/indexes/functions, migration files and Supabase Realtime configuration; then produce the complete additive migration and security design for review. Do not apply any production migration until the user explicitly approves the exact database change.
