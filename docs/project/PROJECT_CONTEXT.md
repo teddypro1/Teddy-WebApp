@@ -1212,7 +1212,7 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
 - Realtime project-wide `Allow public access` setting could not be inspected with available tools. Private Broadcast/Presence enforcement is not verified. Do not change this global setting without assessing Notes/Profile channels and explicit approval; Messaging clients must use `private: true`.
 - Full separate-session Android client tests, Realtime channel authorization tests, and Notes/Profile/notification/Vault regression tests remain pending. Build 01 is database-applied, but the overall Messaging foundation is not marked fully complete until these gates pass.
 - No Android source code changed; no CodeAssist Build has been run or claimed.
-## 18.8 Realtime Compatibility Build — Notes/Profile private channel migration (CODEASSIST BUILD CONFIRMED; DEVICE REALTIME TESTS PENDING)
+## 18.8 Realtime Compatibility Build — Notes/Profile private channel migration (BUILD AND BASIC DEVICE REALTIME TEST CONFIRMED; CROSS-ACCOUNT/REGRESSION TESTS PENDING)
 
 - User confirmed the Supabase Dashboard setting **Realtime → Allow public access to channels** is currently Enabled. It has deliberately not been toggled because the existing Android Notes/Profile Realtime client previously joined one shared public topic.
 - Live GitHub main before this change was 40575b4a69fb55cd79f349de1b6c495858240a9c. Supabase project was ACTIVE_HEALTHY; Build 01's five Messaging tables and migration remained present.
@@ -1224,5 +1224,6 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
 - Architecture documentation commit: 615816ee4e896ff59675b81986ac0bbf6f665451.
 - Live policy verification confirms the new policy exists alongside the two existing Messaging policies. Migration history shows version 20261124112553. No existing Notes/Profile policies, publication entries, application data, or global Realtime settings were changed.
 - **User confirmation (2026-11-24):** CodeAssist Build completed successfully. This confirms the Android source compiles/builds in the user's environment; it does not yet prove live Realtime authorization or event delivery.
-- **Pending:** On-device authenticated Notes/Profile Realtime test; cross-account channel isolation test; Notes CRUD/offline sync/conflict/Profile/notification/Secure Vault regression tests.
+- **User confirmation (2026-11-24):** After the successful CodeAssist Build, the user tested the app and confirmed the Notes/Profile Realtime behavior works on-device. Treat this as a basic functional device test, not proof of cross-account isolation or every regression path.
+- **Pending:** Verify cross-account channel isolation; Notes CRUD and offline sync/conflict recovery; Profile refresh/edit; notifications; Secure Vault regression. Keep global Allow public access Enabled until the security/isolation and regression checks pass.
 - **Do not disable global Allow public access yet.** Only after the user confirms these client tests pass should the global setting change be considered. Do not mark this Build or Messaging Build 01 fully complete before those tests.
