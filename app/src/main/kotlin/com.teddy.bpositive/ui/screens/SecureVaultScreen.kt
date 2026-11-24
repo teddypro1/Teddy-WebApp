@@ -15,6 +15,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.teddy.bpositive.data.SupabaseSessionManager
+import com.teddy.bpositive.data.EncryptedLocalNotesStorage
 import com.teddy.bpositive.data.SupabaseVaultApi
 import com.teddy.bpositive.security.NotesEncryption
 import com.teddy.bpositive.security.NotesVaultStorage
@@ -42,6 +43,8 @@ fun SecureVaultScreen(
     var status by remember { mutableStateOf("") }
     var isSyncing by remember { mutableStateOf(false) }
     var cloudRetryCount by remember(userId) { mutableIntStateOf(0) }
+    var isMigratingNotes by remember(userId) { mutableStateOf(false) }
+    var migrationMessage by remember(userId) { mutableStateOf("") }
 
     LaunchedEffect(userId, cloudRetryCount) {
         if (session.userId != userId || userId.isBlank()) {
@@ -281,6 +284,42 @@ fun SecureVaultScreen(
                         }, modifier = Modifier.fillMaxWidth()) {
                             Text("Use Recovery Key instead")
                         }
+                    }
+
+                    HorizontalDivider()
+                    Text("Local Notes Encryption Migration", fontWeight = FontWeight.SemiBold)
+                    Text("After unlocking the Vault, create and verify an encrypted local copy of this account's existing notes. The original notes remain untouched.")
+                    Button(
+                        onClick = {
+                            if (!VaultSessionManager.isUnlocked(userId)) {
+                                migrationMessage = "Unlock the Vault with your Master Password or Recovery Key first."
+                                return@Button
+                            }
+                            isMigratingNotes = true
+                            migrationMessage = "Encrypting and verifying local notes..."
+                            try {
+                                when (val result = EncryptedLocalNotesStorage.stageLegacyMigration(context, userId)) {
+                                    is EncryptedLocalNotesStorage.MigrationResult.Staged ->
+                                        migrationMessage = "Verified encrypted copy created for ${result.noteCount} notes. Original notes were preserved."
+                                    EncryptedLocalNotesStorage.MigrationResult.AlreadyStaged ->
+                                        migrationMessage = "An encrypted local snapshot already exists. No data was overwritten."
+                                    EncryptedLocalNotesStorage.MigrationResult.NoLegacyNotes ->
+                                        migrationMessage = "No existing local notes were found to migrate."
+                                }
+                            } catch (error: Exception) {
+                                migrationMessage = "Migration stopped safely: ${error.message ?: "Unknown error"}. Original notes were preserved."
+                            } finally {
+                                isMigratingNotes = false
+                            }
+                        },
+                        enabled = !isMigratingNotes,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (isMigratingNotes) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                        else Text("Prepare Encrypted Local Copy")
+                    }
+                    if (migrationMessage.isNotBlank()) {
+                        Text(migrationMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
                     HorizontalDivider()
