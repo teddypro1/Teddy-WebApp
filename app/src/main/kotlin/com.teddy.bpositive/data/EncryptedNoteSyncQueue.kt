@@ -26,8 +26,8 @@ object EncryptedNoteSyncQueue {
 
     /**
      * Copies the current user's pending legacy records into an encrypted snapshot.
-     * Every copied record is decrypted and compared before the snapshot is committed.
-     * The original plaintext queue is never modified or deleted.
+     * Existing snapshots are compared with the complete current queue and refreshed
+     * when the legacy queue has changed. The original plaintext queue is never modified.
      */
     @Synchronized
     fun stageLegacyMigration(context: Context, userId: String): MigrationResult {
@@ -37,19 +37,17 @@ object EncryptedNoteSyncQueue {
         }
 
         val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val legacyRecords = NoteSyncStore.getPendingChanges(context, userId)
         val root = readRoot(preferences)
         val existing = root.optJSONObject(userId)
-        if (existing != null && existing.optInt("format_version") == FORMAT_VERSION) {
-            verifySnapshot(userId, existing)
+        if (existing != null && snapshotMatchesLegacyRecords(userId, existing, legacyRecords)) {
             return MigrationResult(
-                copiedCount = existing.optJSONArray("records")?.length() ?: 0,
+                copiedCount = existing.getJSONArray("records").length(),
                 alreadyPresent = true
             )
         }
 
-        val legacyRecords = NoteSyncStore.getPendingChanges(context, userId)
         val encryptedRecords = JSONArray()
-
         legacyRecords.forEach { record ->
             val encryptedFields = NoteEncryptionCodec.encode(
                 userId = userId,
@@ -72,33 +70,23 @@ object EncryptedNoteSyncQueue {
             .put("format_version", FORMAT_VERSION)
             .put("records", encryptedRecords)
 
-        verifySnapshot(userId, snapshot)
-        legacyRecords.forEachIndexed { index, original ->
-            val encryptedRecord = encryptedRecords.getJSONObject(index)
-            val decoded = NoteEncryptionCodec.decode(
-                userId,
-                encryptedRecord.getString("encrypted_fields")
-            )
-            require(
-                decoded.title == original.title &&
-                    decoded.content == original.content &&
-                    encryptedRecord.getLong("local_note_id") == original.localNoteId &&
-                    encryptedRecord.getString("client_id") == original.clientId &&
-                    encryptedRecord.optString("operation") == (original.operation?.name ?: "null") &&
-                    encryptedRecord.optBoolean("is_pinned", false) == original.isPinned
-            ) { "Encrypted sync queue verification did not match the original record." }
+        require(snapshotMatchesLegacyRecords(userId, snapshot, legacyRecords)) {
+            "Encrypted sync queue verification did not match the complete original queue."
         }
 
+        // Merge into the latest stored root so another account's snapshot is preserved.
         val updatedRoot = readRoot(preferences)
         updatedRoot.put(userId, snapshot)
         check(
             preferences.edit().putString(DATA_KEY, updatedRoot.toString()).commit()
         ) { "Could not persist encrypted sync queue." }
 
-        // Read back from disk and authenticate once more after persistence.
+        // Read back from disk and verify ciphertext plus every record field again.
         val persisted = readRoot(preferences).optJSONObject(userId)
             ?: error("Encrypted sync queue was not persisted.")
-        verifySnapshot(userId, persisted)
+        require(snapshotMatchesLegacyRecords(userId, persisted, legacyRecords)) {
+            "Persisted encrypted sync queue did not match the original queue."
+        }
 
         return MigrationResult(
             copiedCount = encryptedRecords.length(),
@@ -118,11 +106,8 @@ object EncryptedNoteSyncQueue {
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         ).optJSONObject(userId) ?: return emptyList()
 
-        require(snapshot.optInt("format_version") == FORMAT_VERSION) {
-            "Unsupported encrypted sync queue version."
-        }
-
-        val records = snapshot.optJSONArray("records") ?: JSONArray()
+        verifySnapshot(userId, snapshot)
+        val records = snapshot.getJSONArray("records")
         return buildList(records.length()) {
             for (index in 0 until records.length()) {
                 val item = records.getJSONObject(index)
@@ -130,9 +115,8 @@ object EncryptedNoteSyncQueue {
                     userId,
                     item.getString("encrypted_fields")
                 )
-                val operationName = item.optString("operation")
-                val operation = NoteSyncStore.Operation.values()
-                    .firstOrNull { it.name == operationName }
+                val operation = if (item.isNull("operation")) null
+                    else NoteSyncStore.Operation.valueOf(item.getString("operation"))
 
                 add(
                     NoteSyncStore.SyncRecord(
@@ -141,14 +125,54 @@ object EncryptedNoteSyncQueue {
                         operation = operation,
                         title = fields.title,
                         content = fields.content,
-                        isPinned = item.optBoolean("is_pinned", false),
+                        isPinned = item.getBoolean("is_pinned"),
                         cloudNoteId = if (item.isNull("cloud_note_id")) null
                             else item.getLong("cloud_note_id"),
-                        cloudUpdatedAt = item.optString("cloud_updated_at")
-                            .takeIf { it.isNotBlank() && it != "null" }
+                        cloudUpdatedAt = if (item.isNull("cloud_updated_at")) null
+                            else item.getString("cloud_updated_at")
                     )
                 )
             }
+        }
+    }
+
+    private fun snapshotMatchesLegacyRecords(
+        userId: String,
+        snapshot: JSONObject,
+        legacyRecords: List<NoteSyncStore.SyncRecord>
+    ): Boolean {
+        return try {
+            verifySnapshot(userId, snapshot)
+            val records = snapshot.getJSONArray("records")
+            if (records.length() != legacyRecords.size) return false
+
+            legacyRecords.forEachIndexed { index, original ->
+                val item = records.getJSONObject(index)
+                val decoded = NoteEncryptionCodec.decode(
+                    userId,
+                    item.getString("encrypted_fields")
+                )
+                val operation = if (item.isNull("operation")) null
+                    else NoteSyncStore.Operation.valueOf(item.getString("operation"))
+                val cloudNoteId = if (item.isNull("cloud_note_id")) null
+                    else item.getLong("cloud_note_id")
+                val cloudUpdatedAt = if (item.isNull("cloud_updated_at")) null
+                    else item.getString("cloud_updated_at")
+
+                if (
+                    decoded.title != original.title ||
+                    decoded.content != original.content ||
+                    item.getLong("local_note_id") != original.localNoteId ||
+                    item.getString("client_id") != original.clientId ||
+                    operation != original.operation ||
+                    item.getBoolean("is_pinned") != original.isPinned ||
+                    cloudNoteId != original.cloudNoteId ||
+                    cloudUpdatedAt != original.cloudUpdatedAt
+                ) return false
+            }
+            true
+        } catch (_: Exception) {
+            false
         }
     }
 
@@ -156,20 +180,35 @@ object EncryptedNoteSyncQueue {
         require(snapshot.optInt("format_version") == FORMAT_VERSION) {
             "Unsupported encrypted sync queue version."
         }
-        val records = snapshot.optJSONArray("records") ?: JSONArray()
+        val records = snapshot.optJSONArray("records")
+            ?: throw IllegalArgumentException("Encrypted sync queue records are missing.")
+
         for (index in 0 until records.length()) {
             val item = records.getJSONObject(index)
-            val decoded = NoteEncryptionCodec.decode(
-                userId,
-                item.getString("encrypted_fields")
-            )
-            require(item.has("local_note_id") && item.has("client_id")) {
+            require(item.has("local_note_id") && item.has("client_id") &&
+                item.has("operation") && item.has("encrypted_fields") &&
+                item.has("is_pinned") && item.has("cloud_note_id") &&
+                item.has("cloud_updated_at")) {
                 "Encrypted sync queue metadata is incomplete."
             }
-            require(decoded.title.isNotEmpty() || decoded.content.isNotEmpty() ||
-                item.has("encrypted_fields")) {
-                "Encrypted sync queue record verification failed."
+            require(item.getLong("local_note_id") > 0L) {
+                "Encrypted sync queue local note ID is invalid."
             }
+            require(item.getString("client_id").isNotBlank()) {
+                "Encrypted sync queue client ID is invalid."
+            }
+            if (!item.isNull("operation")) {
+                NoteSyncStore.Operation.valueOf(item.getString("operation"))
+            }
+            item.getBoolean("is_pinned")
+            if (!item.isNull("cloud_note_id")) {
+                require(item.getLong("cloud_note_id") > 0L) {
+                    "Encrypted sync queue cloud note ID is invalid."
+                }
+            }
+            if (!item.isNull("cloud_updated_at")) item.getString("cloud_updated_at")
+
+            NoteEncryptionCodec.decode(userId, item.getString("encrypted_fields"))
         }
     }
 
