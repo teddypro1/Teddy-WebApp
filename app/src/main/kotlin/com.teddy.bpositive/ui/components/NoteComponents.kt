@@ -6,6 +6,7 @@ import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 import com.teddy.bpositive.model.Note
 import com.teddy.bpositive.data.SupabaseNotesApi
+import com.teddy.bpositive.security.NoteEncryptionCodec
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -49,9 +50,17 @@ fun TrashNoteCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(note.title, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            val isProtected = NoteEncryptionCodec.extractCloudPayload(note.content) != null
+            Text(
+                if (isProtected) "Locked note" else note.title,
+                fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis
+            )
             Spacer(Modifier.height(7.dp))
-            Text(note.content, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            Text(
+                if (isProtected) "This note is encrypted. Restore it, then unlock Secure Vault to view its contents."
+                else note.content,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, maxLines = 3, overflow = TextOverflow.Ellipsis
+            )
             Spacer(Modifier.height(10.dp))
             Text("Deleted: ${note.deletedAt ?: "Unknown"}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             Spacer(Modifier.height(10.dp))
@@ -79,11 +88,22 @@ fun ConflictCopyCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("⚠ Conflict copy", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            val isProtected = NoteEncryptionCodec.extractCloudPayload(conflict.content) != null
+            Text(
+                if (isProtected) "⚠ Protected conflict copy" else "⚠ Conflict copy",
+                color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold
+            )
             Spacer(Modifier.height(7.dp))
-            Text(conflict.title, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(
+                if (isProtected) "Locked note" else conflict.title,
+                fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis
+            )
             Spacer(Modifier.height(7.dp))
-            Text(conflict.content, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, maxLines = 5, overflow = TextOverflow.Ellipsis)
+            Text(
+                if (isProtected) "This conflict copy is encrypted. Restore it, then unlock Secure Vault to view its contents."
+                else conflict.content,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, maxLines = 5, overflow = TextOverflow.Ellipsis
+            )
             Spacer(Modifier.height(10.dp))
             Text("Saved: ${conflict.createdAt ?: "Unknown"}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             Spacer(Modifier.height(10.dp))

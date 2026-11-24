@@ -361,27 +361,6 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         mutableStateListOf<Note>().apply { addAll(loadNotes(context, userId)) }
     }
 
-    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, userId) {
-        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
-                notes.indices.toList().forEach { index ->
-                    val note = notes[index]
-                    if (note.isLocked && !note.isMasked) {
-                        notes[index] = note.copy(
-                            title = "Locked note",
-                            content = "Unlock Secure Vault to view this note.",
-                            isPinned = false,
-                            isMasked = true
-                        )
-                    }
-                }
-                saveNotes(context, userId, notes)
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
     val deletedNotes = remember(userId) { mutableStateListOf<SupabaseNotesApi.CloudNote>() }
     val conflictCopies = remember(userId) { mutableStateListOf<SupabaseNotesApi.ConflictCopy>() }
     var currentProfile by remember(userId) { mutableStateOf<SupabaseProfilesApi.Profile?>(null) }
@@ -826,6 +805,40 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         mutableStateOf("")
     }
 
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, userId) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+                val openedNoteWasProtected = openedNoteId?.let { openId ->
+                    notes.firstOrNull { it.id == openId }?.isLocked == true
+                } == true
+                notes.indices.toList().forEach { index ->
+                    val note = notes[index]
+                    if (note.isLocked && !note.isMasked) {
+                        notes[index] = note.copy(
+                            title = "Locked note",
+                            content = "Unlock Secure Vault to view this note.",
+                            isPinned = false,
+                            isMasked = true
+                        )
+                    }
+                }
+                // Do not leave a protected editor holding plaintext after backgrounding.
+                if (openedNoteWasProtected) {
+                    openedNoteId = null
+                    draftNoteId = null
+                    showEditor = false
+                    editingId = null
+                    title = ""
+                    content = ""
+                }
+                saveNotes(context, userId, notes)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     var deleteTarget by remember {
         mutableStateOf<Long?>(null)
     }
@@ -993,14 +1006,29 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
 
             var localId = System.currentTimeMillis()
             while (notes.any { it.id == localId }) localId++
-            val localNote = Note(
-                id = localId,
-                title = restored.title,
-                content = restored.content,
-                isPinned = restored.isPinned,
-                createdAt = parseCloudTimeMillis(restored.createdAt),
-                updatedAt = parseCloudTimeMillis(restored.updatedAt)
-            )
+            val restoredPayload = NoteEncryptionCodec.extractCloudPayload(restored.content)
+            val localNote = if (restoredPayload != null) {
+                Note(
+                    id = localId,
+                    title = "Locked note",
+                    content = "Unlock Secure Vault to view this note.",
+                    isPinned = false,
+                    createdAt = 0L,
+                    updatedAt = 0L,
+                    isLocked = true,
+                    encryptedPayload = restoredPayload,
+                    isMasked = true
+                )
+            } else {
+                Note(
+                    id = localId,
+                    title = restored.title,
+                    content = restored.content,
+                    isPinned = restored.isPinned,
+                    createdAt = parseCloudTimeMillis(restored.createdAt),
+                    updatedAt = parseCloudTimeMillis(restored.updatedAt)
+                )
+            }
             notes.add(0, localNote)
             NoteSyncStore.registerCloudNote(
                 context = context,
@@ -1073,14 +1101,29 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                 return@upsertNote
             }
 
-            val localNote = Note(
-                id = localId,
-                title = restored.title,
-                content = restored.content,
-                isPinned = restored.isPinned,
-                createdAt = parseCloudTimeMillis(restored.createdAt),
-                updatedAt = parseCloudTimeMillis(restored.updatedAt)
-            )
+            val restoredPayload = NoteEncryptionCodec.extractCloudPayload(restored.content)
+            val localNote = if (restoredPayload != null) {
+                Note(
+                    id = localId,
+                    title = "Locked note",
+                    content = "Unlock Secure Vault to view this note.",
+                    isPinned = false,
+                    createdAt = 0L,
+                    updatedAt = 0L,
+                    isLocked = true,
+                    encryptedPayload = restoredPayload,
+                    isMasked = true
+                )
+            } else {
+                Note(
+                    id = localId,
+                    title = restored.title,
+                    content = restored.content,
+                    isPinned = restored.isPinned,
+                    createdAt = parseCloudTimeMillis(restored.createdAt),
+                    updatedAt = parseCloudTimeMillis(restored.updatedAt)
+                )
+            }
             val localIndex = notes.indexOfFirst { it.id == localId }
             if (localIndex >= 0) notes[localIndex] = localNote else notes.add(0, localNote)
 
@@ -1190,6 +1233,21 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     }
 
     fun editNote(note: Note) {
+        if (note.isMasked) {
+            requestVaultNoteAction(note, encrypt = false)
+            return
+        }
+        if (note.isLocked && !com.teddy.bpositive.security.VaultSessionManager.isUnlocked(userId)) {
+            maskProtectedNote(note)
+            val masked = notes.firstOrNull { it.id == note.id } ?: note.copy(
+                title = "Locked note",
+                content = "Unlock Secure Vault to view this note.",
+                isPinned = false,
+                isMasked = true
+            )
+            requestVaultNoteAction(masked, encrypt = false)
+            return
+        }
         openedNoteId = note.id
         showEditor = false
     }
@@ -1198,6 +1256,21 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         val index = notes.indexOfFirst { it.id == noteId }
         if (index < 0) return
         val previous = notes[index]
+        if (previous.isMasked) {
+            Toast.makeText(context, "Unlock Secure Vault before editing this note.", Toast.LENGTH_LONG).show()
+            openedNoteId = null
+            title = ""
+            content = ""
+            return
+        }
+        if (previous.isLocked && !com.teddy.bpositive.security.VaultSessionManager.isUnlocked(userId)) {
+            maskProtectedNote(previous)
+            Toast.makeText(context, "Vault session expired. The note was hidden; unlock it before editing.", Toast.LENGTH_LONG).show()
+            openedNoteId = null
+            title = ""
+            content = ""
+            return
+        }
         var updated = previous.copy(
             title = newTitle.trim(), content = newContent,
             colorHex = newColor, updatedAt = System.currentTimeMillis()
@@ -1242,6 +1315,15 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     }
 
     fun shareNote(note: Note) {
+        if (note.isMasked) {
+            Toast.makeText(context, "Unlock Secure Vault before sharing this note.", Toast.LENGTH_LONG).show()
+            return
+        }
+        if (note.isLocked && !com.teddy.bpositive.security.VaultSessionManager.isUnlocked(userId)) {
+            maskProtectedNote(note)
+            Toast.makeText(context, "Vault session expired. The note was hidden; unlock it before sharing.", Toast.LENGTH_LONG).show()
+            return
+        }
         val shareText = buildString {
             if (note.title.isNotBlank()) {
                 append(note.title)
@@ -1257,6 +1339,15 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     }
 
     fun togglePin(note: Note) {
+        if (note.isMasked) {
+            Toast.makeText(context, "Unlock Secure Vault before changing this note's pin state.", Toast.LENGTH_LONG).show()
+            return
+        }
+        if (note.isLocked && !com.teddy.bpositive.security.VaultSessionManager.isUnlocked(userId)) {
+            maskProtectedNote(note)
+            Toast.makeText(context, "Vault session expired. The note was hidden; unlock it before changing its pin.", Toast.LENGTH_LONG).show()
+            return
+        }
 
         val index = notes.indexOfFirst {
             it.id == note.id

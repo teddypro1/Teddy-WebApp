@@ -1005,7 +1005,7 @@ These three closely related milestones are intentionally grouped into one source
 - On-device audit execution and its actual result remain unreported; do not claim the local-note or queue comparison passed at runtime.
 
 
-## Builds 58–59 — Background Audit Execution & Strict Queue Validation (single grouped commit; CodeAssist Build pending)
+## Builds 58–59 — Background Audit Execution & Strict Queue Validation (single grouped commit; USER-CONFIRMED CODEASSIST BUILD SUCCESS)
 
 ### Build 58 — Run encrypted migration audits off the UI thread
 - Moved the Secure Vault's read-only local-note and encrypted-queue audit work to `Dispatchers.IO` using the Compose coroutine scope.
@@ -1022,10 +1022,10 @@ These three closely related milestones are intentionally grouped into one source
   - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/SecureVaultScreen.kt`
   - `app/src/main/kotlin/com.teddy.bpositive/data/EncryptedNoteSyncQueue.kt`
 - No Supabase migration, production database mutation, paid-plan change, active Notes storage cutover or active sync-queue cutover.
-- CodeAssist compilation and on-device verification are pending user confirmation.
+- **User confirmation (2026-11-24):** The user explicitly reported successful CodeAssist Build after pulling the grouped commit. Runtime audit execution/results were not separately reported.
 
 
-## 15. Build 60 — Per-note Secure Vault Lock/Unlock integration (USER BUILD PENDING)
+## 15. Build 60 — Per-note Secure Vault Lock/Unlock integration (USER-CONFIRMED CODEASSIST BUILD SUCCESS)
 
 - Connects the Note Card Action Dialog to the existing Vault master key and AES-GCM full-note codec.
 - Locked notes are saved locally as encrypted full-note payloads; plaintext title/content and note metadata are not written into the local note snapshot.
@@ -1033,4 +1033,32 @@ These three closely related milestones are intentionally grouped into one source
 - Cloud hydration recognizes encrypted envelopes and displays a masked placeholder.
 - Editing and pinning protected notes refresh the encrypted payload before persistence and sync.
 - Protected note content is masked in Compose state when the activity enters the background.
-- CodeAssist compilation and device-level verification remain pending user confirmation.
+- **User confirmation (2026-11-24):** The user explicitly confirmed successful CodeAssist Build. Device-level Lock/Unlock, cloud round-trip and lifecycle runtime tests were not separately reported.
+
+
+## 16. Builds 61–63 — Per-note Secure Vault recovery, safety and sync integration (single grouped commit; CodeAssist Build pending)
+
+These three milestones are grouped into one source commit so the user pulls once and runs one CodeAssist Build.
+
+### Build 61 — Protected-note action and lifecycle safeguards
+- Masked notes no longer expose Pin or Share actions in the Note Card Action Dialog; Delete and Unlock remain available.
+- MainActivity rejects pin changes, edits and sharing for masked notes or protected notes when the matching Vault session is not unlocked. This prevents placeholder text from being re-encrypted over the original protected payload.
+- When the app enters the background, protected notes are masked and an open protected-note editor is closed with its plaintext editor state cleared before the local note snapshot is saved.
+
+### Build 62 — Encrypted Trash and conflict recovery
+- Trash and conflict-copy cards detect the versioned encrypted cloud envelope and display a safe generic description instead of ciphertext.
+- Restoring a protected note from Trash or a protected conflict copy reconstructs a masked local Note with its encrypted payload, rather than treating the envelope string as ordinary plaintext note content.
+- Existing unencrypted Trash and conflict-copy records retain their previous restore behavior.
+
+### Build 63 — Secure Vault navigation and accurate migration status
+- Android system Back is handled inside Secure Vault and invokes the same callback as the visible Back button. This allows a pending per-note Lock/Unlock action to resume after the user returns from Vault.
+- Updated Secure Vault explanations to distinguish individually locked notes from the separate legacy encrypted-snapshot migration and the staged encrypted queue copy.
+- No new dependency or Supabase schema change.
+
+- Files changed:
+  - `app/src/main/kotlin/com.teddy.bpositive/MainActivity.kt`
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/NotesScreen.kt`
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/components/NoteComponents.kt`
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/SecureVaultScreen.kt`
+- No Supabase migration, production database mutation, destructive operation or paid-plan change.
+- **CodeAssist compilation and device-level tests are pending user confirmation.** Verify Lock/Unlock, background masking, Trash restore, conflict restore and cloud synchronization on device.

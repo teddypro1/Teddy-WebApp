@@ -272,29 +272,37 @@ fun NotesScreen(
                 },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        NoteActionRow(
-                            if (note.isPinned) "Unpin note" else "Pin note",
-                            if (note.isPinned) "Remove this note from pinned items" else "Keep this note easy to find",
-                            "pin"
-                        ) {
-                            actionNote = null
-                            onTogglePin(note)
+                        if (!note.isMasked) {
+                            NoteActionRow(
+                                if (note.isPinned) "Unpin note" else "Pin note",
+                                if (note.isPinned) "Remove this note from pinned items" else "Keep this note easy to find",
+                                "pin"
+                            ) {
+                                actionNote = null
+                                onTogglePin(note)
+                            }
                         }
                         NoteActionRow(
-                            if (note.isMasked) "Unlock note" else "Lock note",
-                            if (note.isMasked) "Open with Secure Vault" else "Encrypt or temporarily hide this note",
+                            if (note.isMasked) "Unlock note" else if (note.isLocked) "Hide note" else "Lock note",
+                            when {
+                                note.isMasked -> "Open with Secure Vault"
+                                note.isLocked -> "Hide this protected note"
+                                else -> "Encrypt this note with Secure Vault"
+                            },
                             if (note.isMasked) "unlock" else "lock"
                         ) {
                             actionNote = null
                             onLockNote(note)
                         }
-                        NoteActionRow(
-                            "Share note",
-                            "Send a copy to someone",
-                            "share"
-                        ) {
-                            actionNote = null
-                            onShareNote(note)
+                        if (!note.isMasked) {
+                            NoteActionRow(
+                                "Share note",
+                                "Send a copy to someone",
+                                "share"
+                            ) {
+                                actionNote = null
+                                onShareNote(note)
+                            }
                         }
                         NoteActionRow(
                             "Delete note",

@@ -1,5 +1,6 @@
 package com.teddy.bpositive.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -33,6 +34,7 @@ fun SecureVaultScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    BackHandler { onBack() }
     val clipboard = LocalClipboardManager.current
     val auditScope = rememberCoroutineScope()
     var envelope by remember(userId) { mutableStateOf<NotesEncryption.VaultEnvelope?>(null) }
@@ -112,7 +114,7 @@ fun SecureVaultScreen(
             OutlinedButton(onClick = onBack) { Text("Back") }
         }
         Text(
-            "The account stores only the encrypted Vault envelope. Existing notes are not encrypted and Note Lock is not enabled.",
+            "Each note is encrypted when you choose Lock. Locked notes are stored locally as encrypted payloads and synced to your account as ciphertext. Existing notes remain unchanged until you lock them.",
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(storageMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -297,7 +299,7 @@ fun SecureVaultScreen(
 
                     HorizontalDivider()
                     Text("Local Notes Encryption Migration", fontWeight = FontWeight.SemiBold)
-                    Text("After unlocking the Vault, create and verify an encrypted local copy of this account's existing notes. The original notes remain untouched.")
+                    Text("Create and verify a separate encrypted snapshot of this account's current notes. This migration copy does not replace the active note cache; notes you individually Lock are already stored locally as encrypted payloads.")
                     Button(
                         onClick = {
                             if (!VaultSessionManager.isUnlocked(userId)) {
@@ -335,7 +337,7 @@ fun SecureVaultScreen(
 
                     HorizontalDivider()
                     Text("Offline Sync Queue Encryption", fontWeight = FontWeight.SemiBold)
-                    Text("Prepare an encrypted copy of pending offline sync operations. The existing queue remains untouched until all sync paths can be switched safely.")
+                    Text("Locked-note operations already place a generic title and ciphertext envelope in the active queue. This action creates a separately encrypted, verified copy of the complete pending queue; it does not switch the active queue.")
                     Button(
                         onClick = {
                             if (!VaultSessionManager.isUnlocked(userId)) {
