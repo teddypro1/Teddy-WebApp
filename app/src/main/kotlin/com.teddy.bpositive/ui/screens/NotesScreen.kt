@@ -36,6 +36,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.IntOffset
@@ -230,7 +231,8 @@ fun NotesScreen(
                             selectionMode = selectionMode,
                             onSelect = { checked -> selectedIds = if (checked) selectedIds + note.id else selectedIds - note.id },
                             onClick = { if (selectionMode) selectedIds = if (selectedIds.contains(note.id)) selectedIds - note.id else selectedIds + note.id else onNoteClick(note) },
-                            onLongPress = { if (!selectionMode) actionNote = note }
+                            onLongPress = { if (!selectionMode) actionNote = note },
+                            onTogglePin = { if (!selectionMode && note.isPinned) onTogglePin(note) }
                         )
                     }
                 }
@@ -273,7 +275,7 @@ fun NotesScreen(
                         NoteActionRow(
                             if (note.isPinned) "Unpin note" else "Pin note",
                             if (note.isPinned) "Remove this note from pinned items" else "Keep this note easy to find",
-                            "bookmark"
+                            "pin"
                         ) {
                             actionNote = null
                             onTogglePin(note)
@@ -523,7 +525,8 @@ private fun NoteListItem(
     selectionMode: Boolean,
     onSelect: (Boolean) -> Unit,
     onClick: () -> Unit,
-    onLongPress: () -> Unit
+    onLongPress: () -> Unit,
+    onTogglePin: () -> Unit
 ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         if (selectionMode) Checkbox(checked = selected, onCheckedChange = onSelect)
@@ -556,17 +559,21 @@ private fun NoteListItem(
                 modifier = Modifier.weight(1f)
             )
             if (note.isPinned) {
-                Box(
-                    modifier = Modifier
-                        .size(27.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                    contentAlignment = Alignment.Center
+                Surface(
+                    onClick = onTogglePin,
+                    modifier = Modifier.size(32.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    tonalElevation = 2.dp
                 ) {
-                    NoteActionGlyph(
-                        kind = "pin",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(15.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        NoteActionGlyph(
+                            kind = "pin",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
                 }
             }
         }
@@ -681,33 +688,33 @@ private fun NoteActionGlyph(
                 drawPath(path, tint, style = Stroke(width = stroke, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
             }
             "pin" -> {
-                drawCircle(
-                    tint,
-                    radius = size.width * 0.17f,
-                    center = Offset(size.width * 0.50f, size.height * 0.25f),
-                    style = Stroke(width = stroke)
-                )
-                drawLine(
-                    tint,
-                    Offset(size.width * 0.50f, size.height * 0.42f),
-                    Offset(size.width * 0.50f, size.height * 0.72f),
-                    stroke,
-                    StrokeCap.Round
-                )
-                drawLine(
-                    tint,
-                    Offset(size.width * 0.50f, size.height * 0.72f),
-                    Offset(size.width * 0.34f, size.height * 0.91f),
-                    stroke,
-                    StrokeCap.Round
-                )
-                drawLine(
-                    tint,
-                    Offset(size.width * 0.50f, size.height * 0.42f),
-                    Offset(size.width * 0.70f, size.height * 0.58f),
-                    stroke,
-                    StrokeCap.Round
-                )
+                // A compact angled pushpin: rounded head, collar and tapered needle.
+                rotate(degrees = -38f, pivot = Offset(size.width * 0.52f, size.height * 0.50f)) {
+                    val headCenter = Offset(size.width * 0.50f, size.height * 0.22f)
+                    drawCircle(
+                        color = tint,
+                        radius = size.width * 0.19f,
+                        center = headCenter
+                    )
+                    drawCircle(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        radius = size.width * 0.075f,
+                        center = Offset(headCenter.x - size.width * 0.045f, headCenter.y - size.height * 0.045f)
+                    )
+                    drawRoundRect(
+                        color = tint,
+                        topLeft = Offset(size.width * 0.40f, size.height * 0.37f),
+                        size = Size(size.width * 0.20f, size.height * 0.12f),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.05f)
+                    )
+                    val needle = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(size.width * 0.44f, size.height * 0.48f)
+                        lineTo(size.width * 0.56f, size.height * 0.48f)
+                        lineTo(size.width * 0.52f, size.height * 0.94f)
+                        close()
+                    }
+                    drawPath(needle, tint)
+                }
             }
             "lock" -> {
                 drawArc(tint, 180f, 180f, false,
