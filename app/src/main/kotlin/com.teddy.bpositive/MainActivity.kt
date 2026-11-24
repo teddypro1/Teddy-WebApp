@@ -1525,6 +1525,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                 if (chatSession != null && !chatConversationId.isNullOrBlank()) {
                     MessagingChatScreen(
                         context = context,
+                        contentPadding = padding,
                         session = chatSession,
                         conversationId = chatConversationId,
                         displayName = activeChatProfile?.fullName.orEmpty(),
