@@ -246,6 +246,7 @@ fun MessagingUserSearchScreen(
 @Composable
 fun MessagingChatScreen(
     context: android.content.Context,
+    contentPadding: androidx.compose.foundation.layout.PaddingValues,
     session: com.teddy.bpositive.data.SupabaseSessionManager.Session,
     conversationId: String,
     displayName: String,
@@ -289,7 +290,7 @@ fun MessagingChatScreen(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().padding(contentPadding),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Column(modifier = Modifier.weight(1f).fillMaxWidth()) {
