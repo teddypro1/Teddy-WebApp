@@ -1212,6 +1212,24 @@ Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but e
 - Realtime project-wide `Allow public access` setting could not be inspected with available tools. Private Broadcast/Presence enforcement is not verified. Do not change this global setting without assessing Notes/Profile channels and explicit approval; Messaging clients must use `private: true`.
 - Full separate-session Android client tests, Realtime channel authorization tests, and Notes/Profile/notification/Vault regression tests remain pending. Build 01 is database-applied, but the overall Messaging foundation is not marked fully complete until these gates pass.
 - No Android source code changed; no CodeAssist Build has been run or claimed.
+## 18.9 Messaging Build 02 — Navigation and UI foundation (SOURCE COMMITTED; CODEASSIST BUILD NOT YET USER-CONFIRMED)
+
+- Added a dedicated **Chats** destination to the existing bottom navigation. The destination is named `Messages` internally to keep routing explicit.
+- Added `app/src/main/kotlin/com.teddy.bpositive/ui/screens/MessagingScreens.kt` with:
+  - Messaging conversation-list landing UI and empty state.
+  - Search-field visual placeholder (not connected to search yet).
+  - Reusable one-to-one chat-screen UI shell with participant header, message area and composer callback; it is not connected to a backend or a conversation route yet.
+- Connected the Messages destination in `MainActivity.kt`. The empty-state Find people action currently explains that username search arrives in Build 03; it does not perform a search.
+- Updated `AppBottomNavigationBar.kt` to show Chats alongside the existing destinations. Admin remains conditional on verified admin access.
+- Source commits, in order:
+  - `6fe7102a5517ebd164b7fde27ad5fc528be2a795` — add Messaging UI foundation.
+  - `07e0d7346ee42f571a4522865db233367bd71648` — connect Messages route.
+  - `d80f0fd51e46d8fe5718ddad6635b80d8229e7df` — add Chats navigation item.
+  - `6a92639453ffc126bb27bb4ca5961df8c574c22f` — adjust chat screen content sizing.
+- No Supabase schema, data, policies, Realtime settings, Edge Functions, billing or plan changes were made.
+- **Build status:** Source is committed to `main`; the user must pull and run the CodeAssist Build. Do not mark Build 02 successful until the user confirms.
+- **Verification approach:** The remaining Notes/Profile/notification/Vault regression checks are deferred to the consolidated integration/hardening pass rather than being used to block forward progress on this UI-only Build. The earlier two-account Notes/Profile private-channel isolation test remains user-confirmed as passed. Keep global Realtime **Allow public access to channels** Enabled until the relevant private-channel migration and regression coverage is complete.
+
 ## 18.8 Realtime Compatibility Build — Notes/Profile private channel migration (BUILD AND BASIC DEVICE REALTIME TEST CONFIRMED; CROSS-ACCOUNT/REGRESSION TESTS PENDING)
 
 - User confirmed the Supabase Dashboard setting **Realtime → Allow public access to channels** is currently Enabled. It has deliberately not been toggled because the existing Android Notes/Profile Realtime client previously joined one shared public topic.
