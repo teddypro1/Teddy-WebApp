@@ -17,7 +17,8 @@ object EncryptedLocalNotesStorage {
 
     private const val PREFS_NAME = "teddy_notes"
     private const val KEY_PREFIX = "encrypted_notes_data_v1_"
-    private const val FORMAT_VERSION = 1
+    private const val FORMAT_VERSION = 2
+    private const val LEGACY_FORMAT_VERSION = 1
 
     sealed class MigrationResult {
         data class Staged(val noteCount: Int) : MigrationResult()
@@ -36,17 +37,11 @@ object EncryptedLocalNotesStorage {
 
         val array = JSONArray()
         notes.forEach { note ->
-            val encryptedFields = NoteEncryptionCodec.encode(userId, note.title, note.content)
-            val fields = JSONObject(encryptedFields)
-
             array.put(
-                JSONObject()
-                    .put("id", note.id)
-                    .put("encrypted_fields", fields)
-                    .put("isPinned", note.isPinned)
-                    .put("createdAt", note.createdAt)
-                    .put("updatedAt", note.updatedAt)
-                    .put("colorHex", note.colorHex)
+                JSONObject().put(
+                    "encrypted_note",
+                    NoteEncryptionCodec.encodeNote(userId, note)
+                )
             )
         }
 
@@ -69,25 +64,30 @@ object EncryptedLocalNotesStorage {
         val document = JSONObject(saved)
         verifySnapshot(userId, document)
 
+        val version = document.getInt("format_version")
         val array = document.getJSONArray("notes")
         return buildList {
             for (index in 0 until array.length()) {
                 val item = array.getJSONObject(index)
-                val fields = NoteEncryptionCodec.decode(
-                    userId,
-                    item.getJSONObject("encrypted_fields").toString()
-                )
-                add(
-                    Note(
-                        id = item.getLong("id"),
-                        title = fields.title,
-                        content = fields.content,
-                        isPinned = item.getBoolean("isPinned"),
-                        createdAt = item.getLong("createdAt"),
-                        updatedAt = item.getLong("updatedAt"),
-                        colorHex = item.getString("colorHex")
+                if (version == FORMAT_VERSION) {
+                    add(NoteEncryptionCodec.decodeNote(userId, item.getString("encrypted_note")))
+                } else {
+                    val fields = NoteEncryptionCodec.decode(
+                        userId,
+                        item.getJSONObject("encrypted_fields").toString()
                     )
-                )
+                    add(
+                        Note(
+                            id = item.getLong("id"),
+                            title = fields.title,
+                            content = fields.content,
+                            isPinned = item.getBoolean("isPinned"),
+                            createdAt = item.getLong("createdAt"),
+                            updatedAt = item.getLong("updatedAt"),
+                            colorHex = item.getString("colorHex")
+                        )
+                    )
+                }
             }
         }
     }
@@ -107,15 +107,19 @@ object EncryptedLocalNotesStorage {
 
         if (existing != null) {
             val existingDocument = JSONObject(existing)
-            if (snapshotMatchesLegacyNotes(userId, existingDocument, legacy)) {
+            // Reject malformed or unauthenticated existing snapshots before writing.
+            verifySnapshot(userId, existingDocument)
+
+            if (
+                existingDocument.getInt("format_version") == FORMAT_VERSION &&
+                snapshotMatchesLegacyNotes(userId, existingDocument, legacy)
+            ) {
                 return MigrationResult.AlreadyStaged
             }
 
             // An empty legacy cache is ambiguous: it may have been cleared after
-            // staging. Preserve the existing encrypted copy rather than replacing
-            // it with an empty snapshot.
+            // staging. Preserve the existing encrypted copy instead of replacing it.
             if (legacy.isEmpty()) {
-                verifySnapshot(userId, existingDocument)
                 return MigrationResult.AlreadyStaged
             }
         } else if (legacy.isEmpty()) {
@@ -157,57 +161,70 @@ object EncryptedLocalNotesStorage {
     }
 
     private fun loadNotesFromDocument(userId: String, document: JSONObject): List<Note> {
+        val version = document.getInt("format_version")
         val array = document.getJSONArray("notes")
         return buildList {
             for (index in 0 until array.length()) {
                 val item = array.getJSONObject(index)
-                val fields = NoteEncryptionCodec.decode(
-                    userId,
-                    item.getJSONObject("encrypted_fields").toString()
-                )
-                add(
-                    Note(
-                        id = item.getLong("id"),
-                        title = fields.title,
-                        content = fields.content,
-                        isPinned = item.getBoolean("isPinned"),
-                        createdAt = item.getLong("createdAt"),
-                        updatedAt = item.getLong("updatedAt"),
-                        colorHex = item.getString("colorHex")
+                if (version == FORMAT_VERSION) {
+                    add(NoteEncryptionCodec.decodeNote(userId, item.getString("encrypted_note")))
+                } else {
+                    val fields = NoteEncryptionCodec.decode(
+                        userId,
+                        item.getJSONObject("encrypted_fields").toString()
                     )
-                )
+                    add(
+                        Note(
+                            id = item.getLong("id"),
+                            title = fields.title,
+                            content = fields.content,
+                            isPinned = item.getBoolean("isPinned"),
+                            createdAt = item.getLong("createdAt"),
+                            updatedAt = item.getLong("updatedAt"),
+                            colorHex = item.getString("colorHex")
+                        )
+                    )
+                }
             }
         }
     }
 
     private fun verifySnapshot(userId: String, document: JSONObject) {
-        require(document.getInt("format_version") == FORMAT_VERSION) {
+        val version = document.getInt("format_version")
+        require(version == FORMAT_VERSION || version == LEGACY_FORMAT_VERSION) {
             "Unsupported encrypted local-notes format."
         }
         val notes = document.getJSONArray("notes")
         for (index in 0 until notes.length()) {
             val item = notes.getJSONObject(index)
-            require(
-                item.has("id") &&
-                    item.has("encrypted_fields") &&
-                    item.has("isPinned") &&
-                    item.has("createdAt") &&
-                    item.has("updatedAt") &&
-                    item.has("colorHex")
-            ) { "Encrypted local-notes metadata is incomplete." }
+            if (version == FORMAT_VERSION) {
+                require(item.has("encrypted_note")) {
+                    "Encrypted local-note payload is missing."
+                }
+                NoteEncryptionCodec.decodeNote(userId, item.getString("encrypted_note"))
+            } else {
+                require(
+                    item.has("id") &&
+                        item.has("encrypted_fields") &&
+                        item.has("isPinned") &&
+                        item.has("createdAt") &&
+                        item.has("updatedAt") &&
+                        item.has("colorHex")
+                ) { "Encrypted local-notes metadata is incomplete." }
 
-            require(item.getLong("id") > 0L) {
-                "Encrypted local-note ID is invalid."
-            }
-            item.getBoolean("isPinned")
-            item.getLong("createdAt")
-            item.getLong("updatedAt")
-            require(item.getString("colorHex").isNotBlank()) {
-                "Encrypted local-note color metadata is invalid."
-            }
+                require(item.getLong("id") > 0L) {
+                    "Encrypted local-note ID is invalid."
+                }
+                item.getBoolean("isPinned")
+                item.getLong("createdAt")
+                item.getLong("updatedAt")
+                require(item.getString("colorHex").isNotBlank()) {
+                    "Encrypted local-note color metadata is invalid."
+                }
 
-            val encryptedFields = item.getJSONObject("encrypted_fields")
-            NoteEncryptionCodec.decode(userId, encryptedFields.toString())
+                val encryptedFields = item.getJSONObject("encrypted_fields")
+                NoteEncryptionCodec.decode(userId, encryptedFields.toString())
+            }
         }
     }
 
