@@ -19,6 +19,7 @@ object EncryptedLocalNotesStorage {
     private const val KEY_PREFIX = "encrypted_notes_data_v1_"
     private const val FORMAT_VERSION = 2
     private const val LEGACY_FORMAT_VERSION = 1
+    private const val TEMP_KEY_SUFFIX = "_pending_write"
 
     sealed class MigrationResult {
         data class Staged(val noteCount: Int) : MigrationResult()
@@ -35,8 +36,12 @@ object EncryptedLocalNotesStorage {
     fun saveNotes(context: Context, userId: String, notes: List<Note>) {
         require(userId.isNotBlank()) { "Account ID is missing." }
 
+        val noteIds = HashSet<Long>()
         val array = JSONArray()
         notes.forEach { note ->
+            require(note.id > 0L) { "Local note ID is invalid." }
+            require(note.colorHex.isNotBlank()) { "Local note color is invalid." }
+            require(noteIds.add(note.id)) { "Duplicate local note ID detected." }
             array.put(
                 JSONObject().put(
                     "encrypted_note",
@@ -50,10 +55,35 @@ object EncryptedLocalNotesStorage {
             .put("notes", array)
             .toString()
 
-        val written = preferences(context).edit()
-            .putString(storageKey(userId), document)
-            .commit()
-        check(written) { "Encrypted notes could not be saved." }
+        val prefs = preferences(context)
+        val targetKey = storageKey(userId)
+        val temporaryKey = targetKey + TEMP_KEY_SUFFIX
+
+        // Persist and authenticate a temporary snapshot before replacing the
+        // last known-good encrypted copy.
+        check(prefs.edit().putString(temporaryKey, document).commit()) {
+            "Encrypted notes could not be staged for saving."
+        }
+
+        try {
+            val staged = prefs.getString(temporaryKey, null)
+                ?: error("Temporary encrypted snapshot is missing.")
+            val stagedDocument = JSONObject(staged)
+            verifySnapshot(userId, stagedDocument)
+            check(loadNotesFromDocument(userId, stagedDocument) == notes) {
+                "Encrypted snapshot read-back verification failed."
+            }
+
+            check(
+                prefs.edit()
+                    .putString(targetKey, staged)
+                    .remove(temporaryKey)
+                    .commit()
+            ) { "Verified encrypted notes could not be finalized." }
+        } catch (error: Exception) {
+            prefs.edit().remove(temporaryKey).commit()
+            throw error
+        }
     }
 
     /** Returns null when no encrypted snapshot exists; decryption errors propagate. */
@@ -190,41 +220,57 @@ object EncryptedLocalNotesStorage {
     }
 
     private fun verifySnapshot(userId: String, document: JSONObject) {
+        require(document.length() == 2 && document.has("format_version") && document.has("notes")) {
+            "Encrypted local-notes snapshot structure is invalid."
+        }
         val version = document.getInt("format_version")
         require(version == FORMAT_VERSION || version == LEGACY_FORMAT_VERSION) {
             "Unsupported encrypted local-notes format."
         }
         val notes = document.getJSONArray("notes")
+        val noteIds = HashSet<Long>()
+
         for (index in 0 until notes.length()) {
             val item = notes.getJSONObject(index)
-            if (version == FORMAT_VERSION) {
-                require(item.has("encrypted_note")) {
-                    "Encrypted local-note payload is missing."
+            val note = if (version == FORMAT_VERSION) {
+                require(item.length() == 1 && item.has("encrypted_note")) {
+                    "Encrypted local-note payload structure is invalid."
                 }
                 NoteEncryptionCodec.decodeNote(userId, item.getString("encrypted_note"))
             } else {
                 require(
-                    item.has("id") &&
+                    item.length() == 6 &&
+                        item.has("id") &&
                         item.has("encrypted_fields") &&
                         item.has("isPinned") &&
                         item.has("createdAt") &&
                         item.has("updatedAt") &&
                         item.has("colorHex")
-                ) { "Encrypted local-notes metadata is incomplete." }
+                ) { "Encrypted local-notes metadata is incomplete or invalid." }
 
-                require(item.getLong("id") > 0L) {
-                    "Encrypted local-note ID is invalid."
-                }
-                item.getBoolean("isPinned")
-                item.getLong("createdAt")
-                item.getLong("updatedAt")
-                require(item.getString("colorHex").isNotBlank()) {
-                    "Encrypted local-note color metadata is invalid."
-                }
+                val id = item.getLong("id")
+                require(id > 0L) { "Encrypted local-note ID is invalid." }
+                val color = item.getString("colorHex")
+                require(color.isNotBlank()) { "Encrypted local-note color metadata is invalid." }
 
-                val encryptedFields = item.getJSONObject("encrypted_fields")
-                NoteEncryptionCodec.decode(userId, encryptedFields.toString())
+                val fields = NoteEncryptionCodec.decode(
+                    userId,
+                    item.getJSONObject("encrypted_fields").toString()
+                )
+                Note(
+                    id = id,
+                    title = fields.title,
+                    content = fields.content,
+                    isPinned = item.getBoolean("isPinned"),
+                    createdAt = item.getLong("createdAt"),
+                    updatedAt = item.getLong("updatedAt"),
+                    colorHex = color
+                )
             }
+
+            require(note.id > 0L) { "Encrypted local-note ID is invalid." }
+            require(note.colorHex.isNotBlank()) { "Encrypted local-note color is invalid." }
+            require(noteIds.add(note.id)) { "Duplicate encrypted local-note ID detected." }
         }
     }
 
