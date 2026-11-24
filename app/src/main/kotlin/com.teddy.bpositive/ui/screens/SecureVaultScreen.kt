@@ -14,19 +14,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.teddy.bpositive.data.SupabaseSessionManager
+import com.teddy.bpositive.data.SupabaseVaultApi
 import com.teddy.bpositive.security.NotesEncryption
 import com.teddy.bpositive.security.NotesVaultStorage
 
 @Composable
 fun SecureVaultScreen(
     userId: String,
+    session: SupabaseSessionManager.Session,
     contentPadding: PaddingValues,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     var envelope by remember(userId) { mutableStateOf<NotesEncryption.VaultEnvelope?>(null) }
-    var storageMessage by remember(userId) { mutableStateOf("Checking this account's local Vault...") }
+    var storageMessage by remember(userId) { mutableStateOf("Checking this account's Vault...") }
     var page by remember(userId) { mutableStateOf("loading") }
     var masterPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -36,22 +39,66 @@ fun SecureVaultScreen(
     var recoveryUnlockInput by remember { mutableStateOf("") }
     var useRecoveryKey by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("") }
+    var isSyncing by remember { mutableStateOf(false) }
+    var cloudRetryCount by remember(userId) { mutableIntStateOf(0) }
 
-    LaunchedEffect(userId) {
-        when (val result = NotesVaultStorage.load(context, userId)) {
+    LaunchedEffect(userId, cloudRetryCount) {
+        if (session.userId != userId || userId.isBlank()) {
+            page = "cloud_error"
+            storageMessage = "The signed-in account does not match this Vault screen."
+            return@LaunchedEffect
+        }
+
+        when (val local = NotesVaultStorage.load(context, userId)) {
             is NotesVaultStorage.LoadResult.Found -> {
-                envelope = result.envelope
+                envelope = local.envelope
                 page = "unlock"
-                storageMessage = "Vault setup is saved on this device."
+                storageMessage = "Vault is saved on this device. Account sync can be checked below."
             }
             NotesVaultStorage.LoadResult.Missing -> {
-                page = "setup"
-                storageMessage = "No Vault has been configured for this account on this device."
+                storageMessage = "Checking whether this account already has a synced Vault..."
+                SupabaseVaultApi.fetchEnvelope(session) { remote ->
+                    if (!remote.success) {
+                        page = "cloud_error"
+                        storageMessage = "Could not check the account Vault: ${remote.message}"
+                    } else if (remote.data == null) {
+                        page = "setup"
+                        storageMessage = "No Vault exists on this device or in the account yet."
+                    } else {
+                        val saved = NotesVaultStorage.save(context, userId, remote.data)
+                        if (saved) {
+                            envelope = remote.data
+                            page = "unlock"
+                            storageMessage = "Encrypted Vault envelope restored from your account and saved on this device."
+                        } else {
+                            page = "cloud_error"
+                            storageMessage = "The account Vault was found, but could not be saved securely on this device."
+                        }
+                    }
+                }
             }
             is NotesVaultStorage.LoadResult.Error -> {
                 page = "error"
-                storageMessage = result.message
+                storageMessage = local.message
             }
+        }
+    }
+
+    fun syncCurrentVault() {
+        val currentEnvelope = envelope
+        if (currentEnvelope == null) {
+            status = "Vault envelope is not available."
+            return
+        }
+        if (session.userId != userId) {
+            status = "Signed-in account changed. Reopen Secure Vault."
+            return
+        }
+        isSyncing = true
+        status = "Checking account Vault..."
+        SupabaseVaultApi.syncEnvelope(session, currentEnvelope) { result ->
+            isSyncing = false
+            status = result.message
         }
     }
 
@@ -65,13 +112,24 @@ fun SecureVaultScreen(
             OutlinedButton(onClick = onBack) { Text("Back") }
         }
         Text(
-            "This first stage configures the Vault locally. It does not encrypt existing notes or enable Note Lock.",
+            "The account stores only the encrypted Vault envelope. Existing notes are not encrypted and Note Lock is not enabled.",
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(storageMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         when (page) {
             "loading" -> Text("Loading...")
+            "cloud_error" -> Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Account Vault check failed", fontWeight = FontWeight.SemiBold)
+                    Text("A new Vault cannot safely be created until the account is checked. This prevents accidentally creating a different Vault while an existing cloud Vault is unavailable.")
+                    OutlinedButton(
+                        onClick = { cloudRetryCount++ },
+                        enabled = !isSyncing,
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Retry Account Check") }
+                }
+            }
             "setup" -> Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Create Master Password", fontWeight = FontWeight.SemiBold)
@@ -127,14 +185,20 @@ fun SecureVaultScreen(
                         singleLine = true
                     )
                     Button(onClick = {
-                        if (recoveryConfirmation == recoveryKeyToConfirm && envelope != null) {
-                            val saved = NotesVaultStorage.save(context, userId, envelope!!)
+                        val currentEnvelope = envelope
+                        if (recoveryConfirmation == recoveryKeyToConfirm && currentEnvelope != null) {
+                            val saved = NotesVaultStorage.save(context, userId, currentEnvelope)
                             if (saved) {
                                 page = "complete"
                                 recoveryKey = ""
                                 recoveryKeyToConfirm = ""
                                 recoveryConfirmation = ""
-                                status = "Vault setup saved on this device."
+                                status = "Vault saved locally. Syncing encrypted envelope to your account..."
+                                isSyncing = true
+                                SupabaseVaultApi.syncEnvelope(session, currentEnvelope) { result ->
+                                    isSyncing = false
+                                    status = result.message
+                                }
                             } else status = "Could not save Vault data. Try again."
                         } else status = "Recovery Key does not match."
                     }, modifier = Modifier.fillMaxWidth()) { Text("Confirm and Save Vault") }
@@ -144,8 +208,11 @@ fun SecureVaultScreen(
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Vault Setup Complete", fontWeight = FontWeight.SemiBold)
-                        Text("The Vault envelope is saved locally and protected with an Android Keystore key.")
-                        Text("Existing notes are not encrypted yet. Note Lock remains unavailable until encryption and sync migration are implemented.")
+                        Text("The encrypted Vault envelope is saved locally. Account sync stores only the encrypted envelope, not your password or Recovery Key.")
+                        if (isSyncing) {
+                            LinearProgressIndicator(Modifier.fillMaxWidth())
+                            Text("Syncing account Vault...")
+                        }
                     }
                 }
                 Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Done") }
@@ -219,14 +286,22 @@ fun SecureVaultScreen(
                             Text("Use Recovery Key instead")
                         }
                     }
+
+                    HorizontalDivider()
+                    Text("Account Sync", fontWeight = FontWeight.SemiBold)
+                    Text("Send this encrypted Vault envelope to your account, or confirm that the same Vault is already synced. A different account envelope is never overwritten.")
+                    Button(
+                        onClick = { syncCurrentVault() },
+                        enabled = !isSyncing,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (isSyncing) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                        else Text("Sync Vault to Account")
+                    }
                 }
             }
             "error" -> {
                 Text("Local Vault data could not be opened. Do not uninstall the app or clear app data before reviewing recovery options.")
-                OutlinedButton(onClick = {
-                    page = "setup"
-                    status = "Creating a new Vault will not recover the previous Vault."
-                }) { Text("Back to Setup") }
             }
         }
         if (status.isNotBlank()) Text(status, color = MaterialTheme.colorScheme.primary)
