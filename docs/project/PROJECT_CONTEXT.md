@@ -1200,14 +1200,16 @@ Design details that must be resolved before migration:
 
 Build grouping may be adjusted to reduce repeated CodeAssist build cycles, but each logical change-set must be reviewed and user-confirmed before being marked complete. Do not report a CodeAssist Build successful until the user confirms it.
 
-### 18.7 Build 01 — Messaging database foundation (SECURITY-REVIEWED; PRODUCTION MIGRATION PENDING)
+### 18.7 Build 01 — Messaging database foundation (APPLIED; DATABASE SMOKE TEST PASSED; CLIENT/REALTIME VERIFICATION PENDING)
 
-- Build 01 migration and architecture have been re-reviewed after user approval. A security issue in the original helper function was corrected before production application.
-- The helper `messaging_private.is_conversation_member(conversation_id)` derives caller identity exclusively from `auth.uid()`; it no longer accepts an arbitrary user UUID. This prevents authenticated clients from probing membership for other users.
-- The five-table additive schema, least-privilege grants, RLS policies, RPC contracts and Realtime publication additions remain otherwise unchanged.
-- Migration history mismatch remains: live Supabase reports 19 applied migrations while the repository contains only a subset. No history reset, repair or fabrication is authorized or planned.
-- Supabase Realtime documentation confirms RLS policies on `realtime.messages` do not enforce private-only channels while project-wide `Allow public access` is enabled. Inspect separately; do not change it without assessing existing Notes/Profile channels and explicit approval. Messaging Broadcast/Presence privacy is not verified until this is resolved and clients use `private: true`.
-- Pre-application live verification: all five Messaging tables absent; helper schema absent; no Messaging Realtime policies; publication currently contains `notes` and `profiles`.
-- No production schema/data change has yet been made. The user explicitly approved applying Build 01 subject to the security correction and safe migration workflow.
-- No Android source was changed; no CodeAssist Build is involved in Build 01.
+- User approved the exact Build 01 migration after security review. The membership helper derives caller identity exclusively from `auth.uid()`; it accepts no arbitrary user UUID.
+- Applied migration: `20261124110532_build01_messaging_foundation`. Supabase migration history now has 20 entries; the prior 19 entries remain unchanged. No history reset, repair or fabrication occurred.
+- All five additive tables exist: `conversations`, `conversation_members`, `messages`, `message_receipts`, `message_deletions`. RLS is enabled on all five; eight public Messaging policies and two Realtime channel policies are present.
+- All five tables are in `supabase_realtime`; existing `notes` and `profiles` publication entries remain.
+- Helper signature verified safe; no old arbitrary-user signature. Authenticated grants match intended table operations; no `anon` grants on the five Messaging tables.
+- A rollback-only SQL smoke test using two existing authenticated user identities passed: direct conversation creation, message send, recipient read, receipt row, Delete for Me isolation, sender visibility and sender-only Delete for Everyone. Transaction rolled back; no test data remains.
+- Supabase Health advisor: no findings. Security advisor: three expected warnings for intentionally authenticated SECURITY DEFINER RPC endpoints and one unrelated leaked-password-protection setting. Performance advisor: seven unindexed-FK INFO findings plus unused-index INFO findings; review before optimization.
+- Realtime project-wide `Allow public access` setting could not be inspected with available tools. Private Broadcast/Presence enforcement is not verified. Do not change this global setting without assessing Notes/Profile channels and explicit approval; Messaging clients must use `private: true`.
+- Full separate-session Android client tests, Realtime channel authorization tests, and Notes/Profile/notification/Vault regression tests remain pending. Build 01 is database-applied, but the overall Messaging foundation is not marked fully complete until these gates pass.
+- No Android source code changed; no CodeAssist Build has been run or claimed.
 
