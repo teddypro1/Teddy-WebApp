@@ -304,8 +304,10 @@ fun SecureVaultScreen(
                                 when (val result = EncryptedLocalNotesStorage.stageLegacyMigration(context, userId)) {
                                     is EncryptedLocalNotesStorage.MigrationResult.Staged ->
                                         migrationMessage = "Verified encrypted copy created for ${result.noteCount} notes. Original notes were preserved."
+                                    is EncryptedLocalNotesStorage.MigrationResult.Refreshed ->
+                                        migrationMessage = "Encrypted copy refreshed and verified for ${result.noteCount} updated notes. Original notes were preserved."
                                     EncryptedLocalNotesStorage.MigrationResult.AlreadyStaged ->
-                                        migrationMessage = "An encrypted local snapshot already exists. No data was overwritten."
+                                        migrationMessage = "Encrypted local snapshot already matches the current source, or was safely preserved because the plaintext source is empty."
                                     EncryptedLocalNotesStorage.MigrationResult.NoLegacyNotes ->
                                         migrationMessage = "No existing local notes were found to migrate."
                                 }
