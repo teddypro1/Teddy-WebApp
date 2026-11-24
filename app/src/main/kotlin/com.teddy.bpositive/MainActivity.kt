@@ -43,6 +43,7 @@ import com.teddy.bpositive.ui.screens.ProfilePage
 import com.teddy.bpositive.ui.screens.AuthScreen
 import com.teddy.bpositive.ui.screens.TrashScreen
 import com.teddy.bpositive.ui.screens.SettingsScreen
+import com.teddy.bpositive.ui.screens.SecureVaultScreen
 import com.teddy.bpositive.ui.screens.AdminPanelScreen
 import com.teddy.bpositive.ui.screens.HomeScreen
 import com.teddy.bpositive.ui.screens.NotesScreen
@@ -760,6 +761,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var showTrash by rememberSaveable { mutableStateOf(false) }
     var showConflicts by rememberSaveable { mutableStateOf(false) }
     var selectedTab by rememberSaveable { mutableStateOf("Home") }
+    var showVaultScreen by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(hasVerifiedAdminAccess) {
         if (!hasVerifiedAdminAccess && selectedTab == "Admin") selectedTab = "Settings"
     }
@@ -1168,6 +1170,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     showAdmin = hasVerifiedAdminAccess,
                     onTabSelected = { tab ->
                         selectedTab = tab
+                        showVaultScreen = false
                         showNotesFeature = false
                         if (tab == "Inbox") {
                             val session = activeSession
@@ -1412,12 +1415,19 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         }
                     }
                 )
+            } else if (selectedTab == "Settings" && showVaultScreen) {
+                SecureVaultScreen(
+                    userId = activeSession?.userId.orEmpty(),
+                    contentPadding = padding,
+                    onBack = { showVaultScreen = false }
+                )
             } else if (selectedTab == "Settings") {
                 SettingsScreen(
                     darkMode = darkMode,
                     accountEmail = activeSession?.email.orEmpty(),
                     isAdmin = hasVerifiedAdminAccess,
                     onOpenAdminPanel = { selectedTab = "Admin" },
+                    onOpenVault = { showVaultScreen = true },
                     contentPadding = padding,
                     onDarkModeChange = { enabled ->
                         darkMode = enabled
@@ -1480,6 +1490,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         showTrash = false
                         showConflicts = false
                         selectedTab = "Home"
+                        showVaultScreen = false
                         isAdmin = false
                         adminVerifiedUserId = null
                         isCheckingAdmin = false
