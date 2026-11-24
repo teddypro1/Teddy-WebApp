@@ -89,24 +89,6 @@ fun SecureVaultScreen(
         }
     }
 
-    fun syncCurrentVault() {
-        val currentEnvelope = envelope
-        if (currentEnvelope == null) {
-            status = "Vault envelope is not available."
-            return
-        }
-        if (session.userId != userId) {
-            status = "Signed-in account changed. Reopen Secure Vault."
-            return
-        }
-        isSyncing = true
-        status = "Checking account Vault..."
-        SupabaseVaultApi.syncEnvelope(session, currentEnvelope) { result ->
-            isSyncing = false
-            status = result.message
-        }
-    }
-
     Column(
         modifier = Modifier.fillMaxSize().padding(contentPadding)
             .verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 18.dp),
