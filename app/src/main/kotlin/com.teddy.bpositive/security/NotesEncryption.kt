@@ -215,7 +215,12 @@ object NotesEncryption {
 
     private fun deriveRecoveryKey(recoveryKey: String, salt: ByteArray): ByteArray {
         require(recoveryKey.isNotBlank()) { "Recovery key cannot be empty." }
-        return deriveKey(recoveryKey.toCharArray(), salt, RECOVERY_ITERATIONS)
+        val recoveryChars = recoveryKey.trim().toCharArray()
+        return try {
+            deriveKey(recoveryChars, salt, RECOVERY_ITERATIONS)
+        } finally {
+            recoveryChars.fill(0.toChar())
+        }
     }
 
     private fun encryptAesGcm(
