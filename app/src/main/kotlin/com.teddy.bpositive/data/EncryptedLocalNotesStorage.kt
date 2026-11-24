@@ -28,8 +28,8 @@ object EncryptedLocalNotesStorage {
     }
 
     /**
-     * Writes an encrypted snapshot. Note title/content are encrypted; only
-     * non-sensitive note metadata remains visible in SharedPreferences.
+     * Writes a version-2 encrypted snapshot. The complete Note object,
+     * including title, content and metadata, is encrypted as one authenticated payload.
      */
     @Synchronized
     fun saveNotes(context: Context, userId: String, notes: List<Note>) {
