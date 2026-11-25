@@ -1384,3 +1384,21 @@ Implementation scope:
 - Supabase was checked before the source change and was `ACTIVE_HEALTHY`; no database changes were made.
 
 Next action: user opens/pulls `main` in CodeAssist and inspects the `ChatListHeaderPreview`. Wait for feedback before modifying this component or creating `ChatListSearchBar.kt`.
+
+
+### ChatListHeader — top-position and proportion refinement (2026-11-25)
+
+User requested that the header render at its actual top-of-screen position rather than centered in the Preview canvas, and that every visual element be measured/considered before implementation.
+
+Updated only `ChatListHeader.kt`:
+- Header height set to 48dp; it occupies the top of the app content area immediately below the system status bar.
+- Horizontal content insets set to 12dp on both sides.
+- Title typography refined to 18sp bold with slightly tightened letter spacing and one-line constraint.
+- Three-dot menu glyph refined to 24sp, vertically centered with the title.
+- Header surface explicitly white with zero elevation.
+- Preview now uses a 360dp × 800dp screen canvas and a 24dp top inset to represent the Android status-bar area; header is top-aligned rather than vertically centered.
+- No other Kotlin files were added or modified. Still UI-only; no backend, state, navigation or actions.
+- Source commit: `b822ae36cd7d5ab8c5a65c3e1f6e42b5fb9bf7ca`.
+- User has not yet reviewed this revised Preview; do not mark ChatListHeader accepted until screenshot/approval.
+
+The original reference screenshot has a 720×1600 raster size; dp/sp values above are an initial calibrated implementation based on the visible proportions and should be checked against CodeAssist Preview by the user. No Supabase changes.
