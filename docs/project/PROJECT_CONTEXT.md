@@ -1659,3 +1659,15 @@ Updated directly on `main`:
 - Source commits: `de253efa562a7f666a298ee4c8c37393c0e766c8` (Search Bar), `41b353a6eb47034a0b5072a2388d3d822552ecb0` (conversation rows).
 - Supabase was checked before the UI-only changes and reported `ACTIVE_HEALTHY`; no database/schema/RLS/Realtime/Edge Function/billing changes.
 - No Build was run by the assistant and no Build success is claimed. User must Pull the latest `main`, build in CodeAssist, then compare the app screenshot. Visual acceptance remains pending.
+
+
+### Chat List avatar and status-bar refinement (2026-11-25)
+
+User approved a focused follow-up after reviewing the latest device screenshot. All other Chat List sizing and spacing were considered acceptable; only avatar size and the Messages interface status bar needed adjustment.
+
+Updated directly on `main`:
+- `FeaturedChatItem.kt`: avatar container increased from 40dp to 48dp. Placeholder artwork/text scales slightly with the avatar: single-character initials use 29sp; emoji placeholders use 27sp; line height 30sp. Conversation row remains 76dp, with existing horizontal inset, text sizes, row spacing, search bar, and ripple behavior unchanged.
+- `MainActivity.kt`: while the Messages destination is selected in light mode, the Android status bar is set to white and status-bar icons switch to dark for contrast, matching the WhatsApp reference. When leaving Messages or switching to dark mode, the previously captured status-bar color/icon appearance is restored. No app-wide forced white status bar.
+- Commits: `670f0462ba8a1b83b6a3157425c28221a23f837a` (avatar), `b0257288cd264e9cfbc3ab7f778869cf1becdb56` (status bar).
+- Supabase was checked before the UI-only work and reported `ACTIVE_HEALTHY`; no database/schema/RLS/Realtime/Edge Function/billing changes.
+- No Build was run by the assistant. User must Pull latest `main`, build in CodeAssist and visually verify avatar scale and status bar; Build success and visual acceptance remain pending.
