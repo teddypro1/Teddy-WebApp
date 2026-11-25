@@ -1340,3 +1340,28 @@ Correction committed:
 - `33388a30953b189d3c6987058448a0f32af414c4`: passed the Scaffold `padding` from MainActivity into the chat screen.
 
 This is a UI layout correction only. Supabase was not changed. CodeAssist Build and visual confirmation that the conversation header, message input and send button are now visible remain pending user confirmation.
+
+
+## 18.14 Messaging UI-First Decision and Ordered Design Roadmap (USER DECISION — 2026-11-25)
+
+The user explicitly decided to complete the Messaging user interface first, following the exact sequence below, before resuming the remaining Messaging backend/build roadmap. This supersedes the previous immediate next-step plan to start Build 07. Do not start Build 07 or other remaining backend work until the user has completed/approved the UI-first sequence.
+
+**UI-first sequence (follow this order; one step at a time):**
+1. **Chat List** — create a polished WhatsApp/Telegram-inspired conversation list.
+2. **Chat Header** — profile picture, display name, online status, and call/menu actions (actions may remain UI-only until their backend milestones).
+3. **Message Bubbles** — polished incoming/outgoing message presentation.
+4. **Message Composer** — emoji, attachment, text input, send, and voice-message controls (unimplemented actions remain clearly UI-only until backend support exists).
+5. **Message Details** — timestamp and Sent/Delivered/Read indicators (show real states only when backend receipt work is completed; do not fake status).
+6. **User Search** — polished username search and user profile preview.
+7. **Empty States** — designed empty states for no conversations/no messages/search results.
+8. **UI Polish** — animation, spacing, typography, responsive layout and dark mode.
+
+**Product/navigation direction:** Keep the existing Teddy-WebApp workspace bottom navigation intact for now. Improve the Chats destination into the dedicated Messaging experience; do not introduce a separate global app navigation structure unless the user later changes this decision. Use a consistent Teddy-WebApp visual identity while taking interaction/design cues from WhatsApp and Telegram; do not copy either app pixel-for-pixel.
+
+**Current state and safeguards:**
+- Existing messaging backend foundations, Supabase schema/RPC/RLS and current send/history/Realtime implementation must be preserved. UI-first means defer remaining backend milestones, not remove or break existing functionality.
+- The user has confirmed the Amendments Build and Scaffold inset correction CodeAssist Build completed; latest screenshot now shows message history, participant header and bottom composer/send control visible. This confirms the current screen is usable at a basic level, not that the full UI roadmap is complete.
+- Latest live GitHub main HEAD before this documentation update: `2a9423831b903f27451a72524b7f517a20b51ce3`.
+- Supabase project `axklmzuepqcbxsbxvtdn` was rechecked and is `ACTIVE_HEALTHY`. This documentation-only update makes no database changes.
+- **Next task: UI Step 01 — Chat List.** Before source edits, re-fetch current main HEAD, the exact relevant UI/navigation files, and current Supabase project status. Keep work to this one UI step and one change-set; do not proceed to Step 02 until the user reviews/approves Step 01.
+- The user will manually Pull `main` in CodeAssist, build and review on device. Never mark a Build successful without explicit user confirmation.
