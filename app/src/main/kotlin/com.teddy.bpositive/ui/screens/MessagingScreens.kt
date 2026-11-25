@@ -9,11 +9,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -34,9 +33,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.teddy.bpositive.data.UserSearchApi
 import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListHeader
-import com.tedd@Composable
+import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListSearchBar
+import com.teddy.bpositive.ui.screens.messaging.chatlist.FeaturedChatList
+
+@Composable
 fun MessagingHomeScreen(
     contentPadding: androidx.compose.foundation.layout.PaddingValues,
     onFindPeople: () -> Unit
@@ -67,24 +74,15 @@ fun MessagingHomeScreen(
                 containerColor = androidx.compose.ui.graphics.Color(0xFF159B58),
                 contentColor = androidx.compose.ui.graphics.Color.White
             ) {
-                Text("+", fontSize = 28.sp, fontWeight = FontWeight.Normal)
-            }
-        }
-    }
-}  Button(
-                    onClick = onFindPeople,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Text("Find people")
-                }
+                Text(
+                    text = "+",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Normal
+                )
             }
         }
     }
 }
-
 
 @Composable
 fun MessagingUserSearchScreen(
