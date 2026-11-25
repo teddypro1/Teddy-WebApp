@@ -1402,3 +1402,17 @@ Updated only `ChatListHeader.kt`:
 - User has not yet reviewed this revised Preview; do not mark ChatListHeader accepted until screenshot/approval.
 
 The original reference screenshot has a 720×1600 raster size; dp/sp values above are an initial calibrated implementation based on the visible proportions and should be checked against CodeAssist Preview by the user. No Supabase changes.
+
+
+### ChatListHeader — subtle menu icon refinement (2026-11-25)
+
+User approved the proposed small visual refinements and specifically requested Canvas drawing instead of adding a Material Icons dependency, because that dependency causes Build problems in their CodeAssist environment.
+
+Updated only `ChatListHeader.kt`:
+- Replaced the bold text glyph `⋮` with three individually drawn circles using Compose `Canvas`; no Material Icons dependency was added.
+- Each dot uses a 1.5dp radius, centered horizontally in a 24dp drawing area, with vertical centers at 5dp, 12dp and 19dp.
+- Increased the trailing header inset from 12dp to 16dp as planned.
+- Preserved the 48dp header height, 12dp leading inset, title color, 18sp bold title typography, top-aligned Preview and 24dp status-bar simulation. No changes to the main title treatment or overall component structure.
+- Source commit: `34e919a47493177f4798b6b927db3968235c0afc`.
+- No other Kotlin files were changed or created. No backend or Supabase changes.
+- Await the user's CodeAssist Preview review and build confirmation before considering this refinement accepted or creating the next UI segment.
