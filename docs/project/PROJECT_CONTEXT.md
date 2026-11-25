@@ -1616,3 +1616,15 @@ User approved the multi-row sample list and asked to see it inside the app's act
 - Source commits: `0fb62c269b1ec61820fc41229e06c78ac8904b77` (reusable lazy list), `558b70c3a36244483f80b2bfd2e6863ab2baa620` (Messages screen composition), `6871c168f021dfc44b434d46c718e84420bcec85` (MainActivity route).
 - Supabase status before change: `ACTIVE_HEALTHY`; no database changes.
 - No Build was run or claimed successful. User must pull `main`, build on CodeAssist and confirm success, then inspect the integrated Messages screen. Visual acceptance and build success remain pending.
+
+
+### Build failure correction — Messages screen malformed Kotlin source (2026-11-25)
+
+User supplied CodeAssist Build screenshots showing 142 Kotlin errors. Root cause confirmed in live `MessagingScreens.kt`: previous automated source replacement corrupted the import/function boundary (`import com.tedd@Composable`), left the tail of the old `MessagingHomeScreen` after the new function, and imported `androidx.compose.foundation.layout.weight` (an internal scope extension). These parser/import errors caused cascading unresolved-reference diagnostics (`Modifier`, `dp`, `ChatListSearchBar`, `FeaturedChatList`, `Alignment`, `FontWeight`, etc.).
+- Rewrote the import block cleanly with explicit Compose and chatlist imports.
+- Replaced only the `MessagingHomeScreen` declaration and removed the orphaned old function tail; preserved the following `MessagingUserSearchScreen` and subsequent screen implementations.
+- Removed the invalid explicit `weight` import; `Modifier.weight` is resolved inside the `Column` scope.
+- Correction commit: `d3946c673180767a9ccffefdf024bf4fbaa6e6e2`.
+- Verified current source contains clean imports, valid function boundary, explicit `ChatListSearchBar`/`FeaturedChatList` imports, no malformed `com.tedd@Composable`, and no internal `weight` import. MainActivity still has no temporary Header-only route; `FeaturedChatList` remains a public lazy list.
+- Supabase status checked before correction: `ACTIVE_HEALTHY`; this is a Kotlin-only correction, no backend/database changes.
+- No Build was run by assistant. User must Pull latest `main` and run Build again; success remains unconfirmed.
