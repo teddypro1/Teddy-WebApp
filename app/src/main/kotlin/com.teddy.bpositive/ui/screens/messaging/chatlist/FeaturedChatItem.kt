@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -134,7 +137,7 @@ fun FeaturedChatItem(
 }
 
 @Composable
-private fun FeaturedChatListSample() {
+fun FeaturedChatList(modifier: Modifier = Modifier) {
     val samples = listOf(
         FeaturedChatSample(
             "Riya Apu", "11/21/26", "Kora to ace",
@@ -170,12 +173,13 @@ private fun FeaturedChatListSample() {
         )
     )
 
-    Column(
-        modifier = Modifier
+    LazyColumn(
+        modifier = modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(Color.White),
+        contentPadding = PaddingValues(bottom = 84.dp)
     ) {
-        samples.forEach { sample ->
+        items(samples) { sample ->
             FeaturedChatItem(
                 name = sample.name,
                 date = sample.date,
@@ -198,6 +202,6 @@ private fun FeaturedChatListSample() {
 @Composable
 private fun FeaturedChatItemPreview() {
     TeddyAppTheme(darkMode = false) {
-        FeaturedChatListSample()
+        FeaturedChatList()
     }
 }
