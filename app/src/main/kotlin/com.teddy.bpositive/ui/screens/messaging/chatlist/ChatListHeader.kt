@@ -25,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.roundToInt
 import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 /**
@@ -64,21 +63,17 @@ fun ChatListHeader(
             Canvas(
                 modifier = Modifier.size(width = 12.dp, height = 24.dp)
             ) {
-                val dotRadius = 1.9.dp.toPx().roundToInt().toFloat()
-                val centerX = (size.width / 2f - 0.5f)
-                    .roundToInt() + 0.5f
+                val dotRadius = 1.9.dp.toPx()
+                val centerX = size.width / 2f
                 val dotCenterYPositions = listOf(6.6.dp, 12.dp, 17.4.dp)
 
                 dotCenterYPositions.forEach { position ->
-                    val centerY = (position.toPx() - 0.5f)
-                        .roundToInt() + 0.5f
-
                     drawCircle(
                         color = Color(0xFF161616),
                         radius = dotRadius,
                         center = Offset(
                             x = centerX,
-                            y = centerY
+                            y = position.toPx()
                         )
                     )
                 }
