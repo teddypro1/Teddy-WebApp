@@ -64,14 +64,14 @@ fun FeaturedChatItem(
     ) {
         Box(
             modifier = Modifier
-                .size(40.dp)
+                .size(48.dp)
                 .background(avatarBackground, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = avatar,
-                fontSize = 23.sp,
-                lineHeight = 25.sp
+                fontSize = if (avatar.length == 1) 29.sp else 27.sp,
+                lineHeight = 30.sp
             )
         }
 
