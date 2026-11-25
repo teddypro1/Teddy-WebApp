@@ -1577,3 +1577,16 @@ User authorized writing code after asking to inspect the original WhatsApp Chat 
 - User must inspect CodeAssist Live Preview and provide feedback; visual acceptance is pending. Do not proceed to `ConversationListItem.kt` until this file is approved.
 - Supabase status checked before implementation: `ACTIVE_HEALTHY`; no database/schema/RLS/Realtime/billing changes.
 - No Build was requested or run.
+
+
+### Correction — FeaturedChatItem now represents Riya Apu personal conversation row (2026-11-25)
+
+User clarified that the previous `Tedd Music` group/channel-like row was the wrong item. The intended component is the first personal conversation row in the original screenshot: `Riya Apu`.
+- Replaced the previous group/draft row entirely; removed `Tedd Music`, `Ted Music`, Draft label, layered group avatar and chevrons.
+- New default content: name `Riya Apu`, date `11/21/26`, message preview `Kora to ace`.
+- Layout: 34dp circular illustrative avatar placeholder, 8dp gap to text, horizontal row padding 8dp, vertical padding 7dp, min row height 56dp; title 16sp medium, date 11sp, message preview 14sp.
+- Avatar uses a sunflower emoji on a pale warm background as a temporary placeholder. The original screenshot contains a real circular profile photo; the actual photo asset has not been provided/extracted, so do not claim this is a faithful photo reproduction. Replace with the exact image only when a usable asset is supplied.
+- Preview name updated to `Featured Chat Item - Riya Apu`, fixed 360×120dp white preview.
+- Source correction commit: `59efe7831544db156b1f2364d8f033404d92b1bd`.
+- User must inspect Live Preview; no Build was run. Do not proceed to the next file until user approves this corrected component.
+- Supabase status checked before the change: `ACTIVE_HEALTHY`; no database/backend changes.
