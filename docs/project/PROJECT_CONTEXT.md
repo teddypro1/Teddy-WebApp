@@ -1517,3 +1517,22 @@ Created only the next empty Kotlin file in the same package directory:
 - No other new Chat List segment files were created. Continue one file at a time.
 - Supabase was checked before this UI-only operation and reported `ACTIVE_HEALTHY`; no database changes were made.
 - The temporary in-app Header inspection route remains pending removal as a separate cleanup step before the next implementation work, as recorded above.
+
+
+### UI Step 01 — ChatListSearchBar first implementation (2026-11-25)
+
+User authorized implementation after asking for careful measurement of position, padding, margins, color, height and subtle visual details from the supplied 720×1600 Chat List screenshot.
+
+Implemented only `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListSearchBar.kt`:
+- Outer horizontal inset: 9dp on each side.
+- Search pill height: 34dp; fully rounded `RoundedCornerShape(percent = 50)`.
+- Background: `#F5F4F2` (soft warm gray, visually sampled/estimated from screenshot).
+- Content starts 12dp inside the pill; trailing content inset 14dp.
+- Custom Canvas search glyph, 18dp drawing area, 1.8dp stroke, muted gray `#62686D`; avoids Material Icons dependency.
+- Placeholder: `Ask Meta AI or Search`, 16sp normal weight, zero letter spacing, same muted gray.
+- No text input, click behavior, search logic, state, navigation, repository, API or backend integration yet; static visual component only.
+- Added a top-positioned `@Preview` that composes the existing `ChatListHeader()` above `ChatListSearchBar()` on a 360×800dp white canvas with 24dp status-bar inset, matching the screenshot's layout context.
+- Source commit: `72ab418fd867d922c9a8533da5a4202c76fc3bc0`.
+- This is a first calibrated implementation; exact visual approval remains pending user Preview/device review. Adjust only from user feedback/screenshot.
+- Supabase was checked before implementation and reported `ACTIVE_HEALTHY`; no database, migration, RLS, Realtime, billing or backend changes were made.
+- No Build has been run or claimed successful. User should Pull `main` and inspect CodeAssist `ChatListSearchBarPreview` before further UI changes.
