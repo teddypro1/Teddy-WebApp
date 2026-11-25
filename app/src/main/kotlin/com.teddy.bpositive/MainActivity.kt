@@ -1,5 +1,6 @@
 package com.teddy.bpositive
 
+import android.app.Activity
 import android.os.Bundle
 import android.content.Context
 import android.content.Intent
@@ -65,6 +66,7 @@ import com.teddy.bpositive.ui.theme.TeddyAppTheme
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
+import androidx.core.view.WindowCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -76,6 +78,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -149,6 +152,17 @@ class MainActivity : ComponentActivity() {
 fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
 
     val context = androidx.compose.ui.platform.LocalContext.current
+    val view = LocalView.current
+    val activityWindow = (context as? Activity)?.window
+    val originalStatusBarColor = remember(activityWindow) {
+        activityWindow?.statusBarColor ?: android.graphics.Color.TRANSPARENT
+    }
+    val statusBarController = remember(activityWindow, view) {
+        activityWindow?.let { WindowCompat.getInsetsController(it, view) }
+    }
+    val originalLightStatusBarIcons = remember(statusBarController) {
+        statusBarController?.isAppearanceLightStatusBars ?: false
+    }
 
     var isCheckingSession by remember { mutableStateOf(true) }
     var activeSession by remember { mutableStateOf<SupabaseSessionManager.Session?>(null) }
@@ -788,6 +802,16 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var showTrash by rememberSaveable { mutableStateOf(false) }
     var showConflicts by rememberSaveable { mutableStateOf(false) }
     var selectedTab by rememberSaveable { mutableStateOf("Home") }
+
+    SideEffect {
+        if (selectedTab == "Messages" && !darkMode) {
+            activityWindow?.statusBarColor = android.graphics.Color.WHITE
+            statusBarController?.isAppearanceLightStatusBars = true
+        } else {
+            activityWindow?.statusBarColor = originalStatusBarColor
+            statusBarController?.isAppearanceLightStatusBars = originalLightStatusBarIcons
+        }
+    }
     var showUserSearch by rememberSaveable { mutableStateOf(false) }
     var showChatScreen by rememberSaveable { mutableStateOf(false) }
     var isCreatingConversation by remember { mutableStateOf(false) }
