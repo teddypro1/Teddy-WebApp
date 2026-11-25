@@ -1547,3 +1547,17 @@ User supplied a CodeAssist Live Preview screenshot after the initial implementat
 - User has not yet approved the final Search Bar design; continue to wait for feedback before changing measurements or adding behavior.
 - Supabase remains `ACTIVE_HEALTHY`; no backend/database changes.
 - No Build was run or claimed successful.
+
+
+### UI Step 03 — FeaturedChatItem scaffold created (2026-11-25)
+
+The user approved `ChatListSearchBar.kt` and instructed that the next file be created in the project tree only; implementation must wait until the main WhatsApp Chat List screenshot is carefully observed together with the user.
+
+Created only this empty file in `main`:
+- `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/FeaturedChatItem.kt`
+- Creation commit: `f9d4b7c61c0cb194bd1d6ff8380d7f449c31bc57`
+- File content is intentionally empty: no package declaration, imports, composables, functions, preview or UI code.
+- Based on the user's previously shared UI segmentation plan, this component is the Featured / Draft Conversation Row. The screenshot-based details (avatar/profile image, display name, date, message preview, message status icon, badge/chevron as applicable) are not yet implemented or finalized. Re-observe the actual reference screenshot before writing code; do not infer dimensions or styling from the plan alone.
+- Current Chat List directory contains only `ChatListHeader.kt`, `ChatListSearchBar.kt`, and this new `FeaturedChatItem.kt`; create later files only after the active component is approved.
+- Supabase project was checked before this UI-only change and reported `ACTIVE_HEALTHY`; no database, migration, RLS, Realtime or billing changes were made.
+- No Build was requested or run.
