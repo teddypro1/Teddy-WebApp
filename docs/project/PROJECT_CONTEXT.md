@@ -1492,3 +1492,14 @@ User requested another 0.1dp increase in visible dot spacing and reported that t
 - Implementation commits: dcace4b76d3ab450156555f6eba345e0f1d6753e and import cleanup 8876f276bd3285c233b9bcc1ab67bbd565a14781.
 - Supabase was checked before the source change and remains ACTIVE_HEALTHY; no database changes.
 - Build is not requested. User should Pull main and inspect CodeAssist Live Preview. Do not mark the icon accepted until the user confirms its appearance.
+
+
+### ChatListHeader — menu dot gap increased to 1.9dp (2026-11-25)
+
+User requested another 0.1dp increase and asked for a new app Build to inspect the Header in-app.
+- Dot diameter remains 3.8dp.
+- Visible gap is now 1.9dp (Compose `Arrangement.spacedBy(1.9.dp)`); center-to-center spacing is 5.7dp.
+- Existing temporary `ChatListHeaderAppPreview` route remains in place; the normal CodeAssist `@Preview` is unchanged.
+- Source commit: d4a7c08ad59dd72a936c48a8deb64ce3d37fac8c.
+- UI-only change; no Supabase database changes. Supabase project was checked before the update and reported `ACTIVE_HEALTHY`.
+- Build request acknowledged. Build execution is not available through the connected GitHub/Supabase tools; do not mark Build successful. The user must pull `main`, build/install in CodeAssist, and confirm the result.
