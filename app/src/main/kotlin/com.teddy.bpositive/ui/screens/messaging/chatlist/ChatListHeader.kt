@@ -2,15 +2,20 @@ package com.teddy.bpositive.ui.screens.messaging.chatlist
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -93,6 +98,49 @@ private fun ChatListHeaderPreview() {
                 .padding(top = 24.dp)
         ) {
             ChatListHeader()
+        }
+    }
+}
+
+
+/**
+ * Temporary in-app inspection screen for the completed Header component.
+ * The normal Android Studio/CodeAssist @Preview remains available.
+ */
+@Composable
+fun ChatListHeaderAppPreview(
+    contentPadding: PaddingValues,
+    onContinueToMessages: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(contentPadding)
+    ) {
+        ChatListHeader()
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        Text(
+            text = "Temporary Header Preview",
+            modifier = Modifier.padding(horizontal = 16.dp),
+            style = MaterialTheme.typography.titleSmall,
+            color = Color(0xFF555555)
+        )
+
+        Text(
+            text = "The original Messages screen is unchanged. Continue when you finish checking the header.",
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = Color(0xFF777777)
+        )
+
+        TextButton(
+            onClick = onContinueToMessages,
+            modifier = Modifier.padding(start = 8.dp)
+        ) {
+            Text("Continue to Messages")
         }
     }
 }
