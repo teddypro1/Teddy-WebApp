@@ -1536,3 +1536,14 @@ Implemented only `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/c
 - This is a first calibrated implementation; exact visual approval remains pending user Preview/device review. Adjust only from user feedback/screenshot.
 - Supabase was checked before implementation and reported `ACTIVE_HEALTHY`; no database, migration, RLS, Realtime, billing or backend changes were made.
 - No Build has been run or claimed successful. User should Pull `main` and inspect CodeAssist `ChatListSearchBarPreview` before further UI changes.
+
+
+### ChatListSearchBar visual review and import cleanup (2026-11-25)
+
+User supplied a CodeAssist Live Preview screenshot after the initial implementation. Visual review found no material layout mismatch: pill width/insets, height, warm-gray fill, rounded ends, search glyph and placeholder alignment are broadly consistent with the reference WhatsApp screenshot. The preview is currently 360×800dp at 69% zoom; this zoom is not a device-scale measurement.
+- Removed one unused `androidx.compose.material3.Surface` import.
+- No visual dimensions, colors, layout, icon geometry, text or behavior changed.
+- Cleanup commit: 0ac4031f8c298377f821bc5186754e9cf358e46f.
+- User has not yet approved the final Search Bar design; continue to wait for feedback before changing measurements or adding behavior.
+- Supabase remains `ACTIVE_HEALTHY`; no backend/database changes.
+- No Build was run or claimed successful.
