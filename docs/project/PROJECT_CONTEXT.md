@@ -1416,3 +1416,20 @@ Updated only `ChatListHeader.kt`:
 - Source commit: `34e919a47493177f4798b6b927db3968235c0afc`.
 - No other Kotlin files were changed or created. No backend or Supabase changes.
 - Await the user's CodeAssist Preview review and build confirmation before considering this refinement accepted or creating the next UI segment.
+
+
+### ChatListHeader — three-dot icon geometry correction (2026-11-25)
+
+User reviewed the previous Preview and identified that the dots should be slightly larger, not smaller. User specified increasing radius by 0.2dp from 1.5dp to 1.7dp. The previous implementation also had excessive vertical spacing and placed the icon too far inward because the 24dp-wide Canvas plus 16dp trailing padding were not accounted for as a combined geometry.
+
+Updated only `ChatListHeader.kt`:
+- Dot radius: 1.7dp (diameter 3.4dp), following the user's explicit correction.
+- Canvas size: 12dp wide × 24dp high, replacing 24dp × 24dp.
+- Dot center X: Canvas horizontal center.
+- Dot center Y positions: 8dp, 12dp, 16dp (4dp center-to-center spacing).
+- Header trailing padding: 12dp, placing the dots closer to the right edge while accounting for the Canvas width and circle radius.
+- Header height (48dp), leading padding (12dp), title typography/color, white surface and top-positioned Preview preserved.
+- Used `androidx.compose.ui.geometry.Offset` import; no Material Icons dependency.
+- Source commit: `2028a7ab3cabeac27659ee8db29fbce55a37a84d`.
+- Supabase checked before change: project `ACTIVE_HEALTHY`; no database changes.
+- This is a geometry refinement based on the user's screenshot observations; wait for the next CodeAssist Preview screenshot and user approval. Do not create another UI segment yet.
