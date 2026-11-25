@@ -1,6 +1,5 @@
 package com.teddy.bpositive.ui.screens.messaging.chatlist
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -19,7 +18,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -60,21 +58,22 @@ fun ChatListHeader(
                 maxLines = 1
             )
 
-            Canvas(
-                modifier = Modifier.size(width = 12.dp, height = 24.dp)
+            Column(
+                modifier = Modifier.size(width = 12.dp, height = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(
+                    space = 1.8.dp,
+                    alignment = Alignment.CenterVertically
+                )
             ) {
-                val dotRadius = 1.9.dp.toPx()
-                val centerX = size.width / 2f
-                val dotCenterYPositions = listOf(6.5.dp, 12.dp, 17.5.dp)
-
-                dotCenterYPositions.forEach { position ->
-                    drawCircle(
-                        color = Color(0xFF161616),
-                        radius = dotRadius,
-                        center = Offset(
-                            x = centerX,
-                            y = position.toPx()
-                        )
+                repeat(3) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .size(3.8.dp)
+                            .background(
+                                color = Color(0xFF161616),
+                                shape = androidx.compose.foundation.shape.CircleShape
+                            )
                     )
                 }
             }
