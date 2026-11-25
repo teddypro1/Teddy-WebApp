@@ -58,7 +58,7 @@ fun MessagingHomeScreen(
         ChatListHeader()
         Spacer(modifier = Modifier.height(8.dp))
         ChatListSearchBar()
-        Spacer(modifier = Modifier.height(5.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Box(
             modifier = Modifier
