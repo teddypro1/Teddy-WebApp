@@ -1633,3 +1633,15 @@ User supplied CodeAssist Build screenshots showing 142 Kotlin errors. Root cause
 ### Follow-up Build correction — missing TextAlign import (2026-11-25)
 
 After the prior Messages screen syntax/import repair, the user's next CodeAssist Build reported one remaining error: `Unresolved reference 'TextAlign'` at `MessagingScreens.kt:275`. Confirmed that `TextAlign.Center` was used but `androidx.compose.ui.text.style.TextAlign` was not imported. Added the missing import only. Source correction commit: `c09f39a52cf2a4a85f8c3e0e01dfbeb37bd8abd1`. Re-fetched the source and verified the import is present. Supabase was checked and remained `ACTIVE_HEALTHY`; no database changes. No Build was run by assistant; user confirmation is still required.
+
+
+### Chat List visual refinement — Search Bar and conversation rows (2026-11-25)
+
+User compared the integrated app screenshot with the WhatsApp reference and approved a refinement pass for sizing, vertical rhythm and typography. Updated only the active Chat List components and the spacing between them:
+- `ChatListSearchBar.kt`: pill height increased from 34dp to 40dp; inner horizontal content inset adjusted to 14dp start / 16dp end; search glyph drawing area increased from 18dp to 20dp, stroke 2dp and lens radius 5.7dp; placeholder increased from 16sp to 17sp. Kept outer horizontal inset 9dp, warm-gray fill `#F5F4F2`, rounded pill and static-only behavior.
+- `FeaturedChatItem.kt`: row height increased from 53dp to 64dp; avatar from 34dp to 40dp; avatar/text gap from 8dp to 10dp; name from 16sp to 17sp with 21sp line height and subtle -0.1sp letter spacing; date from 11sp to 12sp; message preview and Draft label from 14sp to 15sp, preview line height 19sp; preview top gap from 2dp to 3dp. Kept horizontal row inset, sample content, avatar placeholder approach, white list background and no separators.
+- `MessagingScreens.kt`: gap between Search Bar and conversation list increased from 5dp to 8dp.
+- No changes to ChatListHeader, MainActivity navigation, bottom navigation, floating action button behavior, data sources, repository/API integration or Supabase.
+- Source commits: `c4dc08f99559913c2684ac82fc339639b5a0b06f`, `9b068588134268511fe775e389dfd69e9986a87b`, `d7468d55786520c31c4b2662ff1c75b227e8f9a6`.
+- Supabase project was checked before the UI-only work and reported `ACTIVE_HEALTHY`; no database/schema/RLS/Realtime/billing changes.
+- This is a calibrated visual refinement, not yet user-approved. User must Pull `main`, inspect CodeAssist Live Preview and the actual app screenshot. No Build was run or claimed successful.
