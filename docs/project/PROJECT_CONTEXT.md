@@ -1590,3 +1590,17 @@ User clarified that the previous `Tedd Music` group/channel-like row was the wro
 - Source correction commit: `59efe7831544db156b1f2364d8f033404d92b1bd`.
 - User must inspect Live Preview; no Build was run. Do not proceed to the next file until user approves this corrected component.
 - Supabase status checked before the change: `ACTIVE_HEALTHY`; no database/backend changes.
+
+
+### FeaturedChatItem — multi-row WhatsApp-style preview density pass (2026-11-25)
+
+User reviewed the single-row preview and correctly noted that the large blank area below it did not resemble a populated WhatsApp Chat List. User requested several independently invented sample rows in the same Kotlin file so the preview resembles a real list.
+- Kept `FeaturedChatItem` as a reusable single-row composable with configurable name, date, message preview, avatar placeholder/background and optional Draft label.
+- Reduced row height to 53dp, avatar diameter 34dp, horizontal inset 8dp, avatar-to-text gap 8dp; title 16sp medium, date 11sp, message preview 14sp. No separators were added, matching the clean continuous white-list appearance in the reference screenshot.
+- Added private `FeaturedChatListSample()` with eight fictional sample conversations: Riya Apu, Nusrat Jahan, Shakila apu, Teddy Ahsan (You), Mim Akter, Study Group, Soma Bhabi and Tasdit. Includes one Draft example and varied simple avatar placeholders/backgrounds.
+- Changed the `@Preview` to show the whole 360×480dp multi-row list, rather than a single 360×120dp row. This should make row density and vertical rhythm easier to judge in CodeAssist Live Preview.
+- Sample avatars are illustrative emoji/initial placeholders; no actual personal photos or external image assets are bundled.
+- Source commit: `6215ab29e7fd2ef1e0a082585c6b43dd4a13ac7f`.
+- This is still visual-only sample content: no click behavior, navigation, real data model, persistence, network, API or backend integration.
+- Supabase was checked before this UI-only change and reported `ACTIVE_HEALTHY`; no database/schema/RLS/Realtime/billing changes.
+- No Build was requested or run. User should Pull `main`, inspect Live Preview and provide feedback. Do not proceed to `ConversationListItem.kt` until this component is approved.
