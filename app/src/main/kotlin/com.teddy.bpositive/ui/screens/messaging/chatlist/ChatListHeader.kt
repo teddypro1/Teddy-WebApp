@@ -63,9 +63,9 @@ fun ChatListHeader(
             Canvas(
                 modifier = Modifier.size(width = 12.dp, height = 24.dp)
             ) {
-                val dotRadius = 1.7.dp.toPx()
+                val dotRadius = 1.9.dp.toPx()
                 val centerX = size.width / 2f
-                val dotCenterYPositions = listOf(7.2.dp, 12.dp, 16.8.dp)
+                val dotCenterYPositions = listOf(6.6.dp, 12.dp, 17.4.dp)
 
                 dotCenterYPositions.forEach { position ->
                     drawCircle(
