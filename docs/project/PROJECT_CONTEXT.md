@@ -1433,3 +1433,15 @@ Updated only `ChatListHeader.kt`:
 - Source commit: `2028a7ab3cabeac27659ee8db29fbce55a37a84d`.
 - Supabase checked before change: project `ACTIVE_HEALTHY`; no database changes.
 - This is a geometry refinement based on the user's screenshot observations; wait for the next CodeAssist Preview screenshot and user approval. Do not create another UI segment yet.
+
+
+### ChatListHeader — menu dot visible gap set to 1dp (2026-11-25)
+
+User explicitly requested a 1dp visible gap between adjacent menu dots (not 0.6dp).
+- Dot radius remains 1.7dp; diameter remains 3.4dp.
+- Required center-to-center spacing is therefore 4.4dp (3.4dp diameter + 1dp visible gap).
+- Vertically centered positions in the 24dp Canvas are 7.6dp, 12dp and 16.4dp.
+- No other geometry or Header styling changed.
+- Source commit: `660710033bc0c26c9ca3c13f64d4b20d812e229f`.
+- Supabase project was checked and remains ACTIVE_HEALTHY; no database changes.
+- Await the user's CodeAssist Preview review.
