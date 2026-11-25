@@ -1,6 +1,6 @@
 # Teddy-WebApp — Project Context & Progress Log
 
-সর্বশেষ হালনাগাদ: ২০২৬-১১-২৪
+সর্বশেষ হালনাগাদ: ২০২৬-১১-২৫
 Repository: https://github.com/teddypro1/Teddy-WebApp  
 এই নথি AI development assistant-এর জন্য canonical project handoff। কোনো কাজ শুরুর আগে এই নথি পড়বে এবং live GitHub/Supabase state যাচাই করবে। নথির কোনো তথ্য পুরোনো হতে পারে; live state সর্বদা অগ্রাধিকার পাবে।
 
@@ -1458,3 +1458,25 @@ User reviewed the 1dp gap in Preview and requested a further 0.4dp increase.
 - Source commit: `d586758b82035f299cd17a5bd16785f092eb64fa`.
 - Supabase status checked before update: ACTIVE_HEALTHY; no database changes.
 - Await user Preview review before further adjustments or creating the next segment.
+
+
+### ChatListHeader — temporary in-app inspection route (2026-11-25)
+
+The user clarified that the existing CodeAssist Live Preview workflow must remain unchanged. Because the Header component is nearly finished, the user requested a one-time real-app inspection before approving the component. This temporary route does not replace or disable the normal `@Preview` composable.
+
+Implemented directly on `main`:
+- `2fefd771ed977af157bd17bda1276e00389de68e` — added `ChatListHeaderAppPreview` to the existing `ChatListHeader.kt`. It displays the exact `ChatListHeader()` component at the top of a white app-content surface, followed by a small temporary explanation and a **Continue to Messages** action.
+- `ea457cd36f8956f22fde6ac3bfab333d992265df` — updated `MainActivity.kt` so selecting the existing **Messages** bottom-navigation destination opens this temporary Header inspection view first. The workspace top bar is hidden only while this preview is displayed, allowing the Header to be inspected at the top of the content area. Tapping **Continue to Messages** opens the existing `MessagingHomeScreen` without changing its implementation. The existing bottom navigation remains present.
+- The original `ChatListHeaderPreview` CodeAssist Live Preview remains intact and usable as before.
+- No Supabase schema, data, RLS, Realtime, billing or project settings were changed. Live Supabase status rechecked after source changes: `ACTIVE_HEALTHY`.
+- Latest main HEAD after the two source commits: `ea457cd36f8956f22fde6ac3bfab333d992265df`.
+- **Build status: pending user-side CodeAssist build.** The assistant cannot run the user's Android CodeAssist build/device installation from GitHub. Do not mark this build successful until the user confirms.
+
+User steps:
+1. Pull the latest `main` in CodeAssist.
+2. Build and install the app.
+3. Open the existing **Messages** bottom-navigation tab. The temporary Header preview should appear first.
+4. Inspect the Header in the real app. Tap **Continue to Messages** to return to the existing Messages home screen.
+5. The normal CodeAssist Live Preview remains available in `ChatListHeader.kt`.
+
+After the user confirms the app inspection and approves the Header, remove this temporary in-app preview route in a later focused change before proceeding to the next Chat List component. Do not treat the Header as approved until the user explicitly says so.
