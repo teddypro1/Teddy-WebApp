@@ -1,15 +1,14 @@
 package com.teddy.bpositive.ui.screens.messaging.chatlist
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,9 +24,9 @@ import com.teddy.bpositive.ui.theme.TeddyAppTheme
 /**
  * Static, UI-only Chat List header.
  *
- * The component is designed to sit at the top of the app content area,
- * immediately below the Android system status bar.
- * It intentionally contains no navigation, menu action, state or backend code.
+ * Positioned at the top of the app content area, immediately below
+ * the Android system status bar. No navigation, menu action, state,
+ * repository, API or backend integration is included.
  */
 @Composable
 fun ChatListHeader(
@@ -42,7 +41,7 @@ fun ChatListHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp)
-                .padding(start = 12.dp, end = 12.dp),
+                .padding(start = 12.dp, end = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -55,13 +54,24 @@ fun ChatListHeader(
                 maxLines = 1
             )
 
-            Text(
-                text = "⋮",
-                color = Color(0xFF161616),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                lineHeight = 24.sp
-            )
+            Canvas(
+                modifier = Modifier.size(24.dp)
+            ) {
+                val dotRadius = 1.5.dp.toPx()
+                val centerX = size.width / 2f
+                val dotPositions = listOf(5.dp, 12.dp, 19.dp)
+
+                dotPositions.forEach { position ->
+                    drawCircle(
+                        color = Color(0xFF161616),
+                        radius = dotRadius,
+                        center = androidx.compose.ui.geometry.Offset(
+                            x = centerX,
+                            y = position.toPx()
+                        )
+                    )
+                }
+            }
         }
     }
 }
