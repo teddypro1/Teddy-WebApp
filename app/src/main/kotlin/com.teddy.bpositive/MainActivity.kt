@@ -53,6 +53,7 @@ import com.teddy.bpositive.ui.screens.HomeScreen
 import com.teddy.bpositive.ui.screens.MessagingHomeScreen
 import com.teddy.bpositive.ui.screens.MessagingUserSearchScreen
 import com.teddy.bpositive.ui.screens.MessagingChatScreen
+import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListHeaderAppPreview
 import com.teddy.bpositive.ui.screens.NotesScreen
 import com.teddy.bpositive.ui.screens.NoteDetailScreen
 import com.teddy.bpositive.ui.screens.NotificationInboxScreen
@@ -788,6 +789,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     var showTrash by rememberSaveable { mutableStateOf(false) }
     var showConflicts by rememberSaveable { mutableStateOf(false) }
     var selectedTab by rememberSaveable { mutableStateOf("Home") }
+    var showChatListHeaderAppPreview by remember { mutableStateOf(true) }
     var showUserSearch by rememberSaveable { mutableStateOf(false) }
     var showChatScreen by rememberSaveable { mutableStateOf(false) }
     var isCreatingConversation by remember { mutableStateOf(false) }
@@ -1439,7 +1441,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                 )
             },
             topBar = {
-                if (openedNoteId == null && !(selectedTab == "Home" && showNotesFeature)) WorkspaceTopBar(
+                if (openedNoteId == null && !(selectedTab == "Home" && showNotesFeature) && !(selectedTab == "Messages" && showChatListHeaderAppPreview && !showChatScreen && !showUserSearch)) WorkspaceTopBar(
                     fullName = currentProfile?.fullName.orEmpty(),
                     avatarUrl = currentProfile?.avatarUrl.orEmpty(),
                     darkMode = darkMode,
@@ -1581,6 +1583,11 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                             }
                         }
                     }
+                )
+            } else if (selectedTab == "Messages" && showChatListHeaderAppPreview) {
+                ChatListHeaderAppPreview(
+                    contentPadding = padding,
+                    onContinueToMessages = { showChatListHeaderAppPreview = false }
                 )
             } else if (selectedTab == "Messages") {
                 MessagingHomeScreen(
