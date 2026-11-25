@@ -1604,3 +1604,15 @@ User reviewed the single-row preview and correctly noted that the large blank ar
 - This is still visual-only sample content: no click behavior, navigation, real data model, persistence, network, API or backend integration.
 - Supabase was checked before this UI-only change and reported `ACTIVE_HEALTHY`; no database/schema/RLS/Realtime/billing changes.
 - No Build was requested or run. User should Pull `main`, inspect Live Preview and provide feedback. Do not proceed to `ConversationListItem.kt` until this component is approved.
+
+
+### Messages tab — integrated WhatsApp-style Chat List preview (2026-11-25)
+
+User approved the multi-row sample list and asked to see it inside the app's actual Messages interface. Integrated the current visual components into the existing Messages destination:
+- `MessagingScreens.kt`: replaced the old generic Messages landing card/search placeholder with `ChatListHeader`, `ChatListSearchBar`, and the reusable `FeaturedChatList`; added a green FloatingActionButton wired to the existing `onFindPeople` callback so user-search functionality remains accessible.
+- `FeaturedChatItem.kt`: exposed `FeaturedChatList(modifier)` as a reusable scrolling `LazyColumn`; retained the eight fictional sample conversations and the standalone `@Preview`.
+- `MainActivity.kt`: removed the temporary Header-only in-app inspection route and its state/import. The Messages tab now opens the integrated list directly. WorkspaceTopBar is hidden on the Messages list (the custom WhatsApp-style Header takes its place), but remains on the chat and user-search screens. Existing bottom navigation remains untouched.
+- This is a UI integration using local fictional sample rows only. It does not connect the sample list to Supabase conversations/messages, does not create chat records, and does not change schema, RLS, Realtime, Edge Functions, or billing. Existing Find People flow is preserved through the green FAB.
+- Source commits: `0fb62c269b1ec61820fc41229e06c78ac8904b77` (reusable lazy list), `558b70c3a36244483f80b2bfd2e6863ab2baa620` (Messages screen composition), `6871c168f021dfc44b434d46c718e84420bcec85` (MainActivity route).
+- Supabase status before change: `ACTIVE_HEALTHY`; no database changes.
+- No Build was run or claimed successful. User must pull `main`, build on CodeAssist and confirm success, then inspect the integrated Messages screen. Visual acceptance and build success remain pending.
