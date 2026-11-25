@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -24,29 +24,51 @@ import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 private val ChatItemPrimaryText = Color(0xFF111418)
 private val ChatItemSecondaryText = Color(0xFF62686D)
+private val ChatItemDraftGreen = Color(0xFF159B58)
+
+private data class FeaturedChatSample(
+    val name: String,
+    val date: String,
+    val message: String,
+    val avatar: String,
+    val avatarBackground: Color,
+    val isDraft: Boolean = false
+)
 
 /**
- * Static personal conversation row based on the first "Riya Apu" item
- * in the supplied WhatsApp Chat List screenshot.
- *
- * The avatar is an illustrative placeholder until the real image asset
- * is supplied. This component has no click, navigation or data behavior.
+ * One compact personal conversation row, styled after the WhatsApp Chat List.
+ * The preview below shows multiple sample rows to judge real list density.
+ * Avatar artwork is illustrative placeholder content, not a real contact photo.
  */
 @Composable
 fun FeaturedChatItem(
     name: String = "Riya Apu",
     date: String = "11/21/26",
     messagePreview: String = "Kora to ace",
+    avatar: String = "🌻",
+    avatarBackground: Color = Color(0xFFF4E6C8),
+    isDraft: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .padding(horizontal = 8.dp, vertical = 7.dp),
+            .height(53.dp)
+            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RiyaApuAvatar()
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .background(avatarBackground, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = avatar,
+                fontSize = 20.sp,
+                lineHeight = 22.sp
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -61,6 +83,7 @@ fun FeaturedChatItem(
             ) {
                 Text(
                     text = name,
+                    modifier = Modifier.weight(1f),
                     color = ChatItemPrimaryText,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
@@ -80,56 +103,101 @@ fun FeaturedChatItem(
                 )
             }
 
-            Text(
-                text = messagePreview,
-                modifier = Modifier.padding(top = 2.dp),
-                color = ChatItemSecondaryText,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Normal,
-                letterSpacing = 0.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isDraft) {
+                    Text(
+                        text = "Draft: ",
+                        color = ChatItemDraftGreen,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1
+                    )
+                }
+
+                Text(
+                    text = messagePreview,
+                    color = ChatItemSecondaryText,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    letterSpacing = 0.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeaturedChatListSample() {
+    val samples = listOf(
+        FeaturedChatSample(
+            "Riya Apu", "11/21/26", "Kora to ace",
+            "🌻", Color(0xFFF4E6C8)
+        ),
+        FeaturedChatSample(
+            "Nusrat Jahan", "11/20/26", "Ajke class hobe?",
+            "N", Color(0xFFE8DDF8)
+        ),
+        FeaturedChatSample(
+            "Shakila apu", "11/18/26", "Thik ache, pore kotha hobe",
+            "🌿", Color(0xFFDCEBDD)
+        ),
+        FeaturedChatSample(
+            "Teddy Ahsan (You)", "11/17/26", "https://example.com/shared-file...",
+            "T", Color(0xFFF8DFD8), isDraft = true
+        ),
+        FeaturedChatSample(
+            "Mim Akter", "11/15/26", "Photo pathiyechi dekho",
+            "M", Color(0xFFF5E3D2)
+        ),
+        FeaturedChatSample(
+            "Study Group", "11/14/26", "Rahim: Notes gula peyecho?",
+            "👥", Color(0xFFFFEBCB)
+        ),
+        FeaturedChatSample(
+            "Soma Bhabi", "11/13/26", "Jitla vlo hoto eta fir ki",
+            "S", Color(0xFFE8E0FA)
+        ),
+        FeaturedChatSample(
+            "Tasdit", "11/12/26", "You reacted 🙂 to a message",
+            "T", Color(0xFFDCE8F5)
+        )
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+    ) {
+        samples.forEach { sample ->
+            FeaturedChatItem(
+                name = sample.name,
+                date = sample.date,
+                messagePreview = sample.message,
+                avatar = sample.avatar,
+                avatarBackground = sample.avatarBackground,
+                isDraft = sample.isDraft
             )
         }
     }
 }
 
-@Composable
-private fun RiyaApuAvatar() {
-    Box(
-        modifier = Modifier
-            .size(34.dp)
-            .background(
-                color = Color(0xFFF4E6C8),
-                shape = CircleShape
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "🌻",
-            fontSize = 21.sp,
-            lineHeight = 21.sp
-        )
-    }
-}
-
 @Preview(
-    name = "Featured Chat Item - Riya Apu",
+    name = "Featured Chat Items - WhatsApp List",
     showBackground = true,
     backgroundColor = 0xFFFFFFFF,
     widthDp = 360,
-    heightDp = 120
+    heightDp = 480
 )
 @Composable
 private fun FeaturedChatItemPreview() {
     TeddyAppTheme(darkMode = false) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White)
-                .padding(top = 8.dp)
-        ) {
-            FeaturedChatItem()
-        }
+        FeaturedChatListSample()
     }
 }
