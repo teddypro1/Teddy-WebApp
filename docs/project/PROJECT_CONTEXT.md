@@ -1365,3 +1365,22 @@ The user explicitly decided to complete the Messaging user interface first, foll
 - Supabase project `axklmzuepqcbxsbxvtdn` was rechecked and is `ACTIVE_HEALTHY`. This documentation-only update makes no database changes.
 - **Next task: UI Step 01 — Chat List.** Before source edits, re-fetch current main HEAD, the exact relevant UI/navigation files, and current Supabase project status. Keep work to this one UI step and one change-set; do not proceed to Step 02 until the user reviews/approves Step 01.
 - The user will manually Pull `main` in CodeAssist, build and review on device. Never mark a Build successful without explicit user confirmation.
+
+
+### UI Step 01 — Chat List Header component created (2026-11-25)
+
+User instructed that only the currently active Kotlin file should be added to the project tree; later segment files must not be created in advance. Therefore, only this file has been added:
+- `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListHeader.kt`
+- Git commit: `37c935021c19f53b49c4e5b839ae91d2efd106e4`
+
+Implementation scope:
+- Static Compose header based on the supplied WhatsApp Chats screenshot.
+- Green “WhatsApp” title aligned left and vertical three-dot glyph aligned right.
+- White Material surface, 64dp header height, screenshot-inspired horizontal padding and typography.
+- Includes a `@Preview` composable wrapped in `TeddyAppTheme(darkMode = false)`.
+- UI-only: no navigation callbacks, menu behavior, state, backend, API, repository or Supabase integration.
+- This is the first component implementation, not yet user-reviewed or build-confirmed. Do not mark Step 01 complete until the user inspects the CodeAssist Preview and approves it.
+- No other Chat List segment files have been created. Continue one file at a time; only create the next file after the current segment is reviewed and accepted.
+- Supabase was checked before the source change and was `ACTIVE_HEALTHY`; no database changes were made.
+
+Next action: user opens/pulls `main` in CodeAssist and inspects the `ChatListHeaderPreview`. Wait for feedback before modifying this component or creating `ChatListSearchBar.kt`.
