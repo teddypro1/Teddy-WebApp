@@ -64,7 +64,7 @@ fun ChatListHeader(
                 modifier = Modifier.size(width = 12.dp, height = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(
-                    space = 1.8.dp,
+                    space = 1.9.dp,
                     alignment = Alignment.CenterVertically
                 )
             ) {
