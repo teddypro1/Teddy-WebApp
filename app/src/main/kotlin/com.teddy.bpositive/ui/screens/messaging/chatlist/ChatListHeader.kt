@@ -1,6 +1,7 @@
 package com.teddy.bpositive.ui.screens.messaging.chatlist
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -67,12 +69,12 @@ fun ChatListHeader(
                 )
             ) {
                 repeat(3) {
-                    androidx.compose.foundation.layout.Box(
+                    Box(
                         modifier = Modifier
                             .size(3.8.dp)
                             .background(
                                 color = Color(0xFF161616),
-                                shape = androidx.compose.foundation.shape.CircleShape
+                                shape = CircleShape
                             )
                     )
                 }
