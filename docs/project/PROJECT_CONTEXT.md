@@ -1645,3 +1645,17 @@ User compared the integrated app screenshot with the WhatsApp reference and appr
 - Source commits: `c4dc08f99559913c2684ac82fc339639b5a0b06f`, `9b068588134268511fe775e389dfd69e9986a87b`, `d7468d55786520c31c4b2662ff1c75b227e8f9a6`.
 - Supabase project was checked before the UI-only work and reported `ACTIVE_HEALTHY`; no database/schema/RLS/Realtime/billing changes.
 - This is a calibrated visual refinement, not yet user-approved. User must Pull `main`, inspect CodeAssist Live Preview and the actual app screenshot. No Build was run or claimed successful.
+
+
+### Chat List second visual calibration — Search Bar and conversation rows (2026-11-25)
+
+User confirmed the previous Search Bar/row refinement had been pulled and built, but the resulting app still looked noticeably more compact than the WhatsApp reference. Rechecked the live active call path: `MessagingHomeScreen()` renders `ChatListHeader()`, `ChatListSearchBar()` and `FeaturedChatList()`; the list is rendered from `FeaturedChatItem.kt`. No alternate/legacy Chat List renderer was found in the active screen composition.
+
+Updated directly on `main`:
+- `ChatListSearchBar.kt`: height increased from 40dp to 46dp; drawing area for the search icon increased from 20dp to 22dp, with a slightly larger 5.9dp lens radius. Existing 9dp outer horizontal inset, pill fill and placeholder styling remain.
+- `FeaturedChatItem.kt`: row height increased from 64dp to 76dp; horizontal content inset changed from 8dp to 10dp; name increased from 17sp to 18sp (22sp line height); date from 12sp to 13sp; preview/Draft text from 15sp to 16sp (20sp preview line height); preview top gap from 3dp to 4dp. Avatar remains 40dp because its rendered size was already close to the reference screenshot.
+- Added a row-level `Modifier.clickable` around the full row bounds so the press/ripple feedback covers the complete conversation item. The sample rows use the default no-op callback for visual demonstration; no chat navigation or message action is implied.
+- Kept fictional sample data, white background, no separators, existing screen navigation and FAB behavior unchanged.
+- Source commits: `de253efa562a7f666a298ee4c8c37393c0e766c8` (Search Bar), `41b353a6eb47034a0b5072a2388d3d822552ecb0` (conversation rows).
+- Supabase was checked before the UI-only changes and reported `ACTIVE_HEALTHY`; no database/schema/RLS/Realtime/Edge Function/billing changes.
+- No Build was run by the assistant and no Build success is claimed. User must Pull the latest `main`, build in CodeAssist, then compare the app screenshot. Visual acceptance remains pending.
