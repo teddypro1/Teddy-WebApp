@@ -60,7 +60,7 @@ fun ChatListHeader(
             ) {
                 val dotRadius = 1.7.dp.toPx()
                 val centerX = size.width / 2f
-                val dotCenterYPositions = listOf(8.dp, 12.dp, 16.dp)
+                val dotCenterYPositions = listOf(7.6.dp, 12.dp, 16.4.dp)
 
                 dotCenterYPositions.forEach { position ->
                     drawCircle(
