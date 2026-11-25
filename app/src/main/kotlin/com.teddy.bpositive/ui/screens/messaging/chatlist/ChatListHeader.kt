@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,7 +42,7 @@ fun ChatListHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp)
-                .padding(start = 12.dp, end = 16.dp),
+                .padding(start = 12.dp, end = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -55,17 +56,17 @@ fun ChatListHeader(
             )
 
             Canvas(
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(width = 12.dp, height = 24.dp)
             ) {
-                val dotRadius = 1.5.dp.toPx()
+                val dotRadius = 1.7.dp.toPx()
                 val centerX = size.width / 2f
-                val dotPositions = listOf(5.dp, 12.dp, 19.dp)
+                val dotCenterYPositions = listOf(8.dp, 12.dp, 16.dp)
 
-                dotPositions.forEach { position ->
+                dotCenterYPositions.forEach { position ->
                     drawCircle(
                         color = Color(0xFF161616),
                         radius = dotRadius,
-                        center = androidx.compose.ui.geometry.Offset(
+                        center = Offset(
                             x = centerX,
                             y = position.toPx()
                         )
