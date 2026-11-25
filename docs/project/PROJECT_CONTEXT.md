@@ -1628,3 +1628,8 @@ User supplied CodeAssist Build screenshots showing 142 Kotlin errors. Root cause
 - Verified current source contains clean imports, valid function boundary, explicit `ChatListSearchBar`/`FeaturedChatList` imports, no malformed `com.tedd@Composable`, and no internal `weight` import. MainActivity still has no temporary Header-only route; `FeaturedChatList` remains a public lazy list.
 - Supabase status checked before correction: `ACTIVE_HEALTHY`; this is a Kotlin-only correction, no backend/database changes.
 - No Build was run by assistant. User must Pull latest `main` and run Build again; success remains unconfirmed.
+
+
+### Follow-up Build correction — missing TextAlign import (2026-11-25)
+
+After the prior Messages screen syntax/import repair, the user's next CodeAssist Build reported one remaining error: `Unresolved reference 'TextAlign'` at `MessagingScreens.kt:275`. Confirmed that `TextAlign.Center` was used but `androidx.compose.ui.text.style.TextAlign` was not imported. Added the missing import only. Source correction commit: `c09f39a52cf2a4a85f8c3e0e01dfbeb37bd8abd1`. Re-fetched the source and verified the import is present. Supabase was checked and remained `ACTIVE_HEALTHY`; no database changes. No Build was run by assistant; user confirmation is still required.
