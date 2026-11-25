@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,14 +35,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.teddy.bpositive.data.UserSearchApi
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-
-@Composable
+import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListHeader
+import com.tedd@Composable
 fun MessagingHomeScreen(
     contentPadding: androidx.compose.foundation.layout.PaddingValues,
     onFindPeople: () -> Unit
@@ -47,80 +44,34 @@ fun MessagingHomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(androidx.compose.ui.graphics.Color.White)
             .padding(contentPadding)
-            .padding(horizontal = 20.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(
-                text = "Messages",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = "Private conversations, all in one place.",
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        ChatListHeader()
+        Spacer(modifier = Modifier.height(8.dp))
+        ChatListSearchBar()
+        Spacer(modifier = Modifier.height(5.dp))
 
-        OutlinedTextField(
-            value = "",
-            onValueChange = {},
-            enabled = false,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-            placeholder = { Text("Search conversations") },
-            leadingIcon = { Text("⌕", fontSize = 23.sp) },
-            singleLine = true,
-            colors = TextFieldDefaults.colors(
-                disabledContainerColor = MaterialTheme.colorScheme.surface,
-                disabledIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
-                disabledTextColor = MaterialTheme.colorScheme.onSurface
-            )
-        )
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
         ) {
-            Column(
+            FeaturedChatList(modifier = Modifier.fillMaxSize())
+
+            FloatingActionButton(
+                onClick = onFindPeople,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 34.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 18.dp, bottom = 18.dp),
+                containerColor = androidx.compose.ui.graphics.Color(0xFF159B58),
+                contentColor = androidx.compose.ui.graphics.Color.White
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(76.dp)
-                        .background(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                            CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("✉", fontSize = 34.sp, color = MaterialTheme.colorScheme.primary)
-                }
-                Text(
-                    text = "No conversations yet",
-                    fontSize = 19.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "Find a person by username and start a private conversation. Your chats will appear here.",
-                    fontSize = 14.sp,
-                    lineHeight = 21.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-                Button(
+                Text("+", fontSize = 28.sp, fontWeight = FontWeight.Normal)
+            }
+        }
+    }
+}  Button(
                     onClick = onFindPeople,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
