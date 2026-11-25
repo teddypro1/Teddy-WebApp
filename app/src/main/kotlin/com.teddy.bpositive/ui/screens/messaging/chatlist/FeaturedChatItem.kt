@@ -56,27 +56,27 @@ fun FeaturedChatItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(53.dp)
+            .height(64.dp)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(34.dp)
+                .size(40.dp)
                 .background(avatarBackground, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = avatar,
-                fontSize = 20.sp,
-                lineHeight = 22.sp
+                fontSize = 23.sp,
+                lineHeight = 25.sp
             )
         }
 
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 8.dp),
+                .padding(start = 10.dp),
             verticalArrangement = Arrangement.Center
         ) {
             Row(
@@ -88,9 +88,10 @@ fun FeaturedChatItem(
                     text = name,
                     modifier = Modifier.weight(1f),
                     color = ChatItemPrimaryText,
-                    fontSize = 16.sp,
+                    fontSize = 17.sp,
+                    lineHeight = 21.sp,
                     fontWeight = FontWeight.Medium,
-                    letterSpacing = 0.sp,
+                    letterSpacing = (-0.1).sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -99,7 +100,7 @@ fun FeaturedChatItem(
                     text = date,
                     modifier = Modifier.padding(start = 8.dp),
                     color = ChatItemSecondaryText,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Normal,
                     letterSpacing = 0.sp,
                     maxLines = 1
@@ -109,14 +110,14 @@ fun FeaturedChatItem(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 2.dp),
+                    .padding(top = 3.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (isDraft) {
                     Text(
                         text = "Draft: ",
                         color = ChatItemDraftGreen,
-                        fontSize = 14.sp,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1
                     )
@@ -125,7 +126,8 @@ fun FeaturedChatItem(
                 Text(
                     text = messagePreview,
                     color = ChatItemSecondaryText,
-                    fontSize = 14.sp,
+                    fontSize = 15.sp,
+                    lineHeight = 19.sp,
                     fontWeight = FontWeight.Normal,
                     letterSpacing = 0.sp,
                     maxLines = 1,
