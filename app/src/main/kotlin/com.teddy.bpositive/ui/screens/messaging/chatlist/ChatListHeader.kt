@@ -1,7 +1,11 @@
 package com.teddy.bpositive.ui.screens.messaging.chatlist
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -11,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -18,10 +23,11 @@ import androidx.compose.ui.unit.sp
 import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 /**
- * Static UI-only header for the Chat List screen.
+ * Static, UI-only Chat List header.
  *
- * This component intentionally contains no navigation, menu actions,
- * application state, repository, API, or backend integration.
+ * The component is designed to sit at the top of the app content area,
+ * immediately below the Android system status bar.
+ * It intentionally contains no navigation, menu action, state or backend code.
  */
 @Composable
 fun ChatListHeader(
@@ -29,43 +35,53 @@ fun ChatListHeader(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface
+        color = Color.White,
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp)
-                .padding(start = 22.dp, end = 18.dp),
+                .height(48.dp)
+                .padding(start = 12.dp, end = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "WhatsApp",
-                color = androidx.compose.ui.graphics.Color(0xFF159B58),
-                fontSize = 28.sp,
+                color = Color(0xFF159B58),
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.7).sp
+                letterSpacing = (-0.35).sp,
+                maxLines = 1
             )
 
             Text(
                 text = "⋮",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
+                color = Color(0xFF161616),
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                lineHeight = 24.sp
             )
         }
     }
 }
 
 @Preview(
-    name = "Chat List Header - Light",
+    name = "Chat List Header - Top Position",
     showBackground = true,
     backgroundColor = 0xFFFFFFFF,
-    widthDp = 360
+    widthDp = 360,
+    heightDp = 800
 )
 @Composable
 private fun ChatListHeaderPreview() {
     TeddyAppTheme(darkMode = false) {
-        ChatListHeader()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 24.dp)
+        ) {
+            ChatListHeader()
+        }
     }
 }
