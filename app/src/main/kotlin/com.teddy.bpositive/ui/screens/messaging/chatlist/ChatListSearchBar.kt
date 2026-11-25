@@ -39,7 +39,7 @@ fun ChatListSearchBar(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 9.dp)
-            .height(40.dp)
+            .height(46.dp)
             .background(
                 color = Color(0xFFF5F4F2),
                 shape = RoundedCornerShape(percent = 50)
@@ -54,10 +54,10 @@ fun ChatListSearchBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Canvas(
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(22.dp)
             ) {
                 val strokeWidth = 2.dp.toPx()
-                val lensRadius = 5.7.dp.toPx()
+                val lensRadius = 5.9.dp.toPx()
                 val lensCenter = Offset(
                     x = size.width * 0.43f,
                     y = size.height * 0.42f
