@@ -1561,3 +1561,19 @@ Created only this empty file in `main`:
 - Current Chat List directory contains only `ChatListHeader.kt`, `ChatListSearchBar.kt`, and this new `FeaturedChatItem.kt`; create later files only after the active component is approved.
 - Supabase project was checked before this UI-only change and reported `ACTIVE_HEALTHY`; no database, migration, RLS, Realtime or billing changes were made.
 - No Build was requested or run.
+
+
+### UI Step 03 — FeaturedChatItem first screenshot-based implementation (2026-11-25)
+
+User authorized writing code after asking to inspect the original WhatsApp Chat List screenshot in detail. Implemented the featured group/draft row visible in the screenshot (the `Tedd Music` row with layered group avatar and right chevron):
+- Public composable `FeaturedChatItem(title, sender, draftPreview, modifier)` with screenshot-derived defaults `Tedd Music`, `Ted Music`, and truncated URL-like draft preview.
+- Row height 56dp; horizontal inset 9dp; 34×36dp layered avatar region; text block start gap 8dp.
+- Title uses 16sp medium dark text; preview uses 14sp secondary gray; `Draft:` is green `#159B58` and semibold.
+- Sender is followed by a small custom Canvas chevron; another custom Canvas chevron sits at the far right, avoiding Material Icons dependencies.
+- Layered cream rounded-square group avatar is drawn with Canvas group glyph as a placeholder; actual profile images are not wired.
+- Added isolated `@Preview` for the single row on a white background.
+- This is visual-only: no click handling, real avatar/photo loading, date, message status, badge, conversation model, state, repository, API or backend integration. Those elements are not visible on this specific featured group/draft row in the supplied reference screenshot; do not add them without a further reference/approval.
+- Source commit: `ddb361b1ec217750595d2ef329a9867c7493c956`.
+- User must inspect CodeAssist Live Preview and provide feedback; visual acceptance is pending. Do not proceed to `ConversationListItem.kt` until this file is approved.
+- Supabase status checked before implementation: `ACTIVE_HEALTHY`; no database/schema/RLS/Realtime/billing changes.
+- No Build was requested or run.
