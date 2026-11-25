@@ -39,7 +39,7 @@ fun ChatListSearchBar(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 9.dp)
-            .height(34.dp)
+            .height(40.dp)
             .background(
                 color = Color(0xFFF5F4F2),
                 shape = RoundedCornerShape(percent = 50)
@@ -49,15 +49,15 @@ fun ChatListSearchBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 12.dp, end = 14.dp),
+                .padding(start = 14.dp, end = 16.dp),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Canvas(
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(20.dp)
             ) {
-                val strokeWidth = 1.8.dp.toPx()
-                val lensRadius = 5.2.dp.toPx()
+                val strokeWidth = 2.dp.toPx()
+                val lensRadius = 5.7.dp.toPx()
                 val lensCenter = Offset(
                     x = size.width * 0.43f,
                     y = size.height * 0.42f
@@ -91,7 +91,7 @@ fun ChatListSearchBar(
                 text = "Ask Meta AI or Search",
                 modifier = Modifier.padding(start = 6.dp),
                 color = Color(0xFF62686D),
-                fontSize = 16.sp,
+                fontSize = 17.sp,
                 fontWeight = FontWeight.Normal,
                 letterSpacing = 0.sp,
                 maxLines = 1
