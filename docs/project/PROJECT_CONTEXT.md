@@ -1480,3 +1480,15 @@ User steps:
 5. The normal CodeAssist Live Preview remains available in `ChatListHeader.kt`.
 
 After the user confirms the app inspection and approves the Header, remove this temporary in-app preview route in a later focused change before proceeding to the next Chat List component. Do not treat the Header as approved until the user explicitly says so.
+
+
+### ChatListHeader — dot gap and rendering refinement (2026-11-25)
+
+User requested another 0.1dp increase in visible dot spacing and reported that the Canvas-rendered icon still appeared unclear in Preview.
+- Dot diameter remains 3.8dp (equivalent to the previous 1.9dp radius).
+- Visible gap increased from 1.7dp to 1.8dp; center-to-center spacing is 5.6dp.
+- Replaced Canvas drawCircle rendering with three Compose circular Box shapes in a vertically centered Column. This avoids the previous custom Canvas coordinate calculations and uses standard Compose shape rendering; visual sharpness still requires the user's Preview/device confirmation.
+- Only ChatListHeader.kt changed for the UI implementation. @Preview and the temporary in-app inspection composable remain present.
+- Implementation commits: dcace4b76d3ab450156555f6eba345e0f1d6753e and import cleanup 8876f276bd3285c233b9bcc1ab67bbd565a14781.
+- Supabase was checked before the source change and remains ACTIVE_HEALTHY; no database changes.
+- Build is not requested. User should Pull main and inspect CodeAssist Live Preview. Do not mark the icon accepted until the user confirms its appearance.
