@@ -1445,3 +1445,16 @@ User explicitly requested a 1dp visible gap between adjacent menu dots (not 0.6d
 - Source commit: `660710033bc0c26c9ca3c13f64d4b20d812e229f`.
 - Supabase project was checked and remains ACTIVE_HEALTHY; no database changes.
 - Await the user's CodeAssist Preview review.
+
+
+### ChatListHeader — menu dot visible gap increased to 1.4dp (2026-11-25)
+
+User reviewed the 1dp gap in Preview and requested a further 0.4dp increase.
+- Dot radius remains 1.7dp (diameter 3.4dp).
+- Visible gap is now 1.4dp.
+- Center-to-center spacing is 4.8dp.
+- Vertical dot centers in the 24dp Canvas: 7.2dp, 12dp and 16.8dp.
+- Only the three vertical center positions changed; all other Header geometry and styling remain unchanged.
+- Source commit: `d586758b82035f299cd17a5bd16785f092eb64fa`.
+- Supabase status checked before update: ACTIVE_HEALTHY; no database changes.
+- Await user Preview review before further adjustments or creating the next segment.
