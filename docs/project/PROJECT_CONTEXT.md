@@ -1503,3 +1503,17 @@ User requested another 0.1dp increase and asked for a new app Build to inspect t
 - Source commit: d4a7c08ad59dd72a936c48a8deb64ce3d37fac8c.
 - UI-only change; no Supabase database changes. Supabase project was checked before the update and reported `ACTIVE_HEALTHY`.
 - Build request acknowledged. Build execution is not available through the connected GitHub/Supabase tools; do not mark Build successful. The user must pull `main`, build/install in CodeAssist, and confirm the result.
+
+
+### UI Step 01 — ChatListHeader accepted; ChatListSearchBar scaffold created (2026-11-25)
+
+The user reviewed the actual app Chat List screenshot and explicitly decided the `ChatListHeader.kt` work is finished. The screenshot confirms the header is displayed at the top of the Chat List, with the WhatsApp title and three-dot menu, followed by the search field.
+
+Created only the next empty Kotlin file in the same package directory:
+- `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListSearchBar.kt`
+- Commit: `49ec793d352f31f883bf68eef1deefd7df85349f`
+- The file is intentionally empty. No package declaration, imports, composables, functions, UI code, or dependencies have been added; the user wants to discuss the screenshot and design before implementation.
+- Current ChatListSearchBar design discussion has not yet been finalized. Reference screenshot: 720×1600; visible search bar is a light warm-gray rounded pill directly below the header, with a leading search icon and placeholder text “Ask Meta AI or Search”. Exact dp dimensions, spacing, typography, colors and behavior are to be agreed before coding.
+- No other new Chat List segment files were created. Continue one file at a time.
+- Supabase was checked before this UI-only operation and reported `ACTIVE_HEALTHY`; no database changes were made.
+- The temporary in-app Header inspection route remains pending removal as a separate cleanup step before the next implementation work, as recorded above.
