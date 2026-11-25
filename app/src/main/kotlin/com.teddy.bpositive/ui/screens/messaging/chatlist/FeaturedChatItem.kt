@@ -1,6 +1,7 @@
 package com.teddy.bpositive.ui.screens.messaging.chatlist
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,8 +40,7 @@ private data class FeaturedChatSample(
 )
 
 /**
- * One compact personal conversation row, styled after the WhatsApp Chat List.
- * The preview below shows multiple sample rows to judge real list density.
+ * One personal conversation row styled after the WhatsApp Chat List.
  * Avatar artwork is illustrative placeholder content, not a real contact photo.
  */
 @Composable
@@ -51,13 +51,15 @@ fun FeaturedChatItem(
     avatar: String = "🌻",
     avatarBackground: Color = Color(0xFFF4E6C8),
     isDraft: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .padding(horizontal = 8.dp),
+            .clickable(onClick = onClick)
+            .height(76.dp)
+            .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -88,8 +90,8 @@ fun FeaturedChatItem(
                     text = name,
                     modifier = Modifier.weight(1f),
                     color = ChatItemPrimaryText,
-                    fontSize = 17.sp,
-                    lineHeight = 21.sp,
+                    fontSize = 18.sp,
+                    lineHeight = 22.sp,
                     fontWeight = FontWeight.Medium,
                     letterSpacing = (-0.1).sp,
                     maxLines = 1,
@@ -100,7 +102,7 @@ fun FeaturedChatItem(
                     text = date,
                     modifier = Modifier.padding(start = 8.dp),
                     color = ChatItemSecondaryText,
-                    fontSize = 12.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Normal,
                     letterSpacing = 0.sp,
                     maxLines = 1
@@ -110,14 +112,14 @@ fun FeaturedChatItem(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 3.dp),
+                    .padding(top = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (isDraft) {
                     Text(
                         text = "Draft: ",
                         color = ChatItemDraftGreen,
-                        fontSize = 15.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1
                     )
@@ -126,8 +128,8 @@ fun FeaturedChatItem(
                 Text(
                     text = messagePreview,
                     color = ChatItemSecondaryText,
-                    fontSize = 15.sp,
-                    lineHeight = 19.sp,
+                    fontSize = 16.sp,
+                    lineHeight = 20.sp,
                     fontWeight = FontWeight.Normal,
                     letterSpacing = 0.sp,
                     maxLines = 1,
@@ -199,7 +201,7 @@ fun FeaturedChatList(modifier: Modifier = Modifier) {
     showBackground = true,
     backgroundColor = 0xFFFFFFFF,
     widthDp = 360,
-    heightDp = 480
+    heightDp = 640
 )
 @Composable
 private fun FeaturedChatItemPreview() {
