@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.teddy.bpositive.data.UserSearchApi
 import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListHeader
 import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListSearchBar
-import com.teddy.bpositive.ui.screens.messaging.chatlist.FeaturedChatList
+import com.teddy.bpositive.ui.screens.messaging.chatlist.ConversationList
 
 @Composable
 fun MessagingHomeScreen(
@@ -65,7 +65,7 @@ fun MessagingHomeScreen(
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            FeaturedChatList(modifier = Modifier.fillMaxSize())
+            ConversationList(modifier = Modifier.fillMaxSize())
 
             FloatingActionButton(
                 onClick = onFindPeople,
