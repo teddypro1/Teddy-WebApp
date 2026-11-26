@@ -197,6 +197,12 @@ fun ConversationList(modifier: Modifier = Modifier) {
                 isDraft = sample.isDraft
             )
         }
+
+        item {
+            EncryptionFooter(
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
 
