@@ -1699,3 +1699,17 @@ Changes committed directly to `main`:
 - Commits: `abc1e7818698915c050b74de844b14edae1bfca6` (new component), `ff32f23e1477dca05612a18213d4b67a64c8cb24` (active screen call site), `da9e9005bfaf812dd8bb3e7cfc44fd9b773bb362` (remove old component).
 - Supabase project was checked before the UI-only change and reported `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
 - No Build was run by the assistant. User must Pull latest `main`, run Build in CodeAssist and confirm success. Visual regression check remains pending.
+
+
+### UI Step 05 — EncryptionFooter implemented and added to Chat List (2026-11-26)
+
+User approved the proposed centered footer design: a small muted-gray lock icon beside a two-line privacy notice, placed after the conversation rows.
+- Implemented public composable `EncryptionFooter(modifier)` in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/EncryptionFooter.kt`.
+- The lock is drawn with Compose Canvas primitives (no additional icon-library dependency); it uses muted gray `#667781`.
+- Notice text: `Your personal messages are` / `end-to-end encrypted`, 12sp with 16sp line height, centered beside the lock.
+- Added 24dp horizontal and 18dp vertical padding. The footer is non-interactive and contains no click action.
+- Integrated it as the final item in the existing `ConversationList()` LazyColumn in `ConversationListItem.kt`, so it appears below all eight sample conversation rows and scrolls naturally with the list. Existing row dimensions, sample data/order, list background and bottom content padding were preserved.
+- Source commits: `045872d887b30f1790e025d79b19e5692c23453a` (footer implementation), `b84c064d460954744867ff78e5655b67763155db` (list integration).
+- The prior empty scaffold commit was `5d0d82d65b755ff33e26b47aafd5b353ccff0dfd`.
+- Supabase project was checked before implementation and reported `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database, schema, RLS, Realtime, Edge Function or billing changes were made.
+- No Build was run by the assistant. User must Pull latest `main`, inspect CodeAssist Live Preview and run Build if ready. Build success and visual acceptance remain pending.
