@@ -199,6 +199,16 @@ fun ConversationList(modifier: Modifier = Modifier) {
         }
 
         item {
+            // WhatsApp-style separator directly below the final conversation row.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color(0xFFE9EDEF))
+            )
+        }
+
+        item {
             EncryptionFooter(
                 modifier = Modifier.fillMaxWidth()
             )
