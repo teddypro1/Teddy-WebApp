@@ -1671,3 +1671,14 @@ Updated directly on `main`:
 - Commits: `670f0462ba8a1b83b6a3157425c28221a23f837a` (avatar), `b0257288cd264e9cfbc3ab7f778869cf1becdb56` (status bar).
 - Supabase was checked before the UI-only work and reported `ACTIVE_HEALTHY`; no database/schema/RLS/Realtime/Edge Function/billing changes.
 - No Build was run by the assistant. User must Pull latest `main`, build in CodeAssist and visually verify avatar scale and status bar; Build success and visual acceptance remain pending.
+
+
+### UI Step 04 — ConversationListItem scaffold created (2026-11-26)
+
+User explicitly confirmed the previous avatar/status-bar refinement Build completed successfully and instructed moving to the next file.
+- Created only an empty scaffold: `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ConversationListItem.kt`.
+- Creation commit: `210531f2fc5a18c47d2fdda8b0d378af67e0b077`.
+- No package declaration, imports, composables, functions, previews, sample rows or implementation code have been added yet. The next step is to inspect the user's original WhatsApp Chat List screenshot and agree the ordinary conversation-row details before implementation.
+- Keep the existing `FeaturedChatItem.kt` as the separately implemented first featured row unless the user requests a structural change. Do not duplicate or replace it without discussion.
+- Live GitHub branch check: only `main`. Supabase project status checked: `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/backend/billing changes.
+- No Build was run for this scaffold creation; the previous Build success is user-confirmed, but this empty file itself has not required a Build.
