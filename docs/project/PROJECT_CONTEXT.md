@@ -1682,3 +1682,20 @@ User explicitly confirmed the previous avatar/status-bar refinement Build comple
 - Keep the existing `FeaturedChatItem.kt` as the separately implemented first featured row unless the user requests a structural change. Do not duplicate or replace it without discussion.
 - Live GitHub branch check: only `main`. Supabase project status checked: `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/backend/billing changes.
 - No Build was run for this scaffold creation; the previous Build success is user-confirmed, but this empty file itself has not required a Build.
+
+
+### UI Step 04 — Merge FeaturedChatItem into ConversationListItem (2026-11-26)
+
+User agreed that `FeaturedChatItem.kt` and the new `ConversationListItem.kt` duplicated the same conversation-row responsibility, and asked for the cleanest consolidation without changing the established UI.
+
+Changes committed directly to `main`:
+- Implemented `ConversationListItem.kt` as the single source for the reusable conversation row and the existing sample list.
+- Renamed the reusable composable from `FeaturedChatItem()` to `ConversationListItem()`.
+- Moved the existing sample data and list renderer into `ConversationList()`, preserving the same eight sample conversations and their order.
+- Preserved the established visual values and behavior: 76dp row height, 48dp avatar, 10dp horizontal row inset, 10dp avatar-to-text gap, typography, date/preview styling, Draft green, white list background, bottom list content padding and row ripple.
+- Updated `MessagingScreens.kt` to render `ConversationList()` instead of `FeaturedChatList()`.
+- Deleted the now-redundant `FeaturedChatItem.kt`; no duplicate compatibility component remains.
+- `ChatListHeader.kt`, `ChatListSearchBar.kt`, FAB, navigation, status bar handling, backend/data sources and Supabase were not modified.
+- Commits: `abc1e7818698915c050b74de844b14edae1bfca6` (new component), `ff32f23e1477dca05612a18213d4b67a64c8cb24` (active screen call site), `da9e9005bfaf812dd8bb3e7cfc44fd9b773bb362` (remove old component).
+- Supabase project was checked before the UI-only change and reported `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
+- No Build was run by the assistant. User must Pull latest `main`, run Build in CodeAssist and confirm success. Visual regression check remains pending.
