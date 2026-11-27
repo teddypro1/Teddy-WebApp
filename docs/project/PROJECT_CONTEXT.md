@@ -1766,3 +1766,17 @@ User asked for a commit that would make the refined New Chat FAB visible in the 
 - Integration commit: `d35b91ac649c9788d049871db58be9c9032feeed`.
 - Pre-change live checks: only `main` branch; Supabase project `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/backend/billing changes.
 - No Build was run by the assistant. User should Pull latest `main`, then Build in CodeAssist to see the FAB in the actual Messages screen. Build success and visual acceptance remain pending.
+
+
+### UI Step 06 — New Chat FAB second visual calibration (2026-11-27)
+
+After the user compared the app screenshot with the WhatsApp reference, the app FAB was visibly too small and too close to the right edge. Updated only `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListFloatingActions.kt`:
+- FAB size: 40dp → 56dp.
+- Corner radius: 9dp → 16dp.
+- Icon Canvas size: 22dp → 28dp.
+- Position insets: end 12dp → 24dp; bottom 12dp → 16dp.
+- Kept the existing green color, custom chat-bubble-plus drawing, click callback and single-FAB behavior. No Meta AI FAB added.
+- Removed an unused Canvas geometry import.
+- Source commit: `f62583003fc77735c05eae9371fc56d53f97906c`.
+- The only working branch remains `main`. Supabase project was checked before this UI-only change and reported `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/backend/billing changes.
+- No Build was run by the assistant. User should pull the commit and build in CodeAssist to compare the actual Messages screen against the WhatsApp reference. Visual acceptance and Build success remain pending.
