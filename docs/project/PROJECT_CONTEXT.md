@@ -2048,3 +2048,12 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Supabase project status was checked before this UI-only change and was `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019). No Supabase or database changes were made.
 - Build and visual fit are pending user verification. Although all fixed-size items fit geometrically within 48dp height, verify the actual rendered vertical alignment and touch interactions in CodeAssist/device. If the user reports clipping or cramped touch targets, reassess rather than reducing the item sizes.
 
+## 22. Chat Screen Header typography refinement (2026-11-27)
+
+- Compared the user's minimized-app screenshots of Teddy-WebApp and WhatsApp. The clearest confirmed mismatch in the Chat Screen Header was the contact name using a serif typeface while WhatsApp uses a sans-serif UI typeface.
+- Changed only the ChatHeader contact-name Text font family from `FontFamily.Serif` to `FontFamily.Default` (platform default sans-serif).
+- Preserved font size (18sp), line height (22sp), bold weight, letter spacing, color, dimensions, row height (48dp), avatar and icon sizes, and callbacks.
+- Source commit: `122390354e05c2e5f053a81974c515946773aea1`.
+- This is a UI-only change; no Supabase/database changes were made. Supabase was verified ACTIVE_HEALTHY before the change.
+- User Pull/Build and visual confirmation are pending. Further geometry adjustments to Chat List / Chat Screen header positioning should be based on a new in-app screenshot comparison, not inferred from the minimized-app overview alone.
+
