@@ -2069,3 +2069,16 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Supabase project was checked before changes and was `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019). No Supabase/database/billing changes were made.
 - CodeAssist Pull, Build and visual verification are pending user confirmation.
 
+## 24. Chat List and Chat Screen headers unified at 56dp (2026-11-27)
+
+- User confirmed the desired outcome: both the Chat List Header and Chat Screen Header should be taller than 48dp, with their shared top/bottom boundaries and vertical centerline aligned when navigating between screens.
+- Updated only the root Row height in both header components from 48dp to 56dp:
+  - `chat/ChatHeader.kt` — 56dp.
+  - `chatlist/ChatListHeader.kt` — 56dp.
+- Existing internal horizontal padding and item dimensions/typography were retained. Both layouts use `Alignment.CenterVertically`; the ChatHeader overflow menu's existing 28dp width and end padding 4dp place its center at the same 18dp trailing offset as the Chat List menu (12dp width with 12dp end padding). No avatar, call icon, back icon, text size or menu size was changed.
+- Commits:
+  - `e2d181a651abb534eb40bb826a69430a64891493` — ChatHeader 56dp.
+  - `64da0723d12cab2dfec0cc9cfdcb86deb1795ee6` — ChatListHeader 56dp.
+- Supabase project `axklmzuepqcbxsbxvtdn` was verified `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019) before the UI-only change. No database, auth, storage, migration, billing or backend changes were made.
+- CodeAssist Pull/Build and visual verification remain pending user confirmation. Compare the two screens at the same device density and app content origin; confirm header height, vertical centerline and right-side overflow alignment before marking accepted.
+
