@@ -1780,3 +1780,15 @@ After the user compared the app screenshot with the WhatsApp reference, the app 
 - Source commit: `f62583003fc77735c05eae9371fc56d53f97906c`.
 - The only working branch remains `main`. Supabase project was checked before this UI-only change and reported `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/backend/billing changes.
 - No Build was run by the assistant. User should pull the commit and build in CodeAssist to compare the actual Messages screen against the WhatsApp reference. Visual acceptance and Build success remain pending.
+
+
+### UI Step 06 — New Chat FAB alignment and shadow refinement (2026-11-27)
+
+Following a side-by-side screenshot review, user pointed out the app FAB sat too far left and its shadow looked too hard/weak compared with WhatsApp.
+- Updated only `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListFloatingActions.kt`.
+- End inset changed from 24dp to 18dp, moving the FAB 6dp toward the right edge. Bottom inset remains 16dp.
+- Material 3 Surface shadowElevation increased from 3dp to 6dp to produce a broader/softer elevated shadow. (Actual device rendering still needs user visual confirmation.)
+- Kept 56dp FAB size, 16dp corner radius, 28dp Canvas icon, green color, existing custom chat-bubble-plus path and click callback. No Meta AI FAB or other UI/backend changes.
+- Source commit: `9d653c1033609455bda3e2b28a3a2733b9bbf3c7`.
+- Pre-change checks: only `main` branch; Supabase project `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
+- No Build was run by the assistant. User should Pull latest `main`, build in CodeAssist, and compare the right inset and shadow on device. Build success and visual acceptance remain pending.
