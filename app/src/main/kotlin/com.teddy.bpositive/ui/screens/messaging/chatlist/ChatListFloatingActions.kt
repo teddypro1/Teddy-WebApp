@@ -39,11 +39,11 @@ fun ChatListFloatingActions(
         Surface(
             onClick = onNewChatClick,
             modifier = Modifier
-                .padding(end = 24.dp, bottom = 16.dp)
+                .padding(end = 18.dp, bottom = 16.dp)
                 .size(56.dp),
             shape = RoundedCornerShape(16.dp),
             color = NewChatFabGreen,
-            shadowElevation = 3.dp,
+            shadowElevation = 6.dp,
             tonalElevation = 0.dp
         ) {
             Box(contentAlignment = Alignment.Center) {
