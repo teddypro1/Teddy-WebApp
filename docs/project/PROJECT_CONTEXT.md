@@ -1818,3 +1818,17 @@ Following a side-by-side screenshot review, user pointed out the app FAB sat too
 - Source commit: `67fb024275cf956c0a273bacee1ea34ffdc0a763`.
 - Before the change, live GitHub branch check showed only `main`; Supabase project `axklmzuepqcbxsbxvtdn` was `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes were made.
 - No Build was run. User should Pull latest `main` and inspect `ChatListBottomNavigationPreview()` in CodeAssist Live Preview. Build success, device rendering and visual acceptance remain pending.
+
+
+
+### UI Step 07 — Telegram bottom navigation integrated only on Messages list (2026-11-27)
+
+- User authorized adding the Telegram-inspired bottom navigation only to the Messages section UI, with the existing app navigation restored whenever the user leaves Messages.
+- Updated only `app/src/main/kotlin/com.teddy.bpositive/MainActivity.kt` for integration.
+- The root Scaffold now shows `ChatListBottomNavigation` only when `selectedTab == "Messages"`, and only while the Messages conversation-list screen is active (`!showChatScreen && !showUserSearch`).
+- The Telegram navigation is hosted in a 60dp full-width bottom slot; its own floating pill remains centered with the existing 10dp bottom inset. Scaffold content padding therefore reserves space for it and keeps the conversation list/FAB from overlapping the navigation.
+- On every other app section, the existing `AppBottomNavigationBar` and its original tab-selection behavior remain unchanged. When the user leaves Messages, the old app navigation returns automatically. The previous bar also remains for the existing in-Messages chat and user-search sub-screens, preserving their prior behavior.
+- The Telegram component file and its standalone Live Preview were not changed. No conversation list, header, search, footer, FAB, backend, or Supabase resources were changed.
+- Integration source commit: `f874b8229848453e10f6d7b59843a846361c5f8d`.
+- Pre-change checks: only the `main` branch exists; Supabase project `axklmzuepqcbxsbxvtdn` is `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
+- No Build was run. User should Pull latest `main` and use CodeAssist Live Preview for routine inspection; a device Build is optional when they want to verify the full root-Scaffold integration. Build success and visual acceptance remain pending.
