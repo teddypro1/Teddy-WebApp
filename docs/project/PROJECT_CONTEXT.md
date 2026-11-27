@@ -2206,3 +2206,17 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - No message repository, realtime subscription, database schema, migration, authentication, storage, Edge Function or billing behavior was changed.
 - Supabase project `axklmzuepqcbxsbxvtdn` was verified `ACTIVE_HEALTHY` before this UI-only source change.
 - CodeAssist Pull/Build and device visual confirmation remain pending user confirmation.
+
+## 35. ChatEncryptionNotice created and integrated into the Chat Screen preview (2026-11-27)
+
+- User confirmed the CodeAssist Build after the ChatDateSeparator preview integration completed successfully; proceeded to the next planned Chat Screen component.
+- Added `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chat/ChatEncryptionNotice.kt`.
+- The component renders a compact warm-tinted notice card with a custom Canvas lock icon, explanatory text and a green “Learn more” action. The callback is exposed as `onLearnMore` for later navigation/implementation.
+- Integrated the notice immediately below the temporary “Today” date separator in `MessagingChatPreviewScreen` within `MessagingScreens.kt`.
+- Important security accuracy: the current app uses transport/storage protection, but does **not** currently implement end-to-end encryption (E2EE). Therefore, the notice deliberately says “Messages are protected in transit and at rest.” It does not claim E2EE. The Learn more callback is currently a UI hook with no destination wired yet.
+- This remains a UI-first prototype. The copy, visibility and Learn more destination can be made state/data-driven and finalized alongside future messaging security work.
+- Supabase project `axklmzuepqcbxsbxvtdn` was checked before changes and reported `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019). No database, migration, RLS, auth, storage, Realtime, Edge Function or billing changes were made.
+- Source commits:
+  - `9240a80d5605e62daf2da641b68df62182ed0dd8` — create ChatEncryptionNotice.
+  - `72da6a93c0c9fe0472c7899fdf1acc9b05b05289` — integrate notice into Chat Screen preview.
+- CodeAssist Pull, Build and device visual verification are pending user confirmation. Do not mark this Build successful until the user confirms.
