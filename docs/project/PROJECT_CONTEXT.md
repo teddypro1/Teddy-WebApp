@@ -2160,3 +2160,16 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - No Supabase/database/migration/auth/storage/Edge Function/billing changes.
 - Awaiting user Pull + CodeAssist Build and visual confirmation; do not mark this build successful until user confirms.
 
+
+
+## 31. Chat List ও Chat Screen overflow menu exact horizontal alignment (2026-11-27)
+
+- User confirmed that the Chat List and Chat Screen three-dot icons should share the same horizontal center position.
+- Pre-change live source geometry was compared using the actual Row end padding, menu-slot width and X offset:
+  - Chat List: Row end padding 12dp, menu slot width 12dp, previous offset +2dp. Its icon center was 16dp from the right edge of the Row content.
+  - Chat Screen: Row end padding 4dp, menu slot width 28dp, offset -1dp. Its icon center was 19dp from the right edge of the Row content.
+- Changed only app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListHeader.kt: menu Column offset from +2dp to -1dp. This shifts the Chat List dots 3dp left and places their center 19dp from the Row content's right edge, matching the Chat Screen menu center.
+- Chat Screen ChatHeader.kt remains unchanged at offset -1dp. The 40dp Chat Screen ripple/touch target, 24dp icon drawing, menu slot dimensions, header heights, other spacing and all callbacks remain unchanged. Chat List dots remain decorative and do not gain a click action or ripple.
+- Source commit: 1cf58046e9359616398cbf07abe87db720297713.
+- Supabase project axklmzuepqcbxsbxvtdn was checked before the change and remained ACTIVE_HEALTHY (PostgreSQL 17.11.0.019). No database, migration, auth, storage, Edge Function or billing changes were made.
+- Pull latest main in CodeAssist and verify the two headers on-device. Build and visual acceptance remain pending explicit user confirmation.
