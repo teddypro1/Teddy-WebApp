@@ -44,6 +44,7 @@ import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListFloatingActions
 import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListSearchBar
 import com.teddy.bpositive.ui.screens.messaging.chatlist.ConversationList
 import com.teddy.bpositive.ui.screens.messaging.chat.ChatHeader
+import com.teddy.bpositive.ui.screens.messaging.chat.ChatDateSeparator
 import com.teddy.bpositive.ui.screens.messaging.chat.ChatWallpaper
 
 @Composable
@@ -388,6 +389,12 @@ fun MessagingChatPreviewScreen(
                 .fillMaxWidth()
         ) {
             ChatWallpaper(modifier = Modifier.fillMaxSize())
+
+            // Static UI placeholder; date grouping will become data-driven later.
+            ChatDateSeparator(
+                date = "Today",
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
         }
     }
 }
