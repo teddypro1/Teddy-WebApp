@@ -4,10 +4,12 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -71,7 +73,7 @@ fun ChatHeader(
 
             Box(
                 modifier = Modifier
-                    .padding(start = 2.dp)
+                    .padding(start = 8.dp)
                     .size(42.dp)
                     .clip(CircleShape)
                     .background(ChatHeaderAvatarFallback),
@@ -98,7 +100,7 @@ fun ChatHeader(
                 text = displayName,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 10.dp, end = 4.dp),
+                    .padding(start = 6.dp, end = 4.dp),
                 color = Color(0xFF151719),
                 fontFamily = FontFamily.Default,
                 fontSize = 18.sp,
@@ -113,9 +115,13 @@ fun ChatHeader(
                 ChatHeaderVideoIcon()
             }
 
+            Spacer(modifier = Modifier.width(10.dp))
+
             IconButton(onClick = onVoiceCall, modifier = Modifier.size(40.dp)) {
                 ChatHeaderPhoneIcon()
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
 
             IconButton(onClick = onMore, modifier = Modifier.size(28.dp)) {
                 ChatHeaderMoreIcon()
