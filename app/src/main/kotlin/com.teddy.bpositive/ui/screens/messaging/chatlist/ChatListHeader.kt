@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -61,7 +62,9 @@ fun ChatListHeader(
             )
 
             Column(
-                modifier = Modifier.size(width = 12.dp, height = 24.dp),
+                modifier = Modifier
+                    .size(width = 12.dp, height = 24.dp)
+                    .offset(x = 2.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(
                     space = 1.9.dp,
