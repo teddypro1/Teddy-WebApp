@@ -11,7 +11,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -22,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import com.teddy.bpositive.ui.theme.TeddyAppTheme
 
 private val NewChatFabGreen = Color(0xFF1FAF62)
-private val NewChatFabIconGreen = NewChatFabGreen
 
 /**
  * WhatsApp-inspired New Chat floating action button.
@@ -42,11 +40,11 @@ fun ChatListFloatingActions(
         Surface(
             onClick = onNewChatClick,
             modifier = Modifier
-                .padding(end = 16.dp, bottom = 16.dp)
-                .size(56.dp),
-            shape = RoundedCornerShape(17.dp),
+                .padding(end = 12.dp, bottom = 12.dp)
+                .size(40.dp),
+            shape = RoundedCornerShape(9.dp),
             color = NewChatFabGreen,
-            shadowElevation = 5.dp,
+            shadowElevation = 3.dp,
             tonalElevation = 0.dp
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -57,53 +55,55 @@ fun ChatListFloatingActions(
 }
 
 /**
- * Custom chat-bubble-plus glyph drawn with Canvas to avoid a generic
- * plus icon and keep the mark visually close to WhatsApp's New Chat symbol.
+ * Custom WhatsApp-style chat-bubble-plus glyph drawn with Compose Canvas.
+ * The white bubble and its tail form one continuous silhouette; the green
+ * plus is centered optically inside the bubble body.
  */
 @Composable
 private fun NewChatChatPlusIcon(
     modifier: Modifier = Modifier
 ) {
     Canvas(
-        modifier = modifier.size(28.dp)
+        modifier = modifier.size(22.dp)
     ) {
-        val sx = size.width / 28f
-        val sy = size.height / 28f
+        val sx = size.width / 22f
+        val sy = size.height / 22f
         val unit = minOf(sx, sy)
         val white = Color.White
 
-        // Main speech-bubble body.
-        drawRoundRect(
-            color = white,
-            topLeft = Offset(5.2f * sx, 5.0f * sy),
-            size = Size(18.0f * sx, 14.2f * sy),
-            cornerRadius = CornerRadius(3.0f * unit, 3.0f * unit)
-        )
-
-        // Small lower-left speech tail.
-        val tail = Path().apply {
-            moveTo(8.0f * sx, 18.0f * sy)
-            lineTo(6.2f * sx, 22.0f * sy)
-            lineTo(12.0f * sx, 19.0f * sy)
+        val bubble = Path().apply {
+            moveTo(6.0f * sx, 3.0f * sy)
+            lineTo(17.0f * sx, 3.0f * sy)
+            quadraticTo(19.0f * sx, 3.0f * sy, 19.0f * sx, 5.0f * sy)
+            lineTo(19.0f * sx, 13.4f * sy)
+            quadraticTo(19.0f * sx, 15.4f * sy, 17.0f * sx, 15.4f * sy)
+            lineTo(10.0f * sx, 15.4f * sy)
+            lineTo(5.0f * sx, 19.0f * sy)
+            lineTo(6.2f * sx, 15.4f * sy)
+            lineTo(5.8f * sx, 15.4f * sy)
+            quadraticTo(4.0f * sx, 15.4f * sy, 4.0f * sx, 13.4f * sy)
+            lineTo(4.0f * sx, 5.0f * sy)
+            quadraticTo(4.0f * sx, 3.0f * sy, 6.0f * sx, 3.0f * sy)
             close()
         }
-        drawPath(path = tail, color = white)
+        drawPath(path = bubble, color = white)
 
-        // Green plus sign inset into the white chat bubble.
-        val plusStroke = 1.9f * unit
-        val centerX = 14.2f * sx
-        val centerY = 12.1f * sy
+        // Plus is optically centered within the bubble's usable inner area.
+        val center = Offset(11.5f * sx, 9.2f * sy)
+        val arm = 2.6f * unit
+        val plusStroke = 1.55f * unit
+
         drawLine(
-            color = NewChatFabIconGreen,
-            start = Offset(centerX - 3.2f * sx, centerY),
-            end = Offset(centerX + 3.2f * sx, centerY),
+            color = NewChatFabGreen,
+            start = Offset(center.x - arm, center.y),
+            end = Offset(center.x + arm, center.y),
             strokeWidth = plusStroke,
             cap = StrokeCap.Round
         )
         drawLine(
-            color = NewChatFabIconGreen,
-            start = Offset(centerX, centerY - 3.2f * sy),
-            end = Offset(centerX, centerY + 3.2f * sy),
+            color = NewChatFabGreen,
+            start = Offset(center.x, center.y - arm),
+            end = Offset(center.x, center.y + arm),
             strokeWidth = plusStroke,
             cap = StrokeCap.Round
         )
