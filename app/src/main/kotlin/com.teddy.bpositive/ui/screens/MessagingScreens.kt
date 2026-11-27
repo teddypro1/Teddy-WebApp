@@ -59,7 +59,6 @@ fun MessagingHomeScreen(
             .padding(contentPadding)
     ) {
         ChatListHeader()
-        Spacer(modifier = Modifier.height(8.dp))
         ChatListSearchBar()
         Spacer(modifier = Modifier.height(8.dp))
 
