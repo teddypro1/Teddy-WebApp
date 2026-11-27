@@ -2133,3 +2133,16 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - No Supabase/database/migration/auth/storage/Edge Function/billing changes.
 - Awaiting user Pull + CodeAssist Build and visual confirmation. Do not mark the build successful until the user confirms.
 
+
+## 29. Chat Screen overflow-menu horizontal alignment (2026-11-27)
+
+- User confirmed the previous ripple-size build completed successfully and reported that the 40dp overflow ripple is partly clipped at the right edge; also noted the three-dot icon sits farther right than in the WhatsApp reference screenshot.
+- Re-verified GitHub `main` source and Supabase project `axklmzuepqcbxsbxvtdn` (`ACTIVE_HEALTHY`) before editing.
+- Updated only `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chat/ChatHeader.kt`:
+  - Added `.offset(x = (-2).dp)` to the existing 28dp overflow-menu container.
+  - This shifts the three-dot icon and its 40dp ripple/touch target together 2dp left, improving right-edge clearance and moving the icon toward the WhatsApp reference position.
+  - Preserves the 28dp Row allocation, 9dp Audio-to-menu spacer, 40dp ripple IconButton, 24dp menu icon drawing, callback, right-side parent padding and all other header elements.
+- Source commit: `a84f4d5a1432d2afb4f442c64d54486eb12745ac`.
+- No Supabase/database/migration/auth/storage/Edge Function/billing changes.
+- Awaiting user Pull + CodeAssist Build and visual confirmation; do not mark this build successful until user confirms.
+
