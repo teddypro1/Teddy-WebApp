@@ -1866,3 +1866,23 @@ User supplied an integrated app screenshot showing the navigation pill was too n
 - Kept the four tabs, selected Chats state, count 18, Profile avatar placeholder, callback API and Live Preview. No chat list, header, search, footer, FAB, backend or Supabase data changed.
 - Before editing, verified `main` is the only GitHub branch, fetched current source/docs, and confirmed Supabase project `axklmzuepqcbxsbxvtdn` is `ACTIVE_HEALTHY` on PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
 - No Build was run. Pull `main`, inspect `ChatListBottomNavigationPreview()` and the integrated Messages screen in CodeAssist. Build success and visual acceptance remain pending.
+
+
+
+### UI Step 08 — Telegram bottom navigation proportion and icon rework (2026-11-27)
+
+User's latest side-by-side screenshots showed that the app pill still differed from Telegram: labels were visually oversized/clipped, tab widths were uneven, Settings was a filled gear rather than an outline, and the overall pill proportions and spacing were off.
+
+- Reworked only `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListBottomNavigation.kt`.
+- Increased the pill width from 296dp to 320dp while keeping the floating pill centered; reduced the outer height slightly to 60dp and softened elevation from 7dp to 5dp. Kept the 8dp bottom inset and full capsule shape.
+- Changed all four tab slots to equal weights; removed the previous extra width assigned to Chats.
+- Reduced label typography from 13sp to 12sp with a 14sp line height and normal weight for unselected tabs, keeping selected Chats semibold. Increased the selected surface height to 50dp and tuned the icon/text vertical allocation to avoid baseline clipping.
+- Refined the Chats glyph to use the two overlapping solid speech bubbles seen in the Telegram reference; retained the unread count 18 with a white perimeter ring.
+- Kept Contacts as a thin outlined person glyph and redrew Settings as an eight-tooth outlined gear with an outlined center (no filled gear body).
+- Reduced the placeholder Profile avatar to 24dp. A real profile image asset has not yet been supplied.
+- Preserved the four tabs, selected Chats state, unread count, callback API, standalone Live Preview and Messages-only integration. `MainActivity.kt` and the 76dp Messages bottom slot were not changed; other app sections continue to use the original navigation.
+- Source commits:
+  - `f7918cd45ede20f76dcb1c7b4d4e39c1ae44d4f1` — main proportion, typography, spacing and icon revision.
+  - `c585c79a984c98caa22af3737d1c35411528ca99` — eight-tooth Settings outline refinement.
+- Before changes, live GitHub showed only `main`; Supabase project `axklmzuepqcbxsbxvtdn` was `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
+- No Build was run. User should Pull latest `main`, inspect `ChatListBottomNavigationPreview()`, then Build the integrated Messages screen in CodeAssist. Build success and visual acceptance remain pending.
