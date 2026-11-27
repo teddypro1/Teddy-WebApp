@@ -2196,3 +2196,13 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Source commits: Chat List `ef779559625e5e57dad1c1f1e55bd0a0d339f63d`; Chat Screen `6e38c047b2975bce2b83bc164390b71c27a93e39`.
 - Supabase project was verified `ACTIVE_HEALTHY` before the changes. No database, migration, auth, storage, Edge Function or billing changes were made.
 - Pull latest `main`, Build in CodeAssist and inspect both headers. Build and visual acceptance remain pending explicit user confirmation.
+
+## 34. ChatDateSeparator integrated into the in-app Chat Screen preview (2026-11-27)
+
+- User clarified that the current Kotlin files/components are UI-first prototypes: visible UI may later change with time/state and may have functionality that will be implemented when backend work is added. Do not treat every current UI element as a finished static product behavior.
+- Integrated the existing `ChatDateSeparator.kt` into the actual in-app `MessagingChatPreviewScreen` in `MessagingScreens.kt`, directly above the wallpaper-backed message area.
+- The preview currently displays a centered `Today` date pill at the top of the chat content area so the component can be inspected on-device. This is a temporary UI placeholder, not a live date calculation or message-date grouping implementation.
+- Later, when the message timeline/backend behavior is implemented, the parent Chat Screen will supply the appropriate date label and render separators dynamically between date groups. The component itself remains responsible only for rendering the supplied label.
+- No message repository, realtime subscription, database schema, migration, authentication, storage, Edge Function or billing behavior was changed.
+- Supabase project `axklmzuepqcbxsbxvtdn` was verified `ACTIVE_HEALTHY` before this UI-only source change.
+- CodeAssist Pull/Build and device visual confirmation remain pending user confirmation.
