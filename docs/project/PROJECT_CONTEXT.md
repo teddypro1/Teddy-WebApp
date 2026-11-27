@@ -1713,3 +1713,15 @@ User approved the proposed centered footer design: a small muted-gray lock icon 
 - The prior empty scaffold commit was `5d0d82d65b755ff33e26b47aafd5b353ccff0dfd`.
 - Supabase project was checked before implementation and reported `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database, schema, RLS, Realtime, Edge Function or billing changes were made.
 - No Build was run by the assistant. User must Pull latest `main`, inspect CodeAssist Live Preview and run Build if ready. Build success and visual acceptance remain pending.
+
+
+### UI Step 06 — ChatListFloatingActions scaffold created (2026-11-27)
+
+- User confirmed the latest app Build completed successfully and reviewed the current Chat List screenshot.
+- Created only a minimal Kotlin scaffold at `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListFloatingActions.kt`.
+- The file currently contains the package declaration and a documentation comment only. No Floating Action Button layout, icons, colors, dimensions, click behavior, preview, or dependencies have been assumed or implemented.
+- Creation commit: `a0c17177f083096ccf5925f39070571905855335`.
+- User will provide the original WhatsApp main screenshot next. Use that screenshot as the visual source before implementing this component; inspect exact button count, iconography, placement, spacing, dimensions, colors, shadows and any labels. Keep scope limited to this file unless user explicitly approves otherwise.
+- Live GitHub branch check: only `main`. Latest prior source commit was `72221497079a5171fd7290a937bc49d1b3f9d104`.
+- Supabase project status checked before the scaffold: `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/backend/billing changes.
+- No Build was run or requested for this empty scaffold. Continue using CodeAssist Live Preview for visual iteration; do not ask for a full Build unless the user explicitly requests it or a verified integration step requires it.
