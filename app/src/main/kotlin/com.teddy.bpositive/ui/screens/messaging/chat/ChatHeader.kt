@@ -100,7 +100,7 @@ fun ChatHeader(
                 text = displayName,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 6.dp, end = 4.dp),
+                    .padding(start = 9.dp, end = 4.dp),
                 color = Color(0xFF151719),
                 fontFamily = FontFamily.Default,
                 fontSize = 18.sp,
@@ -115,13 +115,13 @@ fun ChatHeader(
                 ChatHeaderVideoIcon()
             }
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(11.dp))
 
             IconButton(onClick = onVoiceCall, modifier = Modifier.size(40.dp)) {
                 ChatHeaderPhoneIcon()
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(9.dp))
 
             IconButton(onClick = onMore, modifier = Modifier.size(28.dp)) {
                 ChatHeaderMoreIcon()
