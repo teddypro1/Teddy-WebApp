@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -85,28 +84,24 @@ fun ChatListBottomNavigation(
                     modifier = Modifier.weight(1f),
                     tab = ChatListNavigationTab.CHATS,
                     selected = selectedTab == ChatListNavigationTab.CHATS,
-                    unreadCount = unreadChatsCount,
                     onClick = onTabSelected
                 )
                 NavigationItem(
                     modifier = Modifier.weight(1f),
                     tab = ChatListNavigationTab.CONTACTS,
                     selected = selectedTab == ChatListNavigationTab.CONTACTS,
-                    unreadCount = 0,
                     onClick = onTabSelected
                 )
                 NavigationItem(
                     modifier = Modifier.weight(1f),
                     tab = ChatListNavigationTab.SETTINGS,
                     selected = selectedTab == ChatListNavigationTab.SETTINGS,
-                    unreadCount = 0,
                     onClick = onTabSelected
                 )
                 NavigationItem(
                     modifier = Modifier.weight(1f),
                     tab = ChatListNavigationTab.PROFILE,
                     selected = selectedTab == ChatListNavigationTab.PROFILE,
-                    unreadCount = 0,
                     onClick = onTabSelected
                 )
             }
@@ -119,7 +114,6 @@ private fun NavigationItem(
     modifier: Modifier,
     tab: ChatListNavigationTab,
     selected: Boolean,
-    unreadCount: Int,
     onClick: (ChatListNavigationTab) -> Unit
 ) {
     Surface(
@@ -156,30 +150,7 @@ private fun NavigationItem(
                     )
                 }
 
-                if (tab == ChatListNavigationTab.CHATS && unreadCount > 0) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(x = 5.dp, y = (-2).dp)
-                            .size(width = 25.dp, height = 19.dp)
-                            .clip(CircleShape)
-                            .background(Color.White)
-                            .padding(1.5.dp)
-                            .clip(CircleShape)
-                            .background(TelegramBlue),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = unreadCount.coerceAtMost(99).toString(),
-                            color = Color.White,
-                            fontSize = 9.sp,
-                            lineHeight = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1
-                        )
-                    }
-                }
-            }
+
 
             Text(
                 text = when (tab) {
@@ -191,6 +162,7 @@ private fun NavigationItem(
                 color = if (selected) TelegramBlue else NavigationText,
                 fontSize = 12.sp,
                 lineHeight = 14.sp,
+                letterSpacing = (-0.25).sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 maxLines = 1
             )
@@ -204,35 +176,35 @@ private fun ChatsNavigationIcon(
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier = modifier) {
-        val rear = Path().apply {
-            moveTo(size.width * 0.04f, size.height * 0.28f)
-            quadraticTo(size.width * 0.04f, size.height * 0.08f, size.width * 0.25f, size.height * 0.08f)
-            lineTo(size.width * 0.58f, size.height * 0.08f)
-            quadraticTo(size.width * 0.73f, size.height * 0.08f, size.width * 0.73f, size.height * 0.27f)
-            lineTo(size.width * 0.73f, size.height * 0.48f)
-            lineTo(size.width * 0.48f, size.height * 0.48f)
-            lineTo(size.width * 0.29f, size.height * 0.66f)
-            lineTo(size.width * 0.33f, size.height * 0.48f)
-            lineTo(size.width * 0.23f, size.height * 0.48f)
-            quadraticTo(size.width * 0.04f, size.height * 0.48f, size.width * 0.04f, size.height * 0.28f)
+        // Telegram-style paired chat bubbles; the unread badge is intentionally hidden.
+        val rearBubble = Path().apply {
+            moveTo(size.width * 0.47f, size.height * 0.16f)
+            cubicTo(size.width * 0.47f, size.height * 0.08f, size.width * 0.55f, size.height * 0.04f, size.width * 0.65f, size.height * 0.04f)
+            lineTo(size.width * 0.84f, size.height * 0.04f)
+            cubicTo(size.width * 0.94f, size.height * 0.04f, size.width * 0.99f, size.height * 0.12f, size.width * 0.99f, size.height * 0.22f)
+            lineTo(size.width * 0.99f, size.height * 0.48f)
+            cubicTo(size.width * 0.99f, size.height * 0.58f, size.width * 0.92f, size.height * 0.65f, size.width * 0.82f, size.height * 0.65f)
+            lineTo(size.width * 0.72f, size.height * 0.65f)
+            lineTo(size.width * 0.88f, size.height * 0.88f)
+            lineTo(size.width * 0.55f, size.height * 0.65f)
+            cubicTo(size.width * 0.50f, size.height * 0.62f, size.width * 0.47f, size.height * 0.56f, size.width * 0.47f, size.height * 0.48f)
             close()
         }
-        drawPath(rear, color.copy(alpha = 0.78f))
-
-        val front = Path().apply {
-            moveTo(size.width * 0.28f, size.height * 0.35f)
-            quadraticTo(size.width * 0.28f, size.height * 0.13f, size.width * 0.49f, size.height * 0.13f)
-            lineTo(size.width * 0.83f, size.height * 0.13f)
-            quadraticTo(size.width * 0.98f, size.height * 0.13f, size.width * 0.98f, size.height * 0.33f)
-            lineTo(size.width * 0.98f, size.height * 0.67f)
-            quadraticTo(size.width * 0.98f, size.height * 0.87f, size.width * 0.79f, size.height * 0.87f)
-            lineTo(size.width * 0.55f, size.height * 0.87f)
-            lineTo(size.width * 0.34f, size.height)
-            lineTo(size.width * 0.39f, size.height * 0.84f)
-            quadraticTo(size.width * 0.28f, size.height * 0.78f, size.width * 0.28f, size.height * 0.63f)
+        drawPath(rearBubble, color.copy(alpha = 0.88f))
+        val mainBubble = Path().apply {
+            moveTo(size.width * 0.05f, size.height * 0.31f)
+            cubicTo(size.width * 0.05f, size.height * 0.15f, size.width * 0.16f, size.height * 0.07f, size.width * 0.31f, size.height * 0.07f)
+            lineTo(size.width * 0.62f, size.height * 0.07f)
+            cubicTo(size.width * 0.77f, size.height * 0.07f, size.width * 0.87f, size.height * 0.17f, size.width * 0.87f, size.height * 0.32f)
+            lineTo(size.width * 0.87f, size.height * 0.52f)
+            cubicTo(size.width * 0.87f, size.height * 0.67f, size.width * 0.77f, size.height * 0.77f, size.width * 0.62f, size.height * 0.77f)
+            lineTo(size.width * 0.34f, size.height * 0.77f)
+            lineTo(size.width * 0.13f, size.height * 0.98f)
+            lineTo(size.width * 0.18f, size.height * 0.75f)
+            cubicTo(size.width * 0.10f, size.height * 0.70f, size.width * 0.05f, size.height * 0.62f, size.width * 0.05f, size.height * 0.52f)
             close()
         }
-        drawPath(front, color)
+        drawPath(mainBubble, color)
     }
 }
 
