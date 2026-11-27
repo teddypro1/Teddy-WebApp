@@ -815,6 +815,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
     }
     var showUserSearch by rememberSaveable { mutableStateOf(false) }
     var showChatScreen by rememberSaveable { mutableStateOf(false) }
+    var sampleChatName by rememberSaveable { mutableStateOf<String?>(null) }
     var isCreatingConversation by remember { mutableStateOf(false) }
     var activeConversationId by rememberSaveable { mutableStateOf<String?>(null) }
     var activeChatProfile by remember { mutableStateOf<UserSearchApi.PublicProfile?>(null) }
@@ -1432,8 +1433,8 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
-                if (openedNoteId == null) {
-                    if (selectedTab == "Messages" && !showChatScreen && !showUserSearch) {
+                if (openedNoteId == null && !(selectedTab == "Messages" && showChatScreen)) {
+                    if (selectedTab == "Messages" && !showUserSearch) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1479,7 +1480,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                 }
             },
             topBar = {
-                if (openedNoteId == null && !(selectedTab == "Home" && showNotesFeature) && !(selectedTab == "Messages" && !showChatScreen && !showUserSearch)) WorkspaceTopBar(
+                if (openedNoteId == null && !(selectedTab == "Home" && showNotesFeature) && !(selectedTab == "Messages" && (!showChatScreen || !showUserSearch))) WorkspaceTopBar(
                     fullName = currentProfile?.fullName.orEmpty(),
                     avatarUrl = currentProfile?.avatarUrl.orEmpty(),
                     darkMode = darkMode,
@@ -1559,6 +1560,15 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                     contentPadding = padding,
                     onOpenNotes = { showNotesFeature = true }
                 )
+            } else if (selectedTab == "Messages" && showChatScreen && sampleChatName != null) {
+                MessagingChatPreviewScreen(
+                    displayName = sampleChatName.orEmpty(),
+                    contentPadding = padding,
+                    onBack = {
+                        showChatScreen = false
+                        sampleChatName = null
+                    }
+                )
             } else if (selectedTab == "Messages" && showChatScreen && activeChatProfile != null) {
                 val chatSession = activeSession
                 val chatConversationId = activeConversationId
@@ -1572,6 +1582,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         username = activeChatProfile?.username.orEmpty(),
                         onBack = {
                             showChatScreen = false
+                            sampleChatName = null
                             activeConversationId = null
                             activeChatProfile = null
                         }
@@ -1612,6 +1623,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                             if (result.success && !result.conversationId.isNullOrBlank()) {
                                 activeConversationId = result.conversationId
                                 activeChatProfile = profile
+                                sampleChatName = null
                                 showUserSearch = false
                                 showChatScreen = true
                                 userSearchStatus = ""
@@ -1625,6 +1637,12 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
             } else if (selectedTab == "Messages") {
                 MessagingHomeScreen(
                     contentPadding = padding,
+                    onConversationClick = { name ->
+                        sampleChatName = name
+                        activeChatProfile = null
+                        activeConversationId = null
+                        showChatScreen = true
+                    },
                     onFindPeople = {
                         userSearchResults = emptyList()
                         userSearchStatus = ""
@@ -1859,6 +1877,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         selectedTab = "Home"
                         showUserSearch = false
                         showChatScreen = false
+                        sampleChatName = null
                         activeConversationId = null
                         activeChatProfile = null
                         isCreatingConversation = false
