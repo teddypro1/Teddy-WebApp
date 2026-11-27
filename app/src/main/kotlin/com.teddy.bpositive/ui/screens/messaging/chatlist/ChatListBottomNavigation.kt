@@ -59,7 +59,7 @@ private object TelegramPillShape : Shape {
         val width = size.width
         val height = size.height
         val radius = height / 2f
-        val control = radius * 0.5522848f
+        val control = radius * 0.60f
 
         // Stadium silhouette: straight horizontal body with mathematically
         // smooth semicircular end caps, matching Telegram's pill proportions.
