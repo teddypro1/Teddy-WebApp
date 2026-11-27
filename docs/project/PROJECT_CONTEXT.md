@@ -1804,3 +1804,17 @@ Following a side-by-side screenshot review, user pointed out the app FAB sat too
 - Existing chat list components and Messages screen integration remain unchanged. Next, user should provide/confirm the WhatsApp bottom-navigation reference details before implementation. Continue to use CodeAssist Live Preview for component iteration; do not require a full Build for a scaffold.
 - Supabase was checked before this UI-only step and reported `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
 - Only working branch: `main`. No Build has been run for this new scaffold; the prior FAB Build is user-confirmed successful.
+
+
+### UI Step 07 — Telegram-inspired floating bottom navigation implemented (2026-11-27)
+
+- User changed the bottom-navigation visual direction from WhatsApp to Telegram and supplied two Telegram screenshots as the sole visual reference.
+- Implemented the component in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListBottomNavigation.kt`.
+- The previous scaffold was replaced with a standalone floating white pill: 228dp wide, 40dp high, centered at the bottom with 10dp bottom inset, fully rounded corners, subtle light border and 3dp shadow.
+- Added four evenly weighted tabs: Chats, Contacts, Settings and Profile. Chats is selected by default with a pale-blue selected capsule, Telegram-blue icon/text and an unread-count badge showing 18.
+- Added Compose Canvas-drawn chat, contact and settings glyphs. The Profile tab currently uses a small illustrated avatar placeholder because the user has not supplied the actual profile photo asset.
+- Added `ChatListNavigationTab`, configurable selected tab and unread count, plus a tab-selection callback. The component remains UI-only and standalone.
+- Added `ChatListBottomNavigationPreview()` for CodeAssist Live Preview. No existing screen integration or other Kotlin source file was changed. Header, Search Bar, conversation rows, Encryption Footer and New Chat FAB remain untouched.
+- Source commit: `67fb024275cf956c0a273bacee1ea34ffdc0a763`.
+- Before the change, live GitHub branch check showed only `main`; Supabase project `axklmzuepqcbxsbxvtdn` was `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes were made.
+- No Build was run. User should Pull latest `main` and inspect `ChatListBottomNavigationPreview()` in CodeAssist Live Preview. Build success, device rendering and visual acceptance remain pending.
