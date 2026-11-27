@@ -66,23 +66,23 @@ fun ChatListBottomNavigation(
         Surface(
             modifier = Modifier
                 .padding(bottom = 8.dp)
-                .width(228.dp)
-                .height(54.dp),
+                .width(296.dp)
+                .height(58.dp),
             shape = RoundedCornerShape(50),
             color = Color.White,
-            shadowElevation = 5.dp,
+            shadowElevation = 7.dp,
             tonalElevation = 0.dp,
             border = androidx.compose.foundation.BorderStroke(0.7.dp, NavigationOutline)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                    .padding(horizontal = 5.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(1.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 NavigationItem(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1.32f),
                     tab = ChatListNavigationTab.CHATS,
                     selected = selectedTab == ChatListNavigationTab.CHATS,
                     unreadCount = unreadChatsCount,
@@ -135,24 +135,24 @@ private fun NavigationItem(
             verticalArrangement = Arrangement.Center
         ) {
             Box(
-                modifier = Modifier.height(25.dp),
+                modifier = Modifier.height(27.dp),
                 contentAlignment = Alignment.Center
             ) {
                 when (tab) {
                     ChatListNavigationTab.CHATS -> ChatsNavigationIcon(
                         color = if (selected) TelegramBlue else NavigationText,
-                        modifier = Modifier.size(width = 25.dp, height = 23.dp)
+                        modifier = Modifier.size(width = 27.dp, height = 25.dp)
                     )
                     ChatListNavigationTab.CONTACTS -> ContactsNavigationIcon(
                         color = NavigationText,
-                        modifier = Modifier.size(25.dp)
+                        modifier = Modifier.size(27.dp)
                     )
                     ChatListNavigationTab.SETTINGS -> SettingsNavigationIcon(
                         color = NavigationText,
                         modifier = Modifier.size(25.dp)
                     )
                     ChatListNavigationTab.PROFILE -> ProfileNavigationAvatar(
-                        modifier = Modifier.size(23.dp)
+                        modifier = Modifier.size(25.dp)
                     )
                 }
 
@@ -161,7 +161,10 @@ private fun NavigationItem(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .offset(x = 5.dp, y = (-2).dp)
-                            .size(width = 21.dp, height = 16.dp)
+                            .size(width = 25.dp, height = 19.dp)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                            .padding(1.5.dp)
                             .clip(CircleShape)
                             .background(TelegramBlue),
                         contentAlignment = Alignment.Center
@@ -186,8 +189,8 @@ private fun NavigationItem(
                     ChatListNavigationTab.PROFILE -> "Profile"
                 },
                 color = if (selected) TelegramBlue else NavigationText,
-                fontSize = 11.sp,
-                lineHeight = 13.sp,
+                fontSize = 13.sp,
+                lineHeight = 15.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                 maxLines = 1
             )
@@ -201,36 +204,36 @@ private fun ChatsNavigationIcon(
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier = modifier) {
-        val bubble = Path().apply {
-            moveTo(size.width * 0.12f, size.height * 0.18f)
-            quadraticTo(size.width * 0.12f, 0f, size.width * 0.34f, 0f)
-            lineTo(size.width * 0.78f, 0f)
-            quadraticTo(size.width, 0f, size.width, size.height * 0.24f)
-            lineTo(size.width, size.height * 0.61f)
-            quadraticTo(size.width, size.height * 0.84f, size.width * 0.76f, size.height * 0.84f)
-            lineTo(size.width * 0.43f, size.height * 0.84f)
-            lineTo(size.width * 0.19f, size.height)
-            lineTo(size.width * 0.24f, size.height * 0.79f)
-            quadraticTo(size.width * 0.12f, size.height * 0.72f, size.width * 0.12f, size.height * 0.57f)
+        val rear = Path().apply {
+            moveTo(size.width * 0.05f, size.height * 0.28f)
+            quadraticTo(size.width * 0.05f, size.height * 0.08f, size.width * 0.25f, size.height * 0.08f)
+            lineTo(size.width * 0.57f, size.height * 0.08f)
+            quadraticTo(size.width * 0.70f, size.height * 0.08f, size.width * 0.70f, size.height * 0.25f)
+            lineTo(size.width * 0.70f, size.height * 0.49f)
+            lineTo(size.width * 0.53f, size.height * 0.49f)
+            lineTo(size.width * 0.34f, size.height * 0.66f)
+            lineTo(size.width * 0.37f, size.height * 0.49f)
+            lineTo(size.width * 0.23f, size.height * 0.49f)
+            quadraticTo(size.width * 0.05f, size.height * 0.49f, size.width * 0.05f, size.height * 0.28f)
             close()
         }
-        drawPath(bubble, color)
-        val messageLine = color == TelegramBlue
-        val lineColor = if (messageLine) Color.White else Color.White
-        drawLine(
-            lineColor.copy(alpha = 0.96f),
-            Offset(size.width * 0.34f, size.height * 0.34f),
-            Offset(size.width * 0.75f, size.height * 0.34f),
-            strokeWidth = size.height * 0.075f,
-            cap = StrokeCap.Round
-        )
-        drawLine(
-            lineColor.copy(alpha = 0.96f),
-            Offset(size.width * 0.34f, size.height * 0.51f),
-            Offset(size.width * 0.66f, size.height * 0.51f),
-            strokeWidth = size.height * 0.075f,
-            cap = StrokeCap.Round
-        )
+        drawPath(rear, color.copy(alpha = 0.78f))
+        val front = Path().apply {
+            moveTo(size.width * 0.30f, size.height * 0.36f)
+            quadraticTo(size.width * 0.30f, size.height * 0.16f, size.width * 0.49f, size.height * 0.16f)
+            lineTo(size.width * 0.84f, size.height * 0.16f)
+            quadraticTo(size.width * 0.98f, size.height * 0.16f, size.width * 0.98f, size.height * 0.34f)
+            lineTo(size.width * 0.98f, size.height * 0.68f)
+            quadraticTo(size.width * 0.98f, size.height * 0.86f, size.width * 0.80f, size.height * 0.86f)
+            lineTo(size.width * 0.55f, size.height * 0.86f)
+            lineTo(size.width * 0.34f, size.height)
+            lineTo(size.width * 0.39f, size.height * 0.84f)
+            quadraticTo(size.width * 0.30f, size.height * 0.78f, size.width * 0.30f, size.height * 0.64f)
+            close()
+        }
+        drawPath(front, color)
+        drawLine(Color.White, Offset(size.width * 0.48f, size.height * 0.43f), Offset(size.width * 0.81f, size.height * 0.43f), size.height * 0.065f, cap = StrokeCap.Round)
+        drawLine(Color.White, Offset(size.width * 0.48f, size.height * 0.59f), Offset(size.width * 0.73f, size.height * 0.59f), size.height * 0.065f, cap = StrokeCap.Round)
     }
 }
 
@@ -265,22 +268,22 @@ private fun SettingsNavigationIcon(
 ) {
     Canvas(modifier = modifier) {
         val center = Offset(size.width / 2f, size.height / 2f)
-        val radius = size.minDimension * 0.29f
-        val stroke = 2.dp.toPx()
-        repeat(8) { index ->
-            val angle = Math.toRadians(index * 45.0)
-            val inner = radius * 1.12f
-            val outer = radius * 1.55f
-            drawLine(
-                color,
-                Offset(center.x + cos(angle).toFloat() * inner, center.y + sin(angle).toFloat() * inner),
-                Offset(center.x + cos(angle).toFloat() * outer, center.y + sin(angle).toFloat() * outer),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round
-            )
+        val outerRadius = size.minDimension * 0.46f
+        val rootRadius = size.minDimension * 0.34f
+        val holeRadius = size.minDimension * 0.13f
+        val points = 32
+        val gear = Path()
+        for (index in 0 until points) {
+            val angle = -Math.PI / 2.0 + index * (2.0 * Math.PI / points)
+            val radius = if (index % 4 == 0 || index % 4 == 3) outerRadius else rootRadius
+            val x = center.x + kotlin.math.cos(angle).toFloat() * radius
+            val y = center.y + kotlin.math.sin(angle).toFloat() * radius
+            if (index == 0) gear.moveTo(x, y) else gear.lineTo(x, y)
         }
-        drawCircle(color, radius = radius, center = center, style = Stroke(stroke))
-        drawCircle(color, radius = radius * 0.34f, center = center, style = Stroke(stroke))
+        gear.close()
+        drawPath(gear, color)
+        drawCircle(Color.White, radius = holeRadius, center = center)
+        drawCircle(color, radius = holeRadius, center = center, style = Stroke(1.8.dp.toPx()))
     }
 }
 
