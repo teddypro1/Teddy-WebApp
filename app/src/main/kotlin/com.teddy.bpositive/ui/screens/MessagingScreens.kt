@@ -43,11 +43,13 @@ import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListHeader
 import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListFloatingActions
 import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListSearchBar
 import com.teddy.bpositive.ui.screens.messaging.chatlist.ConversationList
+import com.teddy.bpositive.ui.screens.messaging.chat.ChatHeader
 
 @Composable
 fun MessagingHomeScreen(
     contentPadding: androidx.compose.foundation.layout.PaddingValues,
-    onFindPeople: () -> Unit
+    onFindPeople: () -> Unit,
+    onConversationClick: (String) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -65,7 +67,10 @@ fun MessagingHomeScreen(
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            ConversationList(modifier = Modifier.fillMaxSize())
+            ConversationList(
+                modifier = Modifier.fillMaxSize(),
+                onConversationClick = onConversationClick
+            )
 
             ChatListFloatingActions(
                 modifier = Modifier.fillMaxSize(),
@@ -352,5 +357,36 @@ fun MessagingChatScreen(
                 ) else Text("➤", fontSize = 20.sp)
             }
         }
+    }
+}
+
+
+/**
+ * Temporary in-app route for opening the sample Chat List rows.
+ * It intentionally shows the first Chat Screen component only; message
+ * wallpaper, encryption notice, message area and composer will be added later.
+ */
+@Composable
+fun MessagingChatPreviewScreen(
+    displayName: String,
+    contentPadding: androidx.compose.foundation.layout.PaddingValues,
+    onBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(androidx.compose.ui.graphics.Color.White)
+            .padding(contentPadding)
+    ) {
+        ChatHeader(
+            displayName = displayName,
+            onBack = onBack
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .background(androidx.compose.ui.graphics.Color.White)
+        )
     }
 }
