@@ -2057,3 +2057,15 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - This is a UI-only change; no Supabase/database changes were made. Supabase was verified ACTIVE_HEALTHY before the change.
 - User Pull/Build and visual confirmation are pending. Further geometry adjustments to Chat List / Chat Screen header positioning should be based on a new in-app screenshot comparison, not inferred from the minimized-app overview alone.
 
+## 23. WhatsApp-style wallpaper added to Chat Screen preview (2026-11-27)
+
+- User requested a visible WhatsApp-like patterned background behind the Chat Screen Header's content area so the Header boundary and alignment can be judged against a non-white surface.
+- Added `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chat/ChatWallpaper.kt`.
+- `ChatWallpaper` draws a subtle, low-contrast doodle pattern with Compose Canvas over a warm off-white base (`#F7F2EA`); no external image, network request or new dependency is used.
+- Integrated the wallpaper only into the blank content area of `MessagingChatPreviewScreen` in `MessagingScreens.kt`. The ChatHeader itself remains white and unchanged. The actual `MessagingChatScreen` route, messaging logic and backend behavior are untouched.
+- Commits:
+  - `cd5d89a9b7756c1b4d7a0f8de216750f30c7deff` — add ChatWallpaper component.
+  - `fe84585eeb18d9ab6a6bae4468c8b30f21f15e0f` — integrate wallpaper into sample preview route.
+- Supabase project was checked before changes and was `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019). No Supabase/database/billing changes were made.
+- CodeAssist Pull, Build and visual verification are pending user confirmation.
+
