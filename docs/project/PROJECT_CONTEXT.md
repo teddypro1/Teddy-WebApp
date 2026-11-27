@@ -1792,3 +1792,15 @@ Following a side-by-side screenshot review, user pointed out the app FAB sat too
 - Source commit: `9d653c1033609455bda3e2b28a3a2733b9bbf3c7`.
 - Pre-change checks: only `main` branch; Supabase project `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
 - No Build was run by the assistant. User should Pull latest `main`, build in CodeAssist, and compare the right inset and shadow on device. Build success and visual acceptance remain pending.
+
+
+### UI Step 06 — New Chat FAB alignment/shadow Build confirmed; Step 07 scaffold created (2026-11-27)
+
+- User explicitly confirmed: **“Successfully Build Completed!”** after pulling and building the FAB alignment/shadow refinement.
+- User also confirmed the FAB now looks good. Treat the current New Chat FAB visual state as accepted; do not adjust it unless the user asks.
+- Started the next planned Chat List component from the project UI sequence: `ChatListBottomNavigation.kt`.
+- Created a minimal scaffold at `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListBottomNavigation.kt`. It currently contains only the package declaration and a KDoc placeholder; no UI, icons, colors, dimensions, navigation behavior, preview or screen integration have been implemented.
+- Scaffold commit: `6ea39f01c2bb44864c410c7f82e9fc30b020e129`.
+- Existing chat list components and Messages screen integration remain unchanged. Next, user should provide/confirm the WhatsApp bottom-navigation reference details before implementation. Continue to use CodeAssist Live Preview for component iteration; do not require a full Build for a scaffold.
+- Supabase was checked before this UI-only step and reported `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
+- Only working branch: `main`. No Build has been run for this new scaffold; the prior FAB Build is user-confirmed successful.
