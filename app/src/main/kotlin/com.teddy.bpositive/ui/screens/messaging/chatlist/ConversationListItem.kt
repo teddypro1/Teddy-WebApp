@@ -145,7 +145,10 @@ fun ConversationListItem(
  * Replace the sample source with real conversation data in a later integration step.
  */
 @Composable
-fun ConversationList(modifier: Modifier = Modifier) {
+fun ConversationList(
+    modifier: Modifier = Modifier,
+    onConversationClick: (String) -> Unit = {}
+) {
     val samples = listOf(
         ConversationSample(
             "Riya Apu", "11/21/26", "Kora to ace",
@@ -194,7 +197,8 @@ fun ConversationList(modifier: Modifier = Modifier) {
                 messagePreview = sample.message,
                 avatar = sample.avatar,
                 avatarBackground = sample.avatarBackground,
-                isDraft = sample.isDraft
+                isDraft = sample.isDraft,
+                onClick = { onConversationClick(sample.name) }
             )
         }
 
