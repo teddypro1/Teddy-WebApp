@@ -1899,3 +1899,19 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Source commit: `596c97caeab5b30877cc9487e4dd25e9d5d97fe0`.
 - Before editing, verified only `main` exists, fetched current source and canonical documentation, and confirmed Supabase project `axklmzuepqcbxsbxvtdn` is `ACTIVE_HEALTHY` on PostgreSQL 17.11. No Supabase data/schema/billing changes.
 - Android Build and visual acceptance are pending user testing.
+
+
+
+### UI Step 08 — Telegram bottom navigation pill and icon polish (2026-11-27)
+
+- User confirmed the preceding navigation Build completed successfully, but reported the Chats icon still looked poor, the pill's rounded transition looked awkward, and the navigation had an unwanted shadow underneath.
+- Updated only `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListBottomNavigation.kt`.
+- Removed the pill's Material shadow entirely (`shadowElevation = 0dp)); retained a subtle 0.8dp light outline so the white pill remains distinguishable against the white screen without a bottom shadow.
+- Kept the 320dp × 60dp outer pill and 8dp bottom inset; refined internal horizontal/vertical padding and the selected-tab capsule so the four equal-width sections sit more evenly with softer rounded ends.
+- Removed custom negative letter spacing; labels now use normal tracking at 12sp/14sp line height.
+- Redrew the Chats glyph as two balanced overlapping filled speech bubbles with smoother cubic contours. The unread badge remains hidden, as requested.
+- Kept Contacts and Settings as outline icons, with Settings unfilled; preserved the Profile placeholder, selected-tab behavior, callback API and Live Preview.
+- No changes to `MainActivity.kt`, the 76dp Messages bottom slot, other app navigation, chat-list components, FAB, backend or Supabase.
+- Source commit: `8f709dd979468d94b9753e2fbcac95918315a9a9`.
+- Pre-change verification: only `main` branch exists; latest GitHub history was inspected. Supabase project `axklmzuepqcbxsbxvtdn` is `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
+- No Build was run for this refinement. User should Pull latest `main`, inspect `ChatListBottomNavigationPreview()` and the integrated Messages screen in CodeAssist, then report the Build result. Build success and visual acceptance remain pending.
