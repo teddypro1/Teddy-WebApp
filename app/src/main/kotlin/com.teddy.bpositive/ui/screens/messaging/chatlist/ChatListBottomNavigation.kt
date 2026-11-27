@@ -56,37 +56,41 @@ private object TelegramPillShape : Shape {
         layoutDirection: LayoutDirection,
         density: Density
     ): Outline {
-        val capWidth = size.height * 0.46f
         val width = size.width
         val height = size.height
+        val radius = height / 2f
+        val control = radius * 0.5522848f
+
+        // Stadium silhouette: straight horizontal body with mathematically
+        // smooth semicircular end caps, matching Telegram's pill proportions.
         val path = Path().apply {
-            moveTo(capWidth, 0f)
-            lineTo(width - capWidth, 0f)
+            moveTo(radius, 0f)
+            lineTo(width - radius, 0f)
 
-            // Right end: gently stretched, not a perfect semicircle.
+            // Right cap: top -> outermost midpoint -> bottom.
             cubicTo(
-                width - capWidth * 0.18f, 0f,
-                width, height * 0.18f,
-                width, height * 0.5f
+                width - radius + control, 0f,
+                width, radius - control,
+                width, radius
             )
             cubicTo(
-                width, height * 0.82f,
-                width - capWidth * 0.18f, height,
-                width - capWidth, height
+                width, radius + control,
+                width - radius + control, height,
+                width - radius, height
             )
 
-            lineTo(capWidth, height)
+            lineTo(radius, height)
 
-            // Left end mirrors the right end for a balanced silhouette.
+            // Left cap mirrors the right cap exactly.
             cubicTo(
-                capWidth * 0.18f, height,
-                0f, height * 0.82f,
-                0f, height * 0.5f
+                radius - control, height,
+                0f, radius + control,
+                0f, radius
             )
             cubicTo(
-                0f, height * 0.18f,
-                capWidth * 0.18f, 0f,
-                capWidth, 0f
+                0f, radius - control,
+                radius - control, 0f,
+                radius, 0f
             )
             close()
         }
