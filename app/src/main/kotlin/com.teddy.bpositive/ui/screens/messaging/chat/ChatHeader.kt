@@ -117,7 +117,7 @@ fun ChatHeader(
                 ChatHeaderPhoneIcon()
             }
 
-            IconButton(onClick = onMore, modifier = Modifier.size(36.dp)) {
+            IconButton(onClick = onMore, modifier = Modifier.size(28.dp)) {
                 ChatHeaderMoreIcon()
             }
         }
