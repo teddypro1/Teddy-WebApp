@@ -2023,3 +2023,18 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Supabase project was rechecked before this UI-only change and remained `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019). No database, migration, auth, storage, Edge Function or billing changes were made.
 - Build status for commit `c6303a596790bf17d9cb316ccafa54b1da713730`: **pending user Pull/Build and visual confirmation**. Do not mark this refinement successful until the user confirms.
 - Next user-side verification: Pull latest `main` in CodeAssist 3.48.2, Build, open any sample conversation and compare the overflow menu's horizontal center against the Chat List header's three-dot menu.
+
+## 20. Chat Screen UI — ChatDateSeparator component created (2026-11-27)
+
+- Created `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chat/ChatDateSeparator.kt` directly on `main`.
+- Public composable: `ChatDateSeparator(date: String, modifier: Modifier = Modifier)`.
+- Renders a centered, compact date pill with a white surface, 8dp rounded corners, 1dp elevation, 14sp medium-weight text, and 12dp horizontal / 7dp vertical content padding. The component adds 8dp vertical outer spacing.
+- Includes a light-theme `@Preview` using the warm off-white background from the supplied WhatsApp conversation reference.
+- Component responsibility is intentionally limited to displaying the date label. Parent screen owns date formatting, message ordering and wallpaper/background.
+- Commits:
+  - `2f3fd7b037e82e81e2d941080749bb3363dff647` — initial component file.
+  - `153ca11d7496cdf81f4acdcd479355e2c1191ea0` — removed an unused import.
+- The component has not yet been integrated into the in-app Chat Screen route. No Build, Live Preview or device visual verification has been confirmed.
+- The preceding ChatHeader overflow-alignment refinement (`c6303a596790bf17d9cb316ccafa54b1da713730`) also remains pending user Pull/Build/visual confirmation. The next combined user verification should cover both current Chat Screen components before beginning another component.
+- No Supabase/database/schema/RLS/Realtime/Edge Function/billing changes were made. Supabase remained `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019) during the pre-change check.
+
