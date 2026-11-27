@@ -1979,3 +1979,16 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - This is a planning breakdown only. None of the above Chat Screen files has been created or implemented yet.
 - Next intended task: start with `ChatHeader.kt`, after inspecting the current repository tree, existing navigation/screen routing, theme and relevant UI patterns. Continue one component at a time and preserve CodeAssist Live Preview workflow. Do not create the entire Chat Screen in one change-set.
 - Before implementation, follow the standard GitHub/Supabase verification workflow. No Supabase changes are expected for this UI-only phase.
+
+
+## 18. Chat Screen UI — first component created (2026-11-27)
+
+- Created `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chat/ChatHeader.kt` directly on `main`.
+- Commit: `af24bab52f03523449ef96cffe9f659c14da97f9`.
+- Public composable: `ChatHeader(displayName, modifier, avatarUrl, onBack, onVideoCall, onVoiceCall, onMore)`.
+- Visual elements: back arrow, circular contact avatar (optional URL, otherwise an initial fallback), contact name, video-call icon, voice-call icon and overflow-menu icon.
+- Icons are drawn locally with Compose Canvas paths/circles; no icon-pack dependency was added.
+- Includes a light-theme `@Preview` named “Chat Header - WhatsApp Style”.
+- This is a standalone UI component only. It is not yet connected to `MessagingChatScreen`; existing inline header and screen behavior remain unchanged.
+- No Build or Live Preview result has been claimed. User should Pull the latest `main` and inspect the component preview in CodeAssist.
+- Next step after user review: refine dimensions/visual details if needed, then replace the current inline header in `MessagingChatScreen` with `ChatHeader` as a separate focused change.
