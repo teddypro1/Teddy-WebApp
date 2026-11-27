@@ -273,15 +273,12 @@ private fun SettingsNavigationIcon(
         val center = Offset(size.width / 2f, size.height / 2f)
         val outerRadius = size.minDimension * 0.43f
         val rootRadius = size.minDimension * 0.34f
-        val points = 48
+        val points = 64
         val gear = Path()
         for (index in 0 until points) {
             val angle = -PI / 2.0 + index * (2.0 * PI / points)
-            val toothPhase = index % 12
-            val radius = when (toothPhase) {
-                0, 1, 2, 3 -> outerRadius
-                else -> rootRadius
-            }
+            val toothPhase = index % 8
+            val radius = if (toothPhase <= 2) outerRadius else rootRadius
             val x = center.x + cos(angle).toFloat() * radius
             val y = center.y + sin(angle).toFloat() * radius
             if (index == 0) gear.moveTo(x, y) else gear.lineTo(x, y)
