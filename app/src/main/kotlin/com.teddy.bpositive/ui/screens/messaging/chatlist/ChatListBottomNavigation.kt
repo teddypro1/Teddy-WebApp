@@ -149,8 +149,7 @@ private fun NavigationItem(
                         modifier = Modifier.size(24.dp)
                     )
                 }
-
-
+            }
 
             Text(
                 text = when (tab) {
