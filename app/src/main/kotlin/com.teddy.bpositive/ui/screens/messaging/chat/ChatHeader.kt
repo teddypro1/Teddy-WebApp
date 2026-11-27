@@ -100,7 +100,7 @@ fun ChatHeader(
                     .weight(1f)
                     .padding(start = 10.dp, end = 4.dp),
                 color = Color(0xFF151719),
-                fontFamily = FontFamily.Serif,
+                fontFamily = FontFamily.Default,
                 fontSize = 18.sp,
                 lineHeight = 22.sp,
                 fontWeight = FontWeight.Bold,
