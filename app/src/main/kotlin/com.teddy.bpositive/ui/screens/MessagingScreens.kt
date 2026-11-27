@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -41,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teddy.bpositive.data.UserSearchApi
 import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListHeader
+import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListFloatingActions
 import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListSearchBar
 import com.teddy.bpositive.ui.screens.messaging.chatlist.ConversationList
 
@@ -67,20 +67,10 @@ fun MessagingHomeScreen(
         ) {
             ConversationList(modifier = Modifier.fillMaxSize())
 
-            FloatingActionButton(
-                onClick = onFindPeople,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 18.dp, bottom = 18.dp),
-                containerColor = androidx.compose.ui.graphics.Color(0xFF159B58),
-                contentColor = androidx.compose.ui.graphics.Color.White
-            ) {
-                Text(
-                    text = "+",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Normal
-                )
-            }
+            ChatListFloatingActions(
+                modifier = Modifier.fillMaxSize(),
+                onNewChatClick = onFindPeople
+            )
         }
     }
 }
