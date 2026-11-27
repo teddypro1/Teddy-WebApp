@@ -44,6 +44,7 @@ import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListFloatingActions
 import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListSearchBar
 import com.teddy.bpositive.ui.screens.messaging.chatlist.ConversationList
 import com.teddy.bpositive.ui.screens.messaging.chat.ChatHeader
+import com.teddy.bpositive.ui.screens.messaging.chat.ChatWallpaper
 
 @Composable
 fun MessagingHomeScreen(
@@ -386,7 +387,8 @@ fun MessagingChatPreviewScreen(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .background(androidx.compose.ui.graphics.Color.White)
-        )
+        ) {
+            ChatWallpaper(modifier = Modifier.fillMaxSize())
+        }
     }
 }
