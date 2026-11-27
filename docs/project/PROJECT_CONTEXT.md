@@ -1725,3 +1725,16 @@ User approved the proposed centered footer design: a small muted-gray lock icon 
 - Live GitHub branch check: only `main`. Latest prior source commit was `72221497079a5171fd7290a937bc49d1b3f9d104`.
 - Supabase project status checked before the scaffold: `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/backend/billing changes.
 - No Build was run or requested for this empty scaffold. Continue using CodeAssist Live Preview for visual iteration; do not ask for a full Build unless the user explicitly requests it or a verified integration step requires it.
+
+
+### UI Step 06 — New Chat FAB implemented (2026-11-27)
+
+- User clarified that this step includes only the lower green New Chat floating action button; the Meta AI FAB must not be created now.
+- Implemented the UI only in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListFloatingActions.kt`.
+- Public composable: `ChatListFloatingActions(modifier, onNewChatClick)`. It positions a single 56dp green rounded-square Material 3 Surface at the bottom-end with 16dp end/bottom inset, 17dp corner radius and 5dp shadow elevation.
+- Custom New Chat glyph is drawn using Compose Canvas: white speech-bubble body and tail with a green plus sign inset inside. No emoji or external icon dependency.
+- Added standalone `ChatListFloatingActionsPreview()` wrapped in `TeddyAppTheme(darkMode = false)` for CodeAssist Live Preview.
+- No Meta AI FAB, no other Kotlin files, no existing screen integration/call-site changes, and no click/navigation behavior beyond the provided callback default no-op were added. Existing app FAB/call site remains untouched by design.
+- Source commit: `66efed960ceef8c92fe2ad0006eec24504d1b115`.
+- Supabase status checked before the UI-only change: `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
+- No Build was run. User should Pull `main` and inspect `ChatListFloatingActionsPreview()` in CodeAssist Live Preview. Visual acceptance and any later integration remain pending.
