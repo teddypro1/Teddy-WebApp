@@ -2082,3 +2082,13 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Supabase project `axklmzuepqcbxsbxvtdn` was verified `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019) before the UI-only change. No database, auth, storage, migration, billing or backend changes were made.
 - CodeAssist Pull/Build and visual verification remain pending user confirmation. Compare the two screens at the same device density and app content origin; confirm header height, vertical centerline and right-side overflow alignment before marking accepted.
 
+## 25. Chat List Header-to-Search spacing refinement (2026-11-27)
+
+- Compared the current Chat List layout against the user's WhatsApp screenshots. The explicit 8dp Spacer between `ChatListHeader()` and `ChatListSearchBar()` was creating an unnecessary vertical gap.
+- Removed only that 8dp Spacer in `app/src/main/kotlin/com.teddy.bpositive/ui/screens/MessagingScreens.kt`, placing the search bar immediately after the 56dp header.
+- Preserved the search bar's 46dp height, horizontal 9dp inset, internal icon/text spacing, and the existing 8dp gap below the search bar before the conversation list.
+- Chat Screen Header and both header heights remain unchanged at 56dp. No other UI component, navigation, data flow or backend code was modified.
+- Source commit: `f546e928f424fed014a7913145c280772df2a955`.
+- Supabase project was checked before this UI-only change and was `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019). No Supabase/database/billing changes were made.
+- CodeAssist Pull/Build and screenshot comparison are pending user confirmation.
+
