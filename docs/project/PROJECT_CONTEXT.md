@@ -1851,3 +1851,18 @@ Following a side-by-side screenshot review, user pointed out the app FAB sat too
   - Scaffold slot: `11279f672e49853f5d8b3b2f069a4a20e0a0074c`
 - GitHub branch check: only `main`. Supabase project `axklmzuepqcbxsbxvtdn` remains `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database changes.
 - No Build was run. User should Pull latest `main`, open `ChatListBottomNavigationPreview()` in CodeAssist Live Preview for fast visual review, then Build only when ready to test the integrated screen. Build success and visual acceptance are pending.
+
+
+### UI Step 08 — Telegram bottom navigation layout and icon correction (2026-11-27)
+
+User supplied an integrated app screenshot showing the navigation pill was too narrow, Contacts and Settings labels were clipped, the hand-drawn icons were inaccurate, and the Chats unread badge lacked the white outline visible in Telegram's reference.
+
+- Expanded the pill from 228dp × 54dp to 296dp × 58dp, centered with an 8dp bottom inset, a fine outline and a softer 7dp shadow.
+- Increased the selected tab surface to 50dp and gave Chats a 1.32 weight so the four labels have sufficient horizontal room.
+- Increased labels from 11sp to 13sp (15sp line height) and kept them on one line.
+- Re-drew Chats as overlapping conversation bubbles, refined the Contacts person outline, and replaced the sun-ray Settings glyph with a toothed gear and center.
+- Enlarged the unread badge to 25dp × 19dp and added a white inset outline around the blue count.
+- Increased only the Messages-screen bottom slot in MainActivity from 62dp to 76dp to prevent clipping/overlap. The app's original navigation outside Messages is unchanged.
+- Kept the four tabs, selected Chats state, count 18, Profile avatar placeholder, callback API and Live Preview. No chat list, header, search, footer, FAB, backend or Supabase data changed.
+- Before editing, verified `main` is the only GitHub branch, fetched current source/docs, and confirmed Supabase project `axklmzuepqcbxsbxvtdn` is `ACTIVE_HEALTHY` on PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
+- No Build was run. Pull `main`, inspect `ChatListBottomNavigationPreview()` and the integrated Messages screen in CodeAssist. Build success and visual acceptance remain pending.
