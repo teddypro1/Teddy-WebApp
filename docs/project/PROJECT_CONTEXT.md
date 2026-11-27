@@ -2220,3 +2220,17 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
   - `9240a80d5605e62daf2da641b68df62182ed0dd8` — create ChatEncryptionNotice.
   - `72da6a93c0c9fe0472c7899fdf1acc9b05b05289` — integrate notice into Chat Screen preview.
 - CodeAssist Pull, Build and device visual verification are pending user confirmation. Do not mark this Build successful until the user confirms.
+
+## 36. ChatEncryptionNotice visual correction (2026-11-27)
+
+- User reviewed the first device Build and supplied a WhatsApp-style reference screenshot. The first implementation was visually incorrect because it placed the notice copy and “Learn more” on separate centered lines.
+- Corrected `ChatEncryptionNotice.kt`:
+  - The explanatory copy and “Learn more” now form one continuous annotated text block.
+  - The complete text block is center-aligned and wraps naturally within the notice card.
+  - “Learn more” remains bold and green, inline at the end of the sentence.
+  - The lock icon remains at the leading edge of the text block.
+  - Adjusted horizontal card inset to 18dp to provide a wider text area closer to the reference.
+- Security wording remains accurate: “Messages are protected in transit and at rest.” The screenshot's E2EE claim was not copied because E2EE is not currently implemented in this app.
+- Source commit: `6603ceb28895f36bc00c5e768b0dcf6b9e5b4187`.
+- Documentation updated after verifying the current source and Supabase project state (`ACTIVE_HEALTHY`). No backend/database changes.
+- CodeAssist Pull, Build and visual verification are pending user confirmation.
