@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -123,8 +124,16 @@ fun ChatHeader(
 
             Spacer(modifier = Modifier.width(9.dp))
 
-            IconButton(onClick = onMore, modifier = Modifier.size(28.dp)) {
-                ChatHeaderMoreIcon()
+            Box(
+                modifier = Modifier.size(28.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(
+                    onClick = onMore,
+                    modifier = Modifier.requiredSize(40.dp)
+                ) {
+                    ChatHeaderMoreIcon()
+                }
             }
         }
     }
