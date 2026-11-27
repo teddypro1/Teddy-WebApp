@@ -2106,3 +2106,17 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Supabase project `axklmzuepqcbxsbxvtdn` was verified `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019) before this UI-only change. No database, migration, auth, storage, Edge Function or billing changes were made.
 - User must Pull latest `main`, Build in CodeAssist, and inspect the Chat Screen header. Build success and visual acceptance are pending explicit user confirmation.
 
+
+## 27. Chat Screen Header micro-spacing refinement (2026-11-27)
+
+- User confirmed the previous CodeAssist build completed successfully.
+- Re-verified repository `teddypro1/Teddy-WebApp` on `main` and Supabase project `axklmzuepqcbxsbxvtdn` (`ACTIVE_HEALTHY`, PostgreSQL 17.11.0.019) before changes.
+- Updated only `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chat/ChatHeader.kt`:
+  - Increased avatar-to-contact-name start padding from 6dp to 9dp (+3dp).
+  - Increased Video Call-to-Audio Call spacer from 10dp to 11dp (+1dp).
+  - Increased Audio Call-to-overflow-menu spacer from 8dp to 9dp (+1dp).
+- Preserved Back Button, avatar size and position, name end padding (4dp), 40dp Video/Audio IconButtons, 28dp overflow IconButton, 56dp header height, ripple feedback, callbacks and all backend behavior.
+- Source commit: `d55f6495885df9a9e9900826abcbf91f13f2c83e`.
+- No Supabase/database/migration/auth/storage/Edge Function/billing changes.
+- Awaiting user Pull + CodeAssist Build and visual confirmation; do not mark this build successful until user confirms.
+
