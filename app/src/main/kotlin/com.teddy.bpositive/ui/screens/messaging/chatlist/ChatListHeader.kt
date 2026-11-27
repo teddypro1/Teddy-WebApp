@@ -64,7 +64,7 @@ fun ChatListHeader(
             Column(
                 modifier = Modifier
                     .size(width = 12.dp, height = 24.dp)
-                    .offset(x = (-1).dp),
+                    .offset(x = (-3).dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(
                     space = 1.9.dp,
