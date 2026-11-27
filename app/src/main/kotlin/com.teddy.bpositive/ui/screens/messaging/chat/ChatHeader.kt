@@ -128,7 +128,7 @@ fun ChatHeader(
             Box(
                 modifier = Modifier
                     .size(28.dp)
-                    .offset(x = (-2).dp),
+                    .offset(x = (-1).dp),
                 contentAlignment = Alignment.Center
             ) {
                 IconButton(
