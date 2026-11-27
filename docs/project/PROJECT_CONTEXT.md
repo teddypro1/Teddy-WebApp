@@ -2038,3 +2038,13 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - The preceding ChatHeader overflow-alignment refinement (`c6303a596790bf17d9cb316ccafa54b1da713730`) also remains pending user Pull/Build/visual confirmation. The next combined user verification should cover both current Chat Screen components before beginning another component.
 - No Supabase/database/schema/RLS/Realtime/Edge Function/billing changes were made. Supabase remained `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019) during the pre-change check.
 
+## 21. Chat Screen Header height matched to Chat List Header (2026-11-27)
+
+- User requested the Chat Screen Header to use the same height as the Chat List Header, while preserving the existing visual sizes of all Chat Screen header items.
+- Live source comparison before change: `ChatListHeader.kt` used `height(48.dp)`; `ChatHeader.kt` used `height(56.dp)`.
+- Updated only the root ChatHeader row height from 56dp to 48dp.
+- Preserved existing item dimensions and typography: back IconButton 40dp, avatar 42dp, video and voice IconButtons 40dp each, overflow IconButton 28dp, icon drawing dimensions and name text typography unchanged.
+- Source commit: `35d49569fee46aee553f2a09fc6640422f91aa5d`.
+- Supabase project status was checked before this UI-only change and was `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019). No Supabase or database changes were made.
+- Build and visual fit are pending user verification. Although all fixed-size items fit geometrically within 48dp height, verify the actual rendered vertical alignment and touch interactions in CodeAssist/device. If the user reports clipping or cramped touch targets, reassess rather than reducing the item sizes.
+
