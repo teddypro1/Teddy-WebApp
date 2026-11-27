@@ -1992,3 +1992,23 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - This is a standalone UI component only. It is not yet connected to `MessagingChatScreen`; existing inline header and screen behavior remain unchanged.
 - No Build or Live Preview result has been claimed. User should Pull the latest `main` and inspect the component preview in CodeAssist.
 - Next step after user review: refine dimensions/visual details if needed, then replace the current inline header in `MessagingChatScreen` with `ChatHeader` as a separate focused change.
+
+## 19. Chat List row → in-app Chat Screen preview route (2026-11-27)
+
+- User requested that tapping any sample Chat List row should open the Chat Screen inside the app, rather than only viewing the standalone ChatHeader.kt preview.
+- Added a temporary sample-chat route using the existing showChatScreen state in MainActivity.kt.
+- ConversationList() now accepts onConversationClick: (String) -> Unit; each sample row passes its displayed contact name to the callback.
+- MessagingHomeScreen() forwards that callback. In MainActivity.kt, selecting a sample row stores its name and opens MessagingChatPreviewScreen.
+- Added MessagingChatPreviewScreen() to MessagingScreens.kt. It displays the reusable ChatHeader at the top and a blank white message-content area reserved for the remaining Chat Screen components.
+- The sample-row route is deliberately UI-only: sample contacts do not have real Supabase conversation IDs or verified user profiles, so it does not fabricate a backend conversation or attempt message loading/sending.
+- The existing real chat flow launched from Find People remains separate and continues to use MessagingChatScreen with its real conversation ID. The sample route does not alter database, messaging API, realtime subscriptions or stored data.
+- Hid the workspace top bar and both bottom-navigation bars while an individual chat route is open; the Chat List navigation remains visible on the list, and the existing workspace navigation remains available in Find People.
+- Back arrow in ChatHeader returns to the Chat List. Logout clears the sample-chat route state.
+- Source commits:
+  - dc9a23e9300c56586216b64191612975164028e8 — add sample chat routing in MainActivity.
+  - dd40bb99187968f5de604afd194a049d3304905d — add in-app preview route using ChatHeader.
+  - cf76be05903fe609b8ab512ea81c92592ec731e8 — forward row click callbacks from ConversationList.
+  - f676d1b67ff51d91539580a61f429326dc5fa85d — import preview route and correct top-bar visibility condition.
+- Pre-change checks: latest canonical documentation and relevant source files were fetched; GitHub branch list contained only main; Supabase project axklmzuepqcbxsbxvtdn was ACTIVE_HEALTHY (PostgreSQL 17.11). No Supabase/database/schema/RLS/Realtime/Edge Function/billing changes were made.
+- No Build or device test has been run by the assistant. User must Pull latest main, Build in CodeAssist, then tap a sample conversation row to verify that the Chat Header opens and the back arrow returns to Chat List. Build success and visual acceptance remain pending.
+- Next Chat Screen components remain unimplemented: Date Separator, Encryption Notice, Wallpaper, Message Area and Composer/Voice Message Button.
