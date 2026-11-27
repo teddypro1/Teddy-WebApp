@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -40,9 +39,9 @@ fun ChatListFloatingActions(
         Surface(
             onClick = onNewChatClick,
             modifier = Modifier
-                .padding(end = 12.dp, bottom = 12.dp)
-                .size(40.dp),
-            shape = RoundedCornerShape(9.dp),
+                .padding(end = 24.dp, bottom = 16.dp)
+                .size(56.dp),
+            shape = RoundedCornerShape(16.dp),
             color = NewChatFabGreen,
             shadowElevation = 3.dp,
             tonalElevation = 0.dp
@@ -64,7 +63,7 @@ private fun NewChatChatPlusIcon(
     modifier: Modifier = Modifier
 ) {
     Canvas(
-        modifier = modifier.size(22.dp)
+        modifier = modifier.size(28.dp)
     ) {
         val sx = size.width / 22f
         val sy = size.height / 22f
