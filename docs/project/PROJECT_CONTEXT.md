@@ -1926,3 +1926,13 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Source commit: `5ea8e07aaa7bf3b10abb921437e97ade60e5d6ff`.
 - Pre-change verification: only `main` branch exists; latest source and canonical documentation were fetched. Supabase project `axklmzuepqcbxsbxvtdn` is `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
 - No Android Build was run. User should Pull latest `main`, inspect the pill silhouette in `ChatListBottomNavigationPreview()` and the integrated Messages screen, then report the Build result and visual feedback. Build success and visual acceptance remain pending.
+
+
+## Telegram Messages Bottom Navigation — LayoutDirection compilation fix (Build pending)
+
+- User reported four CodeAssist Kotlin errors in `ChatListBottomNavigation.kt`; Live Preview did not render because the file failed compilation.
+- Root cause: the custom `TelegramPillShape.createOutline()` used the correct Compose Shape method structure, but imported `LayoutDirection` from the incorrect package `androidx.compose.ui.layout`. The Shape API expects `androidx.compose.ui.unit.LayoutDirection`.
+- Corrected only that import. The custom pill path, curve geometry, navigation dimensions, icon drawing, labels, spacing, selected state, shadow and integration were left unchanged.
+- Fix commit: `c924c6db8a9750b3f74c16f37a43420cc40b1c85`.
+- Supabase was checked before this UI-only change and remained `ACTIVE_HEALTHY`; no database, migration, backend or paid-plan changes were made.
+- **CodeAssist Build and Live Preview verification are pending user confirmation.** Do not mark this fix successful until the user reports the result.
