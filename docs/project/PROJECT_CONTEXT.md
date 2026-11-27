@@ -1,6 +1,6 @@
 # Teddy-WebApp — Project Context & Progress Log
 
-সর্বশেষ হালনাগাদ: ২০২৬-১১-২৫
+সর্বশেষ হালনাগাদ: ২০২৬-১১-২৭
 Repository: https://github.com/teddypro1/Teddy-WebApp  
 এই নথি AI development assistant-এর জন্য canonical project handoff। কোনো কাজ শুরুর আগে এই নথি পড়বে এবং live GitHub/Supabase state যাচাই করবে। নথির কোনো তথ্য পুরোনো হতে পারে; live state সর্বদা অগ্রাধিকার পাবে।
 
@@ -1946,3 +1946,36 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Source commit: `eb8e0a16d8d7e459a8c07d140dc4def39b5aad47`.
 - Pre-change live checks: GitHub latest main and target source fetched; Supabase project `axklmzuepqcbxsbxvtdn` status `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database or billing changes.
 - **CodeAssist Build and visual comparison are pending user confirmation.** The new curve is a mathematically defined capsule approximation; exact pixel parity with Telegram cannot be guaranteed from screenshots alone because device density, app version and layout scaling may differ.
+
+
+## 16. Chat List UI — current phase closed (2026-11-27)
+
+- User clarified that the current Chat List UI work is complete for now; do not continue adding or changing Chat List components unless the user explicitly reopens that scope.
+- Chat List component set currently includes:
+  - `ChatListHeader.kt`
+  - `ChatListSearchBar.kt`
+  - `ConversationListItem.kt` (also provides the sample `ConversationList()`)
+  - `ChatListBottomNavigation.kt`
+  - Existing Messages-screen integration in `MainActivity.kt`
+- The obsolete `FeaturedChatItem.kt` was consolidated into `ConversationListItem.kt` and removed. The conversation sample list retains the eight sample entries recorded in the UI history.
+- User explicitly confirmed a successful CodeAssist Build after the ConversationListItem consolidation. This confirmation applies to that build only; do not infer that later source changes are built.
+- Latest navigation geometry adjustment: user requested restoring the earlier outer-pill curve factor. On 2026-11-27, `ChatListBottomNavigation.kt` was updated back to `0.5522848f` (reverting the intervening `0.60f` adjustment). Commit: `d68294c7f30f9ef28107b30c60a169e52c4282e6`. This latest curve restoration has been verified on GitHub but a subsequent CodeAssist Build/visual confirmation is not yet recorded.
+- Current branch remains `main` only. Supabase project `axklmzuepqcbxsbxvtdn` was checked on 2026-11-27 and is `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes were made for this UI work.
+- Treat Chat List UI as paused/complete for now. Preserve its files and current values while beginning the next scope.
+
+## 17. Next UI phase — Individual Chat / Conversation Screen (planned, not implemented)
+
+- User supplied a WhatsApp individual conversation screenshot and asked to decompose the screen into independently buildable UI components, following the same component-by-component process used for Chat List.
+- The screen is referred to as **Chat Screen**, **Conversation Screen**, or **Individual Chat Screen**.
+- Planned visual/component breakdown, based on the supplied screenshot:
+  1. Chat Header — back navigation, contact avatar, contact name, video-call action, voice-call action, overflow menu. Proposed file: `ChatHeader.kt`.
+  2. Date Separator — e.g. “Today”. Proposed file: `ChatDateSeparator.kt`.
+  3. Encryption Notice — lock icon, end-to-end encryption message and “Learn more”. Proposed file: `ChatEncryptionNotice.kt`.
+  4. Chat Wallpaper — patterned background layer. Proposed file: `ChatWallpaper.kt`.
+  5. Message Area — scrollable message-content region, to host incoming/outgoing bubbles and future media/voice messages. Proposed file: `ChatMessageArea.kt`.
+  6. Message Composer — emoji, text input, attachment and camera controls. Proposed file: `ChatMessageComposer.kt`.
+  7. Voice Message Button — separate microphone action at the right edge. Proposed file: `ChatVoiceMessageButton.kt`.
+- Wallpaper and Message Area are separate responsibilities: wallpaper is the background visual layer; message area owns message layout/scrolling/content.
+- This is a planning breakdown only. None of the above Chat Screen files has been created or implemented yet.
+- Next intended task: start with `ChatHeader.kt`, after inspecting the current repository tree, existing navigation/screen routing, theme and relevant UI patterns. Continue one component at a time and preserve CodeAssist Live Preview workflow. Do not create the entire Chat Screen in one change-set.
+- Before implementation, follow the standard GitHub/Supabase verification workflow. No Supabase changes are expected for this UI-only phase.
