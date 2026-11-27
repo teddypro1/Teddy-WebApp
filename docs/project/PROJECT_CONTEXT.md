@@ -1753,3 +1753,16 @@ User reviewed the standalone CodeAssist Live Preview against the original WhatsA
 - Calibration source commit: `c8152acf8aa0561eb4043ea2dcdc9b03be616828`.
 - Supabase project status was checked before this UI-only change and reported `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/backend/billing changes.
 - No Build was run. User should Pull `main` and inspect `ChatListFloatingActionsPreview()` in CodeAssist Live Preview. The new measurements are a closer visual calibration from the supplied screenshot and remain subject to user's visual confirmation.
+
+
+### UI Step 06 — New Chat FAB integrated into Messages screen (2026-11-27)
+
+User asked for a commit that would make the refined New Chat FAB visible in the actual app screen, not only in its isolated Live Preview. Inspection confirmed the component was not yet called by the Messages screen; the screen still used its older Material 3 plus-only FAB.
+- Updated `app/src/main/kotlin/com.teddy.bpositive/ui/screens/MessagingScreens.kt` only: replaced the old generic plus FAB in `MessagingHomeScreen` with `ChatListFloatingActions(modifier = Modifier.fillMaxSize(), onNewChatClick = onFindPeople)`.
+- Added the import for `ChatListFloatingActions` and removed the now-unused Material3 `FloatingActionButton` import.
+- This preserves the existing New Chat action: tapping the custom FAB still calls the existing `onFindPeople` callback. No new navigation/data behavior was introduced.
+- The custom FAB component remains in `chatlist/ChatListFloatingActions.kt` with 40dp size, 9dp corner radius, 3dp shadow, 12dp end/bottom inset and Canvas-drawn chat-bubble-plus icon. No Meta AI FAB.
+- No other UI components, list data, footer, header, search bar, navigation or Supabase resources were changed.
+- Integration commit: `d35b91ac649c9788d049871db58be9c9032feeed`.
+- Pre-change live checks: only `main` branch; Supabase project `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/backend/billing changes.
+- No Build was run by the assistant. User should Pull latest `main`, then Build in CodeAssist to see the FAB in the actual Messages screen. Build success and visual acceptance remain pending.
