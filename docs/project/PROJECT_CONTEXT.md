@@ -2185,3 +2185,14 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Source commits: Chat List 575ae65c67de4c9460d8df0e814aee87daa32fc7; Chat Screen 9300e2bb6516e14120983c8d6406e88072149d7a.
 - Supabase was verified ACTIVE_HEALTHY before the source changes. No database, migration, auth, storage, Edge Function or billing changes were made.
 - Build and visual confirmation are pending user Pull/Build and device inspection.
+
+## 33. Both chat overflow menus shifted a further 1dp left (2026-11-27)
+
+- User requested moving both Chat List and Chat Screen three-dot menus a further 1dp left.
+- Changed both offsets from -3dp to -4dp:
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListHeader.kt`
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chat/ChatHeader.kt`
+- Both menus move left by the same additional 1dp, preserving their relative horizontal alignment. Chat Screen's 40dp ripple/touch target moves with its icon; Chat List dots remain decorative with no click/ripple behavior.
+- Source commits: Chat List `ef779559625e5e57dad1c1f1e55bd0a0d339f63d`; Chat Screen `6e38c047b2975bce2b83bc164390b71c27a93e39`.
+- Supabase project was verified `ACTIVE_HEALTHY` before the changes. No database, migration, auth, storage, Edge Function or billing changes were made.
+- Pull latest `main`, Build in CodeAssist and inspect both headers. Build and visual acceptance remain pending explicit user confirmation.
