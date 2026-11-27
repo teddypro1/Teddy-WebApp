@@ -2092,3 +2092,17 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Supabase project was checked before this UI-only change and was `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019). No Supabase/database/billing changes were made.
 - CodeAssist Pull/Build and screenshot comparison are pending user confirmation.
 
+
+## 26. Chat Screen Header horizontal spacing refinement (2026-11-27)
+
+- Compared the user's latest WhatsApp reference and Teddy-WebApp Chat Screen screenshots at the same 720x1600 image dimensions.
+- Updated only `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chat/ChatHeader.kt`:
+  - Increased the leading gap before the 42dp avatar from 2dp to 8dp; the Back IconButton itself, its position, size and ripple feedback are unchanged.
+  - Reduced the contact-name start padding from 10dp to 6dp so the name shifts only 2dp while the avatar shifts 6dp, approximating the reference alignment.
+  - Added 10dp between Video Call and Audio Call IconButtons.
+  - Added 8dp between Audio Call and the overflow menu. The overflow IconButton size (28dp), trailing inset and right edge remain unchanged.
+- Preserved the 56dp header height, 40dp Back/Video/Audio IconButtons, 42dp avatar size, name typography, callbacks, and all navigation/backend behavior.
+- Source commit: `ef1f20915b44ed90b701296858eb04afa249e539`.
+- Supabase project `axklmzuepqcbxsbxvtdn` was verified `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019) before this UI-only change. No database, migration, auth, storage, Edge Function or billing changes were made.
+- User must Pull latest `main`, Build in CodeAssist, and inspect the Chat Screen header. Build success and visual acceptance are pending explicit user confirmation.
+
