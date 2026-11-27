@@ -61,6 +61,7 @@ import com.teddy.bpositive.ui.dialogs.ProfileEditorDialog
 import com.teddy.bpositive.ui.dialogs.DeleteConfirmationDialog
 import com.teddy.bpositive.ui.dialogs.PermanentDeleteConfirmationDialog
 import com.teddy.bpositive.ui.components.AppBottomNavigationBar
+import com.teddy.bpositive.ui.screens.messaging.chatlist.ChatListBottomNavigation
 import com.teddy.bpositive.ui.components.WorkspaceTopBar
 import com.teddy.bpositive.ui.theme.TeddyAppTheme
 import androidx.activity.ComponentActivity
@@ -1431,36 +1432,51 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
-                if (openedNoteId == null) AppBottomNavigationBar(
-                    selectedTab = selectedTab,
-                    showAdmin = hasVerifiedAdminAccess,
-                    onTabSelected = { tab ->
-                        selectedTab = tab
-                        showVaultScreen = false
-                        showNotesFeature = false
-                        if (tab == "Inbox") {
-                            val session = activeSession
-                            if (session != null) {
-                                isLoadingInbox = true
-                                InboxRepository.load(session) { result ->
-                                    if (activeSession?.userId != session.userId) return@load
-                                    isLoadingInbox = false
-                                    if (result.success) { inboxItems = result.items; inboxStatus = "" }
-                                    else inboxStatus = result.message
+                if (openedNoteId == null) {
+                    if (selectedTab == "Messages" && !showChatScreen && !showUserSearch) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            ChatListBottomNavigation(
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    } else {
+                        AppBottomNavigationBar(
+                            selectedTab = selectedTab,
+                            showAdmin = hasVerifiedAdminAccess,
+                            onTabSelected = { tab ->
+                                selectedTab = tab
+                                showVaultScreen = false
+                                showNotesFeature = false
+                                if (tab == "Inbox") {
+                                    val session = activeSession
+                                    if (session != null) {
+                                        isLoadingInbox = true
+                                        InboxRepository.load(session) { result ->
+                                            if (activeSession?.userId != session.userId) return@load
+                                            isLoadingInbox = false
+                                            if (result.success) { inboxItems = result.items; inboxStatus = "" }
+                                            else inboxStatus = result.message
+                                        }
+                                    }
+                                }
+                                if (tab == "Trash") {
+                                    showTrash = true
+                                    showConflicts = false
+                                    showPinnedOnly = false
+                                    searchQuery = ""
+                                } else if (tab == "Home") {
+                                    showTrash = false
+                                    showConflicts = false
                                 }
                             }
-                        }
-                        if (tab == "Trash") {
-                            showTrash = true
-                            showConflicts = false
-                            showPinnedOnly = false
-                            searchQuery = ""
-                        } else if (tab == "Home") {
-                            showTrash = false
-                            showConflicts = false
-                        }
+                        )
                     }
-                )
+                }
             },
             topBar = {
                 if (openedNoteId == null && !(selectedTab == "Home" && showNotesFeature) && !(selectedTab == "Messages" && !showChatScreen && !showUserSearch)) WorkspaceTopBar(
