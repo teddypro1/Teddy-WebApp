@@ -1936,3 +1936,13 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Fix commit: `c924c6db8a9750b3f74c16f37a43420cc40b1c85`.
 - Supabase was checked before this UI-only change and remained `ACTIVE_HEALTHY`; no database, migration, backend or paid-plan changes were made.
 - **CodeAssist Build and Live Preview verification are pending user confirmation.** Do not mark this fix successful until the user reports the result.
+
+
+## Telegram Messages Bottom Navigation — mathematically refined pill curvature (Build pending)
+
+- User compared two screenshots: app navigation outer pill appeared less curved/too compressed at the ends compared with Telegram.
+- Replaced the previous custom asymmetric-control-point end curves in `TelegramPillShape` with a symmetric stadium/capsule outline. The path uses radius = height / 2 and the standard cubic Bézier circle-approximation constant 0.5522848 for smooth semicircular end caps, with a straight horizontal body.
+- This changes only the outer pill outline geometry. Width (320dp), height (60dp), item distribution, icon paths, typography, selected background, border and zero shadow remain unchanged.
+- Source commit: `eb8e0a16d8d7e459a8c07d140dc4def39b5aad47`.
+- Pre-change live checks: GitHub latest main and target source fetched; Supabase project `axklmzuepqcbxsbxvtdn` status `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database or billing changes.
+- **CodeAssist Build and visual comparison are pending user confirmation.** The new curve is a mathematically defined capsule approximation; exact pixel parity with Telegram cannot be guaranteed from screenshots alone because device density, app version and layout scaling may differ.
