@@ -1915,3 +1915,14 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Source commit: `8f709dd979468d94b9753e2fbcac95918315a9a9`.
 - Pre-change verification: only `main` branch exists; latest GitHub history was inspected. Supabase project `axklmzuepqcbxsbxvtdn` is `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
 - No Build was run for this refinement. User should Pull latest `main`, inspect `ChatListBottomNavigationPreview()` and the integrated Messages screen in CodeAssist, then report the Build result. Build success and visual acceptance remain pending.
+
+
+### UI Step 09 — Custom Telegram-style outer pill curve (2026-11-27)
+
+- User clarified that the outer navigation pill should not use a mathematically circular end cap. The ends should remain pill-like and smooth, but slightly narrower/less semicircular, resembling Telegram's softer elongated silhouette.
+- Replaced `CircleShape` on the outer navigation Surface with a custom `TelegramPillShape` implemented through Compose `Shape` and cubic Bézier path segments.
+- The custom shape uses mirrored left/right end curves, a cap width of 46% of the pill height, and smooth horizontal-to-vertical transitions. The outer dimensions, white fill, subtle outline, zero shadow, four equal tab sections, selected-state behavior and Messages-only integration remain unchanged.
+- Chats icon choice confirmed by user: option A, two overlapping filled speech bubbles, with no notification badge. This change-set only adjusts the outer pill geometry; icon refinement remains separate.
+- Source commit: `5ea8e07aaa7bf3b10abb921437e97ade60e5d6ff`.
+- Pre-change verification: only `main` branch exists; latest source and canonical documentation were fetched. Supabase project `axklmzuepqcbxsbxvtdn` is `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
+- No Android Build was run. User should Pull latest `main`, inspect the pill silhouette in `ChatListBottomNavigationPreview()` and the integrated Messages screen, then report the Build result and visual feedback. Build success and visual acceptance remain pending.
