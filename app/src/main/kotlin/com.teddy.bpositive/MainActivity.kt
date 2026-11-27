@@ -1437,7 +1437,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(62.dp),
+                                .height(76.dp),
                             contentAlignment = Alignment.BottomCenter
                         ) {
                             ChatListBottomNavigation(
