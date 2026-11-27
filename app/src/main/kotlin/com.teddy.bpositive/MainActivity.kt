@@ -54,6 +54,7 @@ import com.teddy.bpositive.ui.screens.HomeScreen
 import com.teddy.bpositive.ui.screens.MessagingHomeScreen
 import com.teddy.bpositive.ui.screens.MessagingUserSearchScreen
 import com.teddy.bpositive.ui.screens.MessagingChatScreen
+import com.teddy.bpositive.ui.screens.MessagingChatPreviewScreen
 import com.teddy.bpositive.ui.screens.NotesScreen
 import com.teddy.bpositive.ui.screens.NoteDetailScreen
 import com.teddy.bpositive.ui.screens.NotificationInboxScreen
@@ -1480,7 +1481,7 @@ fun TeddyNotesApp(suppressInitialSyncSuccessToast: Boolean = false) {
                 }
             },
             topBar = {
-                if (openedNoteId == null && !(selectedTab == "Home" && showNotesFeature) && !(selectedTab == "Messages" && (!showChatScreen || !showUserSearch))) WorkspaceTopBar(
+                if (openedNoteId == null && !(selectedTab == "Home" && showNotesFeature) && !(selectedTab == "Messages" && (showChatScreen || !showUserSearch))) WorkspaceTopBar(
                     fullName = currentProfile?.fullName.orEmpty(),
                     avatarUrl = currentProfile?.avatarUrl.orEmpty(),
                     darkMode = darkMode,
