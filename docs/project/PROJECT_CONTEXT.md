@@ -1832,3 +1832,22 @@ Following a side-by-side screenshot review, user pointed out the app FAB sat too
 - Integration source commit: `f874b8229848453e10f6d7b59843a846361c5f8d`.
 - Pre-change checks: only the `main` branch exists; Supabase project `axklmzuepqcbxsbxvtdn` is `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
 - No Build was run. User should Pull latest `main` and use CodeAssist Live Preview for routine inspection; a device Build is optional when they want to verify the full root-Scaffold integration. Build success and visual acceptance remain pending.
+
+
+
+### UI Step 08 — Telegram bottom navigation visual refinement (2026-11-27)
+
+- User compared the integrated Messages navigation against the supplied Telegram reference and reported that the app version looked undersized, with weak icon quality and insufficiently faithful details.
+- Reworked only `ChatListBottomNavigation.kt` visual dimensions and drawing:
+  - Main floating pill remains reference-width 228dp and is increased to 54dp height, with a softer 5dp elevation, fine outline and 8dp bottom inset.
+  - Selected tab surface is enlarged to 46dp; icons are increased to approximately 23–25dp and labels to 11sp.
+  - Chats unread badge is enlarged to 21×16dp with clearer typography and a deliberate overlap.
+  - Re-drew the chat, contacts and settings icons with more consistent 2dp strokes and proportions; simplified the profile avatar illustration.
+  - Preserved the four Telegram tabs (Chats, Contacts, Settings, Profile), selected Chats state, count 18, click callback API and Live Preview.
+- Updated only the Messages-only bottom slot in `MainActivity.kt` from 60dp to 62dp to accommodate the taller pill and its bottom inset. The existing app navigation on all other sections remains unchanged.
+- No chat list, header, search, encryption footer, FAB, database, backend or Supabase resources were changed.
+- Source commits:
+  - Navigation component: `ddfa11cd4d3dd1037118229acbf4079b2f646255`
+  - Scaffold slot: `11279f672e49853f5d8b3b2f069a4a20e0a0074c`
+- GitHub branch check: only `main`. Supabase project `axklmzuepqcbxsbxvtdn` remains `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database changes.
+- No Build was run. User should Pull latest `main`, open `ChatListBottomNavigationPreview()` in CodeAssist Live Preview for fast visual review, then Build only when ready to test the integrated screen. Build success and visual acceptance are pending.
