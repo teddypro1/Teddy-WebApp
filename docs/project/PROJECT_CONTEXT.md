@@ -2012,3 +2012,14 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Pre-change checks: latest canonical documentation and relevant source files were fetched; GitHub branch list contained only main; Supabase project axklmzuepqcbxsbxvtdn was ACTIVE_HEALTHY (PostgreSQL 17.11). No Supabase/database/schema/RLS/Realtime/Edge Function/billing changes were made.
 - No Build or device test has been run by the assistant. User must Pull latest main, Build in CodeAssist, then tap a sample conversation row to verify that the Chat Header opens and the back arrow returns to Chat List. Build success and visual acceptance remain pending.
 - Next Chat Screen components remain unimplemented: Date Separator, Encryption Notice, Wallpaper, Message Area and Composer/Voice Message Button.
+
+## 16. Chat Screen — ChatHeader in-app route and alignment refinement (2026-11-27)
+
+- User confirmed the latest Build completed successfully after the sample Chat List row-click route was added. The user also confirmed that tapping a Chat List row opens the individual Chat Screen preview and the header is visible.
+- The Chat Screen currently uses `ChatHeader.kt` with a back arrow, 42dp avatar, display name, video-call icon, voice-call icon and overflow menu. It remains a UI-only preview route; no real sample-chat backend or message operations are fabricated.
+- User's latest visual refinement request: align the Chat Screen header's overflow (three-dot) menu with the three-dot menu in `ChatListHeader.kt`. The back arrow, avatar size, name and call icons were already considered broadly acceptable and should not be unnecessarily redesigned.
+- Source change committed directly to `main`:
+  - `c6303a596790bf17d9cb316ccafa54b1da713730` — `ChatHeader.kt`: reduced the trailing overflow IconButton hit-area container from 36dp to 28dp while retaining the 24dp three-dot drawing. With the existing 4dp end inset, this moves the menu's visual center 4dp toward the right, matching the Chat List header menu's 12dp trailing alignment more closely.
+- Supabase project was rechecked before this UI-only change and remained `ACTIVE_HEALTHY` (PostgreSQL 17.11.0.019). No database, migration, auth, storage, Edge Function or billing changes were made.
+- Build status for commit `c6303a596790bf17d9cb316ccafa54b1da713730`: **pending user Pull/Build and visual confirmation**. Do not mark this refinement successful until the user confirms.
+- Next user-side verification: Pull latest `main` in CodeAssist 3.48.2, Build, open any sample conversation and compare the overflow menu's horizontal center against the Chat List header's three-dot menu.
