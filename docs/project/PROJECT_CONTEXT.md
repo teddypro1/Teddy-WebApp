@@ -2234,3 +2234,4 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Source commit: `6603ceb28895f36bc00c5e768b0dcf6b9e5b4187`.
 - Documentation updated after verifying the current source and Supabase project state (`ACTIVE_HEALTHY`). No backend/database changes.
 - CodeAssist Pull, Build and visual verification are pending user confirmation.
+- Follow-up source hygiene: restored the Preview container's explicit background and standard `Modifier` chain; commit `283c89f7280bccac83929b24b0752a70cacac88b`.
