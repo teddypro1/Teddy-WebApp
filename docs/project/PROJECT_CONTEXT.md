@@ -1886,3 +1886,16 @@ User's latest side-by-side screenshots showed that the app pill still differed f
   - `c585c79a984c98caa22af3737d1c35411528ca99` — eight-tooth Settings outline refinement.
 - Before changes, live GitHub showed only `main`; Supabase project `axklmzuepqcbxsbxvtdn` was `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
 - No Build was run. User should Pull latest `main`, inspect `ChatListBottomNavigationPreview()`, then Build the integrated Messages screen in CodeAssist. Build success and visual acceptance remain pending.
+
+### UI Step 08 — Telegram navigation typography and Chats glyph follow-up (2026-11-27)
+
+User's latest side-by-side screenshots showed excess visual letter spacing in the four labels and requested removal of the Chats unread-count badge for now, plus a closer Telegram-style Chats glyph.
+
+- Updated `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListBottomNavigation.kt`.
+- Removed the unread badge from the rendered Chats icon. The `unreadChatsCount` parameter remains temporarily for source-call compatibility, but is not displayed.
+- Re-drew the Chats symbol as two overlapping filled speech bubbles with curved corners and a distinct tail; no numeric badge or white badge ring is rendered.
+- Tightened label tracking to -0.25sp while retaining 12sp font size and 14sp line height.
+- Preserved pill dimensions, equal tab widths, Contacts/Settings outline icons, Profile placeholder, callbacks, Live Preview and Messages-only integration.
+- Source commit: `596c97caeab5b30877cc9487e4dd25e9d5d97fe0`.
+- Before editing, verified only `main` exists, fetched current source and canonical documentation, and confirmed Supabase project `axklmzuepqcbxsbxvtdn` is `ACTIVE_HEALTHY` on PostgreSQL 17.11. No Supabase data/schema/billing changes.
+- Android Build and visual acceptance are pending user testing.
