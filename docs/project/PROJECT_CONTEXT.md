@@ -1738,3 +1738,18 @@ User approved the proposed centered footer design: a small muted-gray lock icon 
 - Source commit: `66efed960ceef8c92fe2ad0006eec24504d1b115`.
 - Supabase status checked before the UI-only change: `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/schema/RLS/Realtime/Edge Function/billing changes.
 - No Build was run. User should Pull `main` and inspect `ChatListFloatingActionsPreview()` in CodeAssist Live Preview. Visual acceptance and any later integration remain pending.
+
+
+### UI Step 06 — New Chat FAB visual calibration (2026-11-27)
+
+User reviewed the standalone CodeAssist Live Preview against the original WhatsApp screenshot and identified that the first implementation was oversized and too rounded. Refined only `ChatListFloatingActions.kt` on `main`:
+- FAB size reduced from 56dp to 40dp.
+- Corner radius reduced from 17dp to 9dp.
+- Shadow elevation reduced from 5dp to 3dp.
+- End and bottom insets reduced from 16dp to 12dp.
+- Custom Canvas icon reduced from 28dp to 22dp and redrawn as a continuous white chat-bubble silhouette with a small lower-left tail and a green plus optically centered inside the bubble.
+- Kept one New Chat FAB only; no Meta AI FAB.
+- Kept the existing standalone Live Preview and click callback API. No other Kotlin source files or app integration points were changed.
+- Calibration source commit: `c8152acf8aa0561eb4043ea2dcdc9b03be616828`.
+- Supabase project status was checked before this UI-only change and reported `ACTIVE_HEALTHY`, PostgreSQL 17.11. No database/backend/billing changes.
+- No Build was run. User should Pull `main` and inspect `ChatListFloatingActionsPreview()` in CodeAssist Live Preview. The new measurements are a closer visual calibration from the supplied screenshot and remain subject to user's visual confirmation.
