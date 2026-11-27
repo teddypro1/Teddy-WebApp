@@ -69,15 +69,15 @@ fun ChatListBottomNavigation(
                 .height(60.dp),
             shape = CircleShape,
             color = Color.White,
-            shadowElevation = 5.dp,
+            shadowElevation = 0.dp,
             tonalElevation = 0.dp,
-            border = androidx.compose.foundation.BorderStroke(0.7.dp, NavigationOutline)
+            border = androidx.compose.foundation.BorderStroke(0.8.dp, NavigationOutline)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 7.dp, vertical = 5.dp),
-                horizontalArrangement = Arrangement.spacedBy(0.dp),
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(1.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 NavigationItem(
@@ -119,17 +119,19 @@ private fun NavigationItem(
     Surface(
         onClick = { onClick(tab) },
         modifier = modifier.height(50.dp),
-        shape = CircleShape,
+        shape = RoundedCornerShape(50),
         color = if (selected) TelegramSelectedBackground else Color.Transparent,
         tonalElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(vertical = 1.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Box(
-                modifier = Modifier.height(26.dp),
+                modifier = Modifier.height(25.dp),
                 contentAlignment = Alignment.Center
             ) {
                 when (tab) {
@@ -161,7 +163,7 @@ private fun NavigationItem(
                 color = if (selected) TelegramBlue else NavigationText,
                 fontSize = 12.sp,
                 lineHeight = 14.sp,
-                letterSpacing = (-0.25).sp,
+                letterSpacing = 0.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 maxLines = 1
             )
@@ -175,35 +177,36 @@ private fun ChatsNavigationIcon(
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier = modifier) {
-        // Telegram-style paired chat bubbles; the unread badge is intentionally hidden.
-        val rearBubble = Path().apply {
-            moveTo(size.width * 0.47f, size.height * 0.16f)
-            cubicTo(size.width * 0.47f, size.height * 0.08f, size.width * 0.55f, size.height * 0.04f, size.width * 0.65f, size.height * 0.04f)
-            lineTo(size.width * 0.84f, size.height * 0.04f)
-            cubicTo(size.width * 0.94f, size.height * 0.04f, size.width * 0.99f, size.height * 0.12f, size.width * 0.99f, size.height * 0.22f)
+        // Two balanced, overlapping Telegram-style speech bubbles. No count badge.
+        val backBubble = Path().apply {
+            moveTo(size.width * 0.43f, size.height * 0.13f)
+            cubicTo(size.width * 0.43f, size.height * 0.06f, size.width * 0.49f, size.height * 0.02f, size.width * 0.57f, size.height * 0.02f)
+            lineTo(size.width * 0.86f, size.height * 0.02f)
+            cubicTo(size.width * 0.94f, size.height * 0.02f, size.width * 0.99f, size.height * 0.08f, size.width * 0.99f, size.height * 0.17f)
             lineTo(size.width * 0.99f, size.height * 0.48f)
-            cubicTo(size.width * 0.99f, size.height * 0.58f, size.width * 0.92f, size.height * 0.65f, size.width * 0.82f, size.height * 0.65f)
-            lineTo(size.width * 0.72f, size.height * 0.65f)
-            lineTo(size.width * 0.88f, size.height * 0.88f)
-            lineTo(size.width * 0.55f, size.height * 0.65f)
-            cubicTo(size.width * 0.50f, size.height * 0.62f, size.width * 0.47f, size.height * 0.56f, size.width * 0.47f, size.height * 0.48f)
+            cubicTo(size.width * 0.99f, size.height * 0.57f, size.width * 0.93f, size.height * 0.63f, size.width * 0.85f, size.height * 0.63f)
+            lineTo(size.width * 0.72f, size.height * 0.63f)
+            lineTo(size.width * 0.84f, size.height * 0.84f)
+            lineTo(size.width * 0.54f, size.height * 0.63f)
+            cubicTo(size.width * 0.47f, size.height * 0.62f, size.width * 0.43f, size.height * 0.56f, size.width * 0.43f, size.height * 0.48f)
             close()
         }
-        drawPath(rearBubble, color.copy(alpha = 0.88f))
-        val mainBubble = Path().apply {
-            moveTo(size.width * 0.05f, size.height * 0.31f)
-            cubicTo(size.width * 0.05f, size.height * 0.15f, size.width * 0.16f, size.height * 0.07f, size.width * 0.31f, size.height * 0.07f)
-            lineTo(size.width * 0.62f, size.height * 0.07f)
-            cubicTo(size.width * 0.77f, size.height * 0.07f, size.width * 0.87f, size.height * 0.17f, size.width * 0.87f, size.height * 0.32f)
-            lineTo(size.width * 0.87f, size.height * 0.52f)
-            cubicTo(size.width * 0.87f, size.height * 0.67f, size.width * 0.77f, size.height * 0.77f, size.width * 0.62f, size.height * 0.77f)
-            lineTo(size.width * 0.34f, size.height * 0.77f)
+        drawPath(backBubble, color.copy(alpha = 0.82f))
+
+        val frontBubble = Path().apply {
+            moveTo(size.width * 0.04f, size.height * 0.29f)
+            cubicTo(size.width * 0.04f, size.height * 0.16f, size.width * 0.13f, size.height * 0.08f, size.width * 0.27f, size.height * 0.08f)
+            lineTo(size.width * 0.59f, size.height * 0.08f)
+            cubicTo(size.width * 0.73f, size.height * 0.08f, size.width * 0.82f, size.height * 0.17f, size.width * 0.82f, size.height * 0.30f)
+            lineTo(size.width * 0.82f, size.height * 0.55f)
+            cubicTo(size.width * 0.82f, size.height * 0.68f, size.width * 0.73f, size.height * 0.77f, size.width * 0.59f, size.height * 0.77f)
+            lineTo(size.width * 0.32f, size.height * 0.77f)
             lineTo(size.width * 0.13f, size.height * 0.98f)
-            lineTo(size.width * 0.18f, size.height * 0.75f)
-            cubicTo(size.width * 0.10f, size.height * 0.70f, size.width * 0.05f, size.height * 0.62f, size.width * 0.05f, size.height * 0.52f)
+            lineTo(size.width * 0.17f, size.height * 0.75f)
+            cubicTo(size.width * 0.09f, size.height * 0.71f, size.width * 0.04f, size.height * 0.64f, size.width * 0.04f, size.height * 0.54f)
             close()
         }
-        drawPath(mainBubble, color)
+        drawPath(frontBubble, color)
     }
 }
 
@@ -256,7 +259,6 @@ private fun SettingsNavigationIcon(
         }
         gear.close()
 
-        // Telegram's Settings glyph is an outlined gear, not a solid gear.
         drawPath(
             gear,
             color,
