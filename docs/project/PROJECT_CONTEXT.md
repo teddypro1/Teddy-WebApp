@@ -2235,3 +2235,12 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - Documentation updated after verifying the current source and Supabase project state (`ACTIVE_HEALTHY`). No backend/database changes.
 - CodeAssist Pull, Build and visual verification are pending user confirmation.
 - Follow-up source hygiene: restored the Preview container's explicit background and standard `Modifier` chain; commit `283c89f7280bccac83929b24b0752a70cacac88b`.
+
+## 37. ChatEncryptionNotice duplicate import build fix (2026-11-27)
+
+- User reported a CodeAssist Build failure with two Kotlin errors: conflicting import for `androidx.compose.ui.Modifier` at lines 16 and 19.
+- Verified the live `main` source and found the same import declared twice. This was introduced by the previous Preview modifier cleanup.
+- Removed only the duplicate import; no UI/layout/behavior code was changed.
+- Source fix commit: `067e75b49f75de772397478370ba1316d99b98a2`.
+- Supabase was checked before the fix and remains `ACTIVE_HEALTHY`; no backend/database changes.
+- The user must Pull the latest `main` and rerun Build. Do not mark the Build successful until user confirmation.
