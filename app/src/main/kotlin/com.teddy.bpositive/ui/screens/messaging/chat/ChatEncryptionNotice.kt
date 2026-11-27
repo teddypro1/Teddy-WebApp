@@ -42,7 +42,7 @@ fun ChatEncryptionNotice(
     onLearnMore: () -> Unit = {}
 ) {
     Surface(
-        modifier = modifier.padding(horizontal = 28.dp, vertical = 8.dp),
+        modifier = modifier.padding(horizontal = 18.dp, vertical = 8.dp),
         color = ChatEncryptionNoticeBackground,
         contentColor = ChatEncryptionNoticeText,
         shape = RoundedCornerShape(8.dp),
@@ -50,15 +50,14 @@ fun ChatEncryptionNotice(
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Canvas(
                 modifier = Modifier
-                    .padding(end = 8.dp)
-                    .size(width = 13.dp, height = 16.dp)
+                    .padding(end = 8.dp, top = 2.dp)
+                    .size(width = 12.dp, height = 14.dp)
             ) {
-                val stroke = 1.35.dp.toPx()
+                val stroke = 1.25.dp.toPx()
                 drawArc(
                     color = ChatEncryptionNoticeText,
                     startAngle = 180f,
@@ -80,40 +79,31 @@ fun ChatEncryptionNotice(
                     size = androidx.compose.ui.geometry.Size(
                         size.width * 0.80f, size.height * 0.56f
                     ),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.6.dp.toPx()),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.5.dp.toPx()),
                     style = Stroke(width = stroke)
                 )
             }
 
-            androidx.compose.foundation.layout.Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Messages are protected in transit and at rest.",
-                    color = ChatEncryptionNoticeText,
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp,
-                    fontWeight = FontWeight.Normal
-                )
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(
-                            SpanStyle(
-                                color = ChatEncryptionNoticeLink,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        ) {
-                            append("Learn more")
-                        }
-                    },
-                    modifier = Modifier
-                        .padding(top = 2.dp)
-                        .clickable(onClick = onLearnMore),
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp
-                )
-            }
+            Text(
+                text = buildAnnotatedString {
+                    append("Messages are protected in transit and at rest. ")
+                    withStyle(
+                        SpanStyle(
+                            color = ChatEncryptionNoticeLink,
+                            fontWeight = FontWeight.Bold
+                        )
+                    ) {
+                        append("Learn more")
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(onClick = onLearnMore),
+                color = ChatEncryptionNoticeText,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
         }
     }
 }
@@ -128,8 +118,8 @@ fun ChatEncryptionNotice(
 private fun ChatEncryptionNoticePreview() {
     TeddyAppTheme(darkMode = false) {
         Box(
-            modifier = Modifier
-                .background(Color(0xFFF7F2EA))
+            modifier = androidx.compose.foundation.layout.Box
+                .class.java.let { androidx.compose.ui.Modifier }
                 .padding(vertical = 8.dp)
         ) {
             ChatEncryptionNotice()
