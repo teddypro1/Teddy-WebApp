@@ -12,6 +12,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.layout.LayoutDirection
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -38,6 +43,56 @@ private val TelegramBlue = Color(0xFF229ED9)
 private val TelegramSelectedBackground = Color(0xFFE5F2FA)
 private val NavigationText = Color(0xFF202124)
 private val NavigationOutline = Color(0xFFE9EDF0)
+
+/**
+ * A Telegram-inspired capsule with slightly compressed end curves.
+ *
+ * Unlike CircleShape, the end caps are a little narrower than a true
+ * semicircle while keeping smooth horizontal-to-vertical transitions.
+ */
+private object TelegramPillShape : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+        val capWidth = size.height * 0.46f
+        val width = size.width
+        val height = size.height
+        val path = Path().apply {
+            moveTo(capWidth, 0f)
+            lineTo(width - capWidth, 0f)
+
+            // Right end: gently stretched, not a perfect semicircle.
+            cubicTo(
+                width - capWidth * 0.18f, 0f,
+                width, height * 0.18f,
+                width, height * 0.5f
+            )
+            cubicTo(
+                width, height * 0.82f,
+                width - capWidth * 0.18f, height,
+                width - capWidth, height
+            )
+
+            lineTo(capWidth, height)
+
+            // Left end mirrors the right end for a balanced silhouette.
+            cubicTo(
+                capWidth * 0.18f, height,
+                0f, height * 0.82f,
+                0f, height * 0.5f
+            )
+            cubicTo(
+                0f, height * 0.18f,
+                capWidth * 0.18f, 0f,
+                capWidth, 0f
+            )
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
 
 /** Tabs displayed by the Telegram-inspired Messages navigation. */
 enum class ChatListNavigationTab {
@@ -67,7 +122,7 @@ fun ChatListBottomNavigation(
                 .padding(bottom = 8.dp)
                 .width(320.dp)
                 .height(60.dp),
-            shape = CircleShape,
+            shape = TelegramPillShape,
             color = Color.White,
             shadowElevation = 0.dp,
             tonalElevation = 0.dp,
