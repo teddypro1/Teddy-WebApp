@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -118,8 +119,8 @@ fun ChatEncryptionNotice(
 private fun ChatEncryptionNoticePreview() {
     TeddyAppTheme(darkMode = false) {
         Box(
-            modifier = androidx.compose.foundation.layout.Box
-                .class.java.let { androidx.compose.ui.Modifier }
+            modifier = Modifier
+                .background(Color(0xFFF7F2EA))
                 .padding(vertical = 8.dp)
         ) {
             ChatEncryptionNotice()
