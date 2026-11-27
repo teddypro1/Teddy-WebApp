@@ -2146,3 +2146,17 @@ User's latest side-by-side screenshots showed excess visual letter spacing in th
 - No Supabase/database/migration/auth/storage/Edge Function/billing changes.
 - Awaiting user Pull + CodeAssist Build and visual confirmation; do not mark this build successful until user confirms.
 
+
+## 30. Chat List and Chat Screen overflow-menu right alignment (2026-11-27)
+
+- User confirmed the prior Chat Screen overflow-menu alignment build completed successfully.
+- Re-verified GitHub `main`, current ChatListHeader.kt and ChatHeader.kt sources, and Supabase project `axklmzuepqcbxsbxvtdn` (`ACTIVE_HEALTHY`) before changes.
+- Updated two UI source files:
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chatlist/ChatListHeader.kt`: shifted the static three-dot Column 2dp right using `.offset(x = 2.dp)`. Current source shows this Chat List menu as decorative dots, not a clickable IconButton; no menu action or ripple was added.
+  - `app/src/main/kotlin/com.teddy.bpositive/ui/screens/messaging/chat/ChatHeader.kt`: changed the overflow container offset from -2dp to -1dp, moving the three-dot icon and 40dp ripple/touch target net 1dp right from its prior position.
+- Preserved menu drawing size, Chat Screen 40dp ripple target, Chat Screen 9dp Audio-to-menu spacer, parent layout allocations, all other header positions, callbacks and backend behavior.
+- Chat List source commit: `1031a14a8359b976111050b11f97f3ae70f44e28`.
+- Chat Screen source commit: `37ddf56e882f3b2cd267dea8c153ad9ed90c8511`.
+- No Supabase/database/migration/auth/storage/Edge Function/billing changes.
+- Awaiting user Pull + CodeAssist Build and visual confirmation; do not mark this build successful until user confirms.
+
